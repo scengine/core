@@ -268,9 +268,9 @@ int SCE_Particle_BuildArrays (SCE_SParticleBuffer *pb, SCE_EPrimitiveType prim,
     vpp = attribs[0];
     a = attribs = &attribs[1];
     offsets[0] = 0;             /* call it before iterate into 'offsets' */
-    /* possible overflow in 'offsets'! */
+    /* TODO: possible overflow in 'offsets'! */
     for (i = 1; i <= n_attrib; i++) {
-        offsets[i] = a[2] * SCE_CSizeofType (a[1]) * vpp + offsets[i - 1];
+        offsets[i] = a[2] * SCE_Type_Sizeof (a[1]) * vpp + offsets[i - 1];
         a = &a[3];
     }
     pb->v_stride = offsets[n_attrib];
