@@ -506,7 +506,7 @@ void SCE_Geometry_AddArray (SCE_SGeometry *geom, SCE_SGeometryArray *array)
 {
     SCE_List_Appendl (&geom->arrays, &array->it);
     array->geom = geom;
-    switch (SCE_Geometry_GetArrayAttributeType (array)) {
+    switch (SCE_Geometry_GetArrayVertexAttribute (array)) {
     case SCE_POSITION:
         geom->pos_array = array;
         geom->pos_data = SCE_Geometry_GetData (array);
