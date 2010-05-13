@@ -72,7 +72,7 @@ int SCE_Init_Core (FILE *outlog, SCEbitfield flags)
     }
     pthread_mutex_unlock (&init_mutex);
     if (ret == SCE_ERROR) {
-        SCE_Quit_Interface ();
+        SCE_Quit_Core ();
         SCEE_LogSrc ();
         SCEE_LogSrcMsg ("failed to initialize SCEngine interface");
     }

@@ -57,7 +57,8 @@ See the file ./doc/html/todo.html
 - Regrouper plusieurs meshs en un seul via le gestionnaire de meshs
   (ou de batchs...) + plusieurs instances uniquement via indices OpenGL...
 - Instaurer d'autres règles pour le changement d'entité d'une instance en plus
-  du LOD (?).
+  du LOD (genre visibilité réduite, dans une zone de floue, etc.). En fait
+  définir un niveau de "visibilité" et déterminer le LOD en fonction de ça.
 - API de shaders intégrée au moteur (noms similaires, uniforms définis, etc...).
     Cette fonctionnalité devient importante. Prévoir de gérer des trucs comme :
     - textures comme support d'informations (skinning, instancing, ...)
@@ -77,7 +78,6 @@ See the file ./doc/html/todo.html
 - Paramètres de ressources lors de l'utilisation : recharger la ressource de
   type SCE_SShader lorsque les paramètres à fourguer sont différents, mais
   instancier quand même le SCE_CShader.
-- Scinder le core pour la compatibilité avec les versions récentes d'OpenGL.
 - Renommer SCEGeometryInstance en SCEInstancing.
 - Add documentation for SCECBuffer.
 - Use enum for GL tokens in appropriated file (work in progress).
@@ -93,11 +93,11 @@ See the file ./doc/html/todo.html
 - Transform feedback.
 - Texture arrays.
 - Solve divin function SCE_Texture_Create().
-- Volume based culling.
+- Volume based culling (wat?).
 - Avoid VBO generation if VA are requested on Mesh_Build().
 - Allow VA render mode for IBO.
 - Allow double-build of meshes (call Mesh_Build() more than once).
 - Fix skyboxes problem
 - Multi-threaded particles (treat range of particles).
 
-54
+53
