@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 05/04/2009
-   updated: 15/05/2009 */
+   updated: 14/05/2010 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCESkeleton.h"
@@ -61,8 +61,7 @@ SCE_SSkeleton* SCE_Skeleton_Create (void)
  */
 void SCE_Skeleton_Delete (SCE_SSkeleton *skel)
 {
-    if (skel)
-    {
+    if (skel) {
         unsigned int i;
         SCE_Skeleton_FreeJoints (skel);
         for (i = 0; i < SCE_MAX_SKELETON_MATRICES; i++)
@@ -115,13 +114,11 @@ int SCE_Skeleton_AllocateJoints (SCE_SSkeleton *skel, unsigned int n_joints)
 
     SCE_Skeleton_FreeJoints (skel);
     skel->joints = SCE_malloc (n_joints * sizeof *skel->joints);
-    if (!skel->joints)
-    {
+    if (!skel->joints) {
         SCEE_LogSrc ();
         return SCE_ERROR;
     }
-    if (SCE_Skeleton_AllocateMatrices (skel, 0) < 0)
-    {
+    if (SCE_Skeleton_AllocateMatrices (skel, 0) < 0) {
         SCEE_LogSrc ();
         return SCE_ERROR;
     }
@@ -150,8 +147,7 @@ void SCE_Skeleton_FreeJoints (SCE_SSkeleton *skel)
 int SCE_Skeleton_AllocateMatrices (SCE_SSkeleton *skel, unsigned int n)
 {
     SCE_free (skel->mat[n]);
-    if (!(skel->mat[n] = SCE_malloc (skel->n_joints * 12 * sizeof (float))))
-    {
+    if (!(skel->mat[n] = SCE_malloc (skel->n_joints * 12 * sizeof (float)))) {
         SCEE_LogSrc ();
         return SCE_ERROR;
     }
@@ -175,12 +171,10 @@ void SCE_Skeleton_FreeMatrices (SCE_SSkeleton *skel, unsigned int n)
 void SCE_Skeleton_SortJoints (SCE_SSkeleton *skel)
 {
     int i, id;
-    for (i = 0; i < skel->n_joints; i++)
-    {
+    for (i = 0; i < skel->n_joints; i++) {
         id = SCE_Joint_GetParentID (&skel->joints[i]);
         /* if a parent is stored after its children */
-        if (id > i)
-        {
+        if (id > i) {
             /* then exchange them */
             SCE_Joint_Exchange (&skel->joints[i], &skel->joints[id]);
             SCE_Joint_SetParentID (&skel->joints[id], i);
@@ -202,12 +196,10 @@ void SCE_Skeleton_ComputeAbsoluteJoints (SCE_SSkeleton *skel)
     SCE_SJoint *j1 = NULL, *j2 = NULL;
     SCE_TVector3 v;
 
-    for (i = 0; i < skel->n_joints; i++)
-    {
+    for (i = 0; i < skel->n_joints; i++) {
         j1 = &skel->joints[i];
         id = SCE_Joint_GetParentID (j1);
-        if (id >= 0)
-        {
+        if (id >= 0) {
             j2 = &skel->joints[id];
             SCE_Quaternion_RotateV3 (j2->orientation, j1->position, v);
             SCE_Vector3_Operator2v (j1->position, =, j2->position, +, v);
@@ -267,8 +259,7 @@ void SCE_Skeleton_Absolute (SCE_SSkeleton *skel1, unsigned int n1,
     unsigned int i;
     int id;
 
-    for (i = 0; i < skel2->n_joints; i++)
-    {
+    for (i = 0; i < skel2->n_joints; i++) {
         id = SCE_Joint_GetParentID (&skel1->joints[i]);
         if (id < 0)
             SCE_Matrix4x3_Copy (&skel2->mat[n2][i * 12], &skel1->mat[n1][i * 12]);
@@ -290,11 +281,9 @@ void SCE_Skeleton_AbsoluteCopy (SCE_SSkeleton *skel, unsigned int n);
     int id;
     SCE_TMatrix4x3 m;
 
-    for (i = 0; i < skel->n_joints; i++)
-    {
+    for (i = 0; i < skel->n_joints; i++) {
         id = SCE_Joint_GetParentID (&skel->joints[i]);
-        if (id >= 0)
-        {
+        if (id >= 0) {
             SCE_Matrix4x3_Mul (&skel->mat[n][id * 12], &skel->mat[n][i * 12],m);
             SCE_Matrix4x3_Copy (&skel->mat[n][i * 12], m);
         }
@@ -344,8 +333,7 @@ void SCE_Skeleton_InterpolateSLERP (SCE_SSkeleton *skel1, SCE_SSkeleton *skel2,
                                     float w, SCE_SSkeleton *result)
 {
     unsigned int i;
-    for (i = 0; i < skel1->n_joints; i++)
-    {
+    for (i = 0; i < skel1->n_joints; i++) {
         SCE_Joint_InterpolateSLERP (&skel1->joints[i], &skel2->joints[i],
                                     w, &result->joints[i]);
     }
@@ -364,8 +352,7 @@ void SCE_Skeleton_InterpolateSLERPIndexed (SCE_SSkeleton *skel1,
                                            unsigned int count)
 {
     unsigned int i, id;
-    for (i = 0; i < count; i++)
-    {
+    for (i = 0; i < count; i++) {
         id = indices[i];
         SCE_Joint_InterpolateSLERP (&skel1->joints[id], &skel2->joints[id],
                                     w, &result->joints[id]);
@@ -386,8 +373,7 @@ void SCE_Skeleton_InterpolateLinear (SCE_SSkeleton *skel1, SCE_SSkeleton *skel2,
                                      float w, SCE_SSkeleton *result)
 {
     unsigned int i;
-    for (i = 0; i < skel1->n_joints; i++)
-    {
+    for (i = 0; i < skel1->n_joints; i++) {
         SCE_Joint_InterpolateLinear (&skel1->joints[i], &skel2->joints[i],
                                      w, &result->joints[i]);
     }
@@ -406,8 +392,7 @@ void SCE_Skeleton_InterpolateLinearIndexed (SCE_SSkeleton *skel1,
                                             unsigned int count)
 {
     unsigned int i, id;
-    for (i = 0; i < count; i++)
-    {
+    for (i = 0; i < count; i++) {
         id = indices[i];
         SCE_Joint_InterpolateLinear (&skel1->joints[id], &skel2->joints[id],
                                      w, &result->joints[id]);
@@ -428,8 +413,7 @@ void SCE_Skeleton_InterpolateMatrices (SCE_SSkeleton *s1, unsigned int n1,
                                        SCE_SSkeleton *r, unsigned int nr)
 {
     unsigned int i;
-    for (i = 0; i < r->n_joints * 12; i += 12)
-    {
+    for (i = 0; i < r->n_joints * 12; i += 12) {
         SCE_Matrix4x3_Interpolate (&s1->mat[n1][i], &s2->mat[n2][i], w,
                                    &r->mat[nr][i]);
     }
@@ -444,8 +428,7 @@ void SCE_Skeleton_InterpolateMatrices0 (SCE_SSkeleton *s1, SCE_SSkeleton *s2,
                                         float w, SCE_SSkeleton *r)
 {
     unsigned int i;
-    for (i = 0; i < r->n_joints * 12; i += 12)
-    {
+    for (i = 0; i < r->n_joints * 12; i += 12) {
         SCE_Matrix4x3_Interpolate (&s1->mat[0][i], &s2->mat[0][i], w,
                                    &r->mat[0][i]);
     }
