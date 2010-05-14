@@ -67,7 +67,6 @@ void SCE_Camera_Init (SCE_SCamera *cam)
 SCE_SCamera* SCE_Camera_Create (void)
 {
     SCE_SCamera *cam = NULL;
-    SCE_btstart ();
     if (!(cam = SCE_malloc (sizeof *cam)))
         goto fail;
     SCE_Camera_Init (cam);

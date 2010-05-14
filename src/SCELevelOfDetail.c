@@ -36,7 +36,6 @@ void SCE_Lod_Init (SCE_SLevelOfDetail *lod)
 SCE_SLevelOfDetail* SCE_Lod_Create (void)
 {
     SCE_SLevelOfDetail *lod = NULL;
-    SCE_btstart ();
     lod = SCE_malloc (sizeof *lod);
     if (!lod)
         SCEE_LogSrc();

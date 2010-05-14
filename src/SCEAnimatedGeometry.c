@@ -130,7 +130,6 @@ static void SCE_AnimGeom_Init (SCE_SAnimatedGeometry *ageom)
 SCE_SAnimatedGeometry* SCE_AnimGeom_Create (void)
 {
     SCE_SAnimatedGeometry *ageom = NULL;
-    SCE_btstart ();
     if (!(ageom = SCE_malloc (sizeof *ageom)))
         SCEE_LogSrc ();
     else {
@@ -140,7 +139,6 @@ SCE_SAnimatedGeometry* SCE_AnimGeom_Create (void)
             SCEE_LogSrc ();
         }
     }
-    SCE_btend ();
     return ageom;
 }
 /**

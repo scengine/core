@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 06/05/2008
-   updated: 04/08/2009 */
+   updated: 14/05/2010 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -64,19 +64,16 @@ static void SCE_Octree_Init (SCE_SOctree *tree)
 SCE_SOctree* SCE_Octree_Create (void)
 {
     SCE_SOctree *tree = NULL;
-    SCE_btstart ();
     if (!(tree = SCE_malloc (sizeof *tree)))
-        goto failure;
+        goto fail;
     SCE_Octree_Init (tree);
     if (!(tree->elements = SCE_List_Create (NULL)))
-        goto failure;
-    goto success;
-failure:
-    SCE_Octree_Delete (tree), tree = NULL;
-    SCEE_LogSrc ();
-success:
-    SCE_btend ();
+        goto fail;
     return tree;
+fail:
+    SCE_Octree_Delete (tree);
+    SCEE_LogSrc ();
+    return NULL;
 }
 /**
  * \brief Clears an octree by removing recusivly all its chlidren
@@ -141,18 +138,14 @@ void SCE_Octree_InitElement (SCE_SOctreeElement *el)
 SCE_SOctreeElement* SCE_Octree_CreateElement (void)
 {
     SCE_SOctreeElement *el = NULL;
-
-    SCE_btstart ();
     if (!(el = SCE_malloc (sizeof *el)))
-        goto failure;
+        goto fail;
     SCE_Octree_InitElement (el);
-    goto success;
-failure:
-    SCE_Octree_DeleteElement (el), el = NULL;
-    SCEE_LogSrc ();
-success:
-    SCE_btend ();
     return el;
+fail:
+    SCE_Octree_DeleteElement (el);
+    SCEE_LogSrc ();
+    return NULL;
 }
 
 /**

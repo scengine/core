@@ -177,7 +177,6 @@ failure:
     SCE_AnimGeom_Delete (ageom), ageom = NULL;
     SCEE_LogSrc ();
 success:
-    SCE_btend ();
     return ageom;
 }
 
@@ -265,7 +264,6 @@ void* SCE_idTechMD5_LoadAnim (FILE *fp, const char *fname, void *un)
     int n_frames = 0, n_joints = 0;
     SCE_SSkeleton *baseskel = NULL;
 
-    SCE_btstart ();
     (void)un;
     if (!(anim = SCE_Anim_Create ()))
         goto failure;
@@ -352,6 +350,5 @@ failure:
 success:
     SCE_free (joint_infos);
     SCE_free (anim_frame_data);
-    SCE_btend ();
     return anim;
 }

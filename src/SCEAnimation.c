@@ -53,8 +53,6 @@ fail:
 }
 void SCE_Quit_Anim (void)
 {
-    SCE_btstart ();
-    SCE_btend ();
 }
 
 
@@ -90,7 +88,6 @@ static void SCE_Anim_Init (SCE_SAnimation *anim)
 SCE_SAnimation* SCE_Anim_Create (void)
 {
     SCE_SAnimation* anim = NULL;
-    SCE_btstart ();
     if (!(anim = SCE_malloc (sizeof *anim)))
         SCEE_LogSrc ();
     else {
@@ -100,7 +97,6 @@ SCE_SAnimation* SCE_Anim_Create (void)
             SCEE_LogSrc ();
         }
     }
-    SCE_btend ();
     return anim;
 }
 
@@ -161,7 +157,6 @@ int SCE_Anim_SetKeys (SCE_SAnimation *anim, SCE_SSkeleton **keys,
 {
     int code = SCE_OK;
     unsigned int n;
-    SCE_btstart ();
     SCE_Anim_DeleteKeys (anim);
     anim->keys = keys;
     anim->n_keys = n_keys;
@@ -177,7 +172,6 @@ failure:
     SCEE_LogSrc ();
     code = SCE_ERROR;
 success:
-    SCE_btend ();
     return code;
 }
 
@@ -229,7 +223,6 @@ failure:
     SCEE_LogSrc ();
     code = SCE_ERROR;
 success:
-    SCE_btend ();
     return code;
 }
 
@@ -359,10 +352,8 @@ void SCE_Anim_End (SCE_SAnimation *anim)
 SCE_SAnimation* SCE_Anim_Load (const char *fname)
 {
     SCE_SAnimation *anim = NULL;
-    SCE_btstart ();
     if (!(anim = SCE_Resource_Load (resource_type, fname, SCE_FALSE, NULL)))
         SCEE_LogSrc ();
-    SCE_btend ();
     return anim;
 }
 

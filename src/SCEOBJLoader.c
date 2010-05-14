@@ -72,14 +72,12 @@ static void* SCE_OBJ_Load (FILE *fp, const char *fname, void *unused)
     SCE_SGeometry *geom = NULL;
     WarMesh *me = NULL;
 
-    SCE_btstart ();
     (void)unused;
 
     me = war_read (fp, gen_indices, load_lod_level);
     if (!me) {
         SCEE_LogSrc ();
         SCEE_LogSrcMsg ("libwar can't load '%s': %s", fname, war_geterror ());
-        SCE_btend ();
         return NULL;
     }
 
@@ -102,12 +100,10 @@ static void* SCE_OBJ_Load (FILE *fp, const char *fname, void *unused)
     }
 
     war_free (me);
-    SCE_btend ();
     return geom;
 fail:
     war_free (me);
     SCE_Geometry_Delete (geom);
     SCEE_LogSrc ();
-    SCE_btend ();
     return NULL;
 }

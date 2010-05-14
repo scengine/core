@@ -120,13 +120,11 @@ SCE_SphereGeom_GetUV (SCE_SSphere *sphere, SCEuint segments,
 
     *pout = p;
     *iout = indices;    
-    SCE_btend ();
     return n_indices;
 failure:
     SCE_free (p);
     SCE_free (indices);
     SCEE_LogSrc ();
-    SCE_btend ();
     return SCE_ERROR;
 }
 

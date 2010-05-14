@@ -49,12 +49,10 @@ void SCE_Skeleton_Init (SCE_SSkeleton *skel)
 SCE_SSkeleton* SCE_Skeleton_Create (void)
 {
     SCE_SSkeleton *skel = NULL;
-    SCE_btstart ();
     if (!(skel = SCE_malloc (sizeof *skel)))
         SCEE_LogSrc ();
     else
         SCE_Skeleton_Init (skel);
-    SCE_btend ();
     return skel;
 }
 

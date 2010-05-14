@@ -47,12 +47,10 @@ void SCE_Joint_Init (SCE_SJoint *joint)
 SCE_SJoint* SCE_Joint_Create (void)
 {
     SCE_SJoint *joint = NULL;
-    SCE_btstart ();
     if (!(joint = SCE_malloc (sizeof *joint)))
         SCEE_LogSrc ();
     else
         SCE_Joint_Init (joint);
-    SCE_btend ();
     return joint;
 }
 
@@ -61,8 +59,7 @@ SCE_SJoint* SCE_Joint_Create (void)
  */
 void SCE_Joint_Delete (SCE_SJoint *joint)
 {
-    if (joint)
-    {
+    if (joint) {
         SCE_free (joint);
     }
 }
