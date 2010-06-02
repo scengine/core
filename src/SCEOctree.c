@@ -420,7 +420,6 @@ static void SCE_Octree_Insert (SCE_SOctree *tree, SCE_SOctreeElement *el)
  * \brief Inserts an element into an octree
  * \param tree an octree
  * \param el the element to insert
- * \note \p el must have been previously added by SCE_Octree_AddElement()
  * \sa SCE_Octree_ReinsertElement(), SCE_Octree_RemoveElement()
  */
 void SCE_Octree_InsertElement (SCE_SOctree *tree, SCE_SOctreeElement *el)

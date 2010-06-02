@@ -116,8 +116,6 @@ int SCE_Octree_MakeChildren (SCE_SOctree*, int, float);
 int SCE_Octree_RecursiveMake (SCE_SOctree*, unsigned int,
                               SCE_FOctreeLimitFunc, void*, int, float);
 
-void SCE_Octree_AddElement (SCE_SOctree*, SCE_SOctreeElement*);
-
 void SCE_Octree_DefaultInsertFunc (SCE_SOctree*, SCE_SOctreeElement*);
 
 void SCE_Octree_InsertElement (SCE_SOctree*, SCE_SOctreeElement*);
