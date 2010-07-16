@@ -448,12 +448,11 @@ void SCE_Octree_ReinsertElement (SCE_SOctreeElement *el)
             break;
         }
         parent = parent->parent;
-    }
-    while (parent);
+    } while (parent);
 #ifdef SCE_DEBUG
     if (!parent) {
         /* element hasn't be inserted lol. */
-        SCEE_SendMsg ("octree element reinsertion failure: out of the box!");
+        SCEE_SendMsg ("octree element reinsertion failure: out of the box!\n");
     }
 #endif
 }

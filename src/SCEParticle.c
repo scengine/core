@@ -319,7 +319,7 @@ static void SCE_Particle_UpdateGeometry (SCE_SParticleBuffer *pb)
  * \brief Builds a geometry from a particle buffer
  *
  * To work fine, this function requires that the geometry array of the particle
- * buffer has already been built calling SCE_Particle_BuildArrays().
+ * buffer to be already built by SCE_Particle_BuildArrays().
  * \sa SCE_Particle_BuildArrays()
  */
 void SCE_Particle_BuildGeometry (SCE_SParticleBuffer *pb, SCE_SGeometry *geom)
