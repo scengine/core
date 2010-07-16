@@ -320,9 +320,9 @@ int SCE_Geometry_IsModified (SCE_SGeometry*);
 
 SCE_SGeometry* SCE_Geometry_Load (const char*, int);
 
-void SCE_Geometry_ComputeBoundingBox (SCEvertices*, size_t, SCE_SBox*);
-void SCE_Geometry_ComputeBoundingSphere (SCEvertices*, size_t, SCE_SBox*,
-                                         SCE_SSphere*);
+void SCE_Geometry_ComputeBoundingBox (SCEvertices*, size_t, size_t, SCE_SBox*);
+void SCE_Geometry_ComputeBoundingSphere (SCEvertices*, size_t, size_t,
+                                         SCE_SBox*, SCE_SSphere*);
 void SCE_Geometry_GenerateBoundingBox (SCE_SGeometry*);
 void SCE_Geometry_GenerateBoundingSphere (SCE_SGeometry*);
 void SCE_Geometry_GenerateBoundingVolumes (SCE_SGeometry*);

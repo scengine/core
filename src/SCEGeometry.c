@@ -1070,19 +1070,23 @@ SCE_SGeometry* SCE_Geometry_Load (const char *fname, int force)
  * \param vcount the number of vertices into \p v
  * \param box write out the bounding box here
  * \sa SCE_Geometry_GenerateBoundingBox()
+ * \todo manage number of vector's components (3 or 2)
+ * \todo manage data type
  */
 void SCE_Geometry_ComputeBoundingBox (SCEvertices *v, size_t vcount,
-                                      SCE_SBox *box)
+                                      size_t stride, SCE_SBox *box)
 {
     SCE_TVector3 max = {0., 0., 0.};
     SCE_TVector3 min = {0., 0., 0.};
     size_t i, count;
+    char *cv = (char*)v;
 
     /* TODO: use a "Rectangle3D" ? */
-    count = vcount * 3;
-    for (i = 0; i < count; i += 3) {
-        SCE_Vector3_GetMin (min, min, &v[i]);
-        SCE_Vector3_GetMax (max, max, &v[i]);
+    count = vcount * stride;
+    for (i = 0; i < count; i += stride) {
+        /* TODO: float type used for vectors */
+        SCE_Vector3_GetMin (min, min, (float*)&cv[i]);
+        SCE_Vector3_GetMax (max, max, (float*)&cv[i]);
     }
     SCE_Box_SetFromMinMax (box, min, max);
 }
@@ -1096,14 +1100,18 @@ void SCE_Geometry_ComputeBoundingBox (SCEvertices *v, size_t vcount,
  * \sa SCE_Geometry_ComputeBoundingBox(), SCE_Geometry_GenerateBoundingVolumes()
  */
 void SCE_Geometry_ComputeBoundingSphere (SCEvertices *v, size_t vcount,
-                                         SCE_SBox *box, SCE_SSphere *sphere)
+                                         size_t stride, SCE_SBox *box,
+                                         SCE_SSphere *sphere)
 {
     float d = 0.0f;
-    size_t i;
+    size_t i, count;
+    char *cv = (char*)v;
     sphere->radius = 0.0f;
     SCE_Box_GetCenterv (box, sphere->center);
-    for (i = 0; i < vcount; i++) {
-        d = SCE_Vector3_Distance (sphere->center, &v[i*3]);
+    count = vcount * stride;
+    for (i = 0; i < count; i += stride) {
+        /* TODO: float type used for vectors */
+        d = SCE_Vector3_Distance (sphere->center, (float*)&cv[i]);
         sphere->radius = (sphere->radius < d ? d : sphere->radius);
     }
 }
@@ -1116,6 +1124,7 @@ void SCE_Geometry_GenerateBoundingBox (SCE_SGeometry *geom)
 {
     if (!geom->box_uptodate) {
         SCE_Geometry_ComputeBoundingBox (geom->pos_data, geom->n_vertices,
+                                         geom->pos_array->data.stride,
                                          &geom->box);
         geom->box_uptodate = SCE_TRUE;
     }
@@ -1129,6 +1138,7 @@ void SCE_Geometry_GenerateBoundingSphere (SCE_SGeometry *geom)
     if (!geom->sphere_uptodate) {
         SCE_Geometry_GenerateBoundingBox (geom);
         SCE_Geometry_ComputeBoundingSphere (geom->pos_data, geom->n_vertices,
+                                            geom->pos_array->data.stride,
                                             &geom->box, &geom->sphere);
         geom->sphere_uptodate = SCE_TRUE;
     }
