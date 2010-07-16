@@ -1163,6 +1163,7 @@ SCE_SSphere* SCE_Geometry_GetSphere (SCE_SGeometry *geom)
 /**
  * \brief Marks the box of a geometry as up to date
  * \sa SCE_Geometry_SphereUpToDate()
+ * \todo what about marking it as non up-to-date?
  */
 void SCE_Geometry_BoxUpToDate (SCE_SGeometry *geom)
 {
@@ -1171,6 +1172,7 @@ void SCE_Geometry_BoxUpToDate (SCE_SGeometry *geom)
 /**
  * \brief Marks the sphere of a geometry as up to date
  * \sa SCE_Geometry_BoxUpToDate()
+ * \todo what about marking it as non up-to-date?
  */
 void SCE_Geometry_SphereUpToDate (SCE_SGeometry *geom)
 {
