@@ -104,6 +104,7 @@ unsigned int SCE_Skeleton_GetNumJoints (SCE_SSkeleton *skel)
 
 /**
  * \brief Allocates \p n_joints joints in a skeleton
+ * \param skel a skeleton
  * \param n_joints the number of joints to allocate
  * \returns SCE_ERROR on error, SCE_OK otherwise
  * \sa SCE_Skeleton_FreeJoints()
@@ -141,6 +142,7 @@ void SCE_Skeleton_FreeJoints (SCE_SSkeleton *skel)
 
 /**
  * \brief Allocates an array of matrices for a skeleton
+ * \param skel a skeleton
  * \param n the array number, maximum is SCE_MAX_SKELETON_MATRICES - 1
  * \sa SCE_Skeleton_FreeMatrices(), SCE_MAX_SKELETON_MATRICES
  */
@@ -156,6 +158,7 @@ int SCE_Skeleton_AllocateMatrices (SCE_SSkeleton *skel, unsigned int n)
 }
 /**
  * \brief Frees matrices of a skeleton
+ * \param skel a skeleton
  * \param n the number of the array to delete
  */
 void SCE_Skeleton_FreeMatrices (SCE_SSkeleton *skel, unsigned int n)
@@ -212,6 +215,7 @@ void SCE_Skeleton_ComputeAbsoluteJoints (SCE_SSkeleton *skel)
 
 /**
  * \brief Computes the matrices of the joints of a skeleton
+ * \param skel a skeleton
  * \param n the array matrix to use as output
  *
  * This function calls SCE_Joint_ComputeMatrix() for each joint of \p skel

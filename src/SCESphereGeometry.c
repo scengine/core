@@ -157,8 +157,7 @@ fail:
 
 /**
  * \brief Creates an UV sphere geometry
- * \param center,radius,segments,rings parameters that defines the sphere
- * to create. \p center can be NULL
+ * \param sphere,segments,rings defines the sphere to create
  * \sa SCE_SphereGeom_CreateDefaultUV(), SCE_SphereGeom_GenerateUV()
  */
 SCE_SGeometry* SCE_SphereGeom_CreateUV (SCE_SSphere *sphere,
@@ -179,7 +178,7 @@ fail:
 
 /**
  * \brief Creates an UV sphere geometry
- * \param center,radius defines the sphere to create, \p center can be NULL
+ * \param sphere defines the sphere to create
  *
  * The segments and the rings of the created sphere are
  * SCE_SPHEREGEOMETRY_SEGMENTS and SCE_SPHEREGEOMETRY_RINGS

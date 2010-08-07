@@ -169,6 +169,7 @@ static void SCE_Node_InitGroup (SCE_SNodeGroup *ngroup)
 }
 /**
  * \brief Creates a node group
+ * \param n group size
  */
 SCE_SNodeGroup* SCE_Node_CreateGroup (size_t n)
 {
@@ -190,6 +191,7 @@ SCE_SNodeGroup* SCE_Node_CreateGroup (size_t n)
 }
 /**
  * \brief Deletes a node group
+ * \param ngroup the node group to delete
  */
 void SCE_Node_DeleteGroup (SCE_SNodeGroup *ngroup)
 {
@@ -201,8 +203,11 @@ void SCE_Node_DeleteGroup (SCE_SNodeGroup *ngroup)
 
 
 /**
- * \brief Switches two identifiers (usually SCE_NODE_READ_MATRIX and
+ * \brief Swaps two identifiers (usually SCE_NODE_READ_MATRIX and
  * SCE_NODE_WRITE_MATRIX)
+ * \param ngroup a node group
+ * \param id1 the first ID to swap with \p id2
+ * \param id2 the second ID to swap with \p id1
  */
 void SCE_Node_Switch (SCE_SNodeGroup *ngroup, size_t id1, size_t id2)
 {
@@ -243,6 +248,7 @@ void SCE_Node_RemoveNode (SCE_SNode *node)
 
 /**
  * \brief Returns the type of a node
+ * \param node a node
  */
 SCE_ENodeType SCE_Node_GetType (SCE_SNode *node)
 {
@@ -285,8 +291,8 @@ void SCE_Node_Detach (SCE_SNode *node)
 
 /**
  * \brief Inserts a node between another and its parent
- * \param node the node to assert
- * \param child 
+ * \param node the node to insert
+ * \param child future child of \p node
  *
  * Inserts \p node between \p child and its parent. If \p child has no parent,
  * this function just attach \p child to \p node.
@@ -305,6 +311,7 @@ void SCE_Node_Insert (SCE_SNode *node, SCE_SNode *child)
 /**
  * \deprecated
  * \brief Calls SCE_CMultMatrix() with the final matrix of the given node
+ * \param node a node
  */
 void SCE_Node_MultMatrix (SCE_SNode *node)
 {
@@ -313,6 +320,7 @@ void SCE_Node_MultMatrix (SCE_SNode *node)
 /**
  * \deprecated
  * \brief Calls SCE_CLoadMatrix() with the final matrix of the given node
+ * \param node a node
  */
 void SCE_Node_LoadMatrix (SCE_SNode *node)
 {
@@ -550,6 +558,7 @@ int SCE_Node_HasParent (SCE_SNode *node)
 
 /**
  * \brief Gets the parent of a node
+ * \param node a node
  * \returns the parent node of \p node
  */
 SCE_SNode* SCE_Node_GetParent (SCE_SNode *node)
@@ -559,6 +568,7 @@ SCE_SNode* SCE_Node_GetParent (SCE_SNode *node)
 
 /**
  * \brief Returns the element of a node
+ * \param node a node
  * \sa SCE_SNode::element
  */
 SCE_SOctreeElement* SCE_Node_GetElement (SCE_SNode *node)
@@ -568,6 +578,7 @@ SCE_SOctreeElement* SCE_Node_GetElement (SCE_SNode *node)
 
 /**
  * \brief Gets the list of the children of a node
+ * \param node a node
  */
 SCE_SList* SCE_Node_GetChildrenList (SCE_SNode *node)
 {
@@ -576,6 +587,7 @@ SCE_SList* SCE_Node_GetChildrenList (SCE_SNode *node)
 
 /**
  * \brief Sets data of a node
+ * \param node a node
  * \param data the data to set to \p node
  */
 void SCE_Node_SetData (SCE_SNode *node, void *data)
@@ -587,6 +599,7 @@ void SCE_Node_SetData (SCE_SNode *node, void *data)
 #if 1
 /**
  * \brief Gets data of a node
+ * \param node a node
  * \returns the data of the \p node node
  */
 void* SCE_Node_GetData (SCE_SNode *node)
@@ -600,6 +613,7 @@ void* SCE_Node_GetData (SCE_SNode *node)
 /**
  * \deprecated
  * \brief Calls SCE_CLoadIdentityMatrix() if \p node is null,
+ * \param node a node
  *  SCE_Node_MultMatrix() otherwise
  */
 void SCE_Node_Use (SCE_SNode *node)

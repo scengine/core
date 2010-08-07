@@ -41,26 +41,41 @@
 
 /**
  * \brief Initialize a bounding sphere
- * \param box the bounding sphere to initialize
+ * \param sphere the bounding sphere to initialize
  */
 void SCE_BoundingSphere_Init (SCE_SBoundingSphere *sphere)
 {
     SCE_BoundingSphere_Set (sphere, 0.0f, 0.0f, 0.0f, 1.0f);
 }
 /**
- * \brief Set a bounding box from a box
+ * \brief Set a bounding sphere from a sphere
+ * \param sphere the bounding sphere to set
+ * \param s the source sphere
  */
 void SCE_BoundingSphere_SetFrom (SCE_SBoundingSphere *sphere, SCE_SSphere *s)
 {
     SCE_Sphere_Copy (&sphere->sphere, s);
 }
 
+/**
+ * \brief Sets a bounding sphere
+ * \param sphere the bounding sphere to set
+ * \param x, y, z coordinates of the bouding sphere's center
+ * \param radius radius of the bouding sphere
+ */
 void SCE_BoundingSphere_Set (SCE_SBoundingSphere *sphere,
                              float x, float y, float z, float radius)
 {
     SCE_Vector3_Set (sphere->sphere.center, x, y, z);
     sphere->sphere.radius = radius;
 }
+/**
+ * \brief Sets a bounding sphere from a vector
+ * \param sphere the bounding sphere to set
+ * \param center a 3D vector representing the coordinates of the bouding
+ *               sphere's center
+ * \param radius radius of the bouding sphere
+ */
 void SCE_BoundingSphere_Setv (SCE_SBoundingSphere *sphere,
                               SCE_TVector3 center, float radius)
 {
@@ -68,14 +83,29 @@ void SCE_BoundingSphere_Setv (SCE_SBoundingSphere *sphere,
     sphere->sphere.radius = radius;
 }
 
+/**
+ * \brief Gets the sphere defining a bouding sphere
+ * \param sphere a bouding sphere
+ * \returns the bouding sphere's sphere
+ */
 SCE_SSphere* SCE_BoundingSphere_GetSphere (SCE_SBoundingSphere *sphere)
 {
     return &sphere->sphere;
 }
+/**
+ * \brief Gets the center coordinates of a bouding sphere
+ * \param sphere a bouding sphere
+ * \returns the 3D vector representing the center coordinates of \p sphere
+ */
 float* SCE_BoundingSphere_GetCenter (SCE_SBoundingSphere *sphere)
 {
     return sphere->sphere.center;
 }
+/**
+ * \brief Gets the radius of a bouding sphere
+ * \param sphere a bouding sphere
+ * \returns the radius of \p sphere
+ */
 float SCE_BoundingSphere_GetRadius (SCE_SBoundingSphere *sphere)
 {
     return sphere->sphere.radius;
@@ -105,12 +135,27 @@ static void SCE_BoundingSphere_ApplyMatrix (SCE_SSphere *sphere,
     sphere->radius = highest;
 }
 
+/**
+ * \brief Pushes a matrix on a bouding sphere
+ * \param sphere a bouding sphere
+ * \param m the matrix to push
+ * \param old a sphere to fill with the pre-push state of the bouding sphere,
+ *        which can be used to pop the transformation later
+ * \sa SCE_BoundingSphere_Pop()
+ */
 void SCE_BoundingSphere_Push (SCE_SBoundingSphere *sphere, SCE_TMatrix4x3 m,
                               SCE_SSphere *old)
 {
     SCE_Sphere_Copy (old, &sphere->sphere);
     SCE_BoundingSphere_ApplyMatrix (&sphere->sphere, m);
 }
+/**
+ * \brief Pops a matrix transformation
+ * \param sphere a bouding sphere
+ * \param old the state of \p sphere saved by a previous call to
+ *        SCE_BoundingSphere_Push()
+ * \sa SCE_BoundingSphere_Push()
+ */
 void SCE_BoundingSphere_Pop (SCE_SBoundingSphere *sphere, SCE_SSphere *old)
 {
     SCE_Sphere_Copy (&sphere->sphere, old);

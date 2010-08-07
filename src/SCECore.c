@@ -27,7 +27,7 @@
 #include "SCE/core/SCECore.h"
 
 /**
- * \defgroup SCEngine
+ * \defgroup SCEngine SCEngine
  *
  * SCEngine is a free and open-source 3D real time rendering engine written
  * in the C language
@@ -48,6 +48,7 @@ static int init_n = 0;
 /**
  * \brief Initializes the core
  * \param outlog stream used to log informations and errors
+ * \param flags currently unuset, set it to 0
  * \returns SCE_ERROR if any error has occured, SCE_OK otherwise
  */
 int SCE_Init_Core (FILE *outlog, SCEbitfield flags)
