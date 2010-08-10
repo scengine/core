@@ -329,7 +329,7 @@ void SCE_Node_LoadMatrix (SCE_SNode *node)
 #endif
 
 
-float* SCE_Node_GetMatrix (SCE_SNode *node, size_t id)
+float* SCE_Node_GetMatrix (SCE_SNode *node, SCE_ENodeMatrixArray id)
 {
     size_t offset = node->group->ids[id];
     /* TODO: sizeof float sux a lot! */

@@ -48,7 +48,7 @@ typedef enum {
 typedef enum {
     SCE_NODE_READ_MATRIX = 0,
     SCE_NODE_WRITE_MATRIX,
-/*    SCE_NODE_STANDBY_MATRIX     /* unused, but available for reading */
+    /*    SCE_NODE_STANDBY_MATRIX */     /* unused, but available for reading */
 } SCE_ENodeMatrixArray;
 
 /** \copydoc sce_snode */
@@ -109,7 +109,7 @@ void SCE_Node_Insert (SCE_SNode*, SCE_SNode*);
 void SCE_Node_MultMatrix (SCE_SNode*) SCE_GNUC_DEPRECATED;
 void SCE_Node_LoadMatrix (SCE_SNode*) SCE_GNUC_DEPRECATED;
 
-float* SCE_Node_GetMatrix (SCE_SNode*, size_t);
+float* SCE_Node_GetMatrix (SCE_SNode*, SCE_ENodeMatrixArray);
 float* SCE_Node_GetFinalMatrix (SCE_SNode*);
 void SCE_Node_SetMatrix (SCE_SNode*, SCE_TMatrix4);
 void SCE_Node_GetMatrixv (SCE_SNode*, SCE_TMatrix4);
