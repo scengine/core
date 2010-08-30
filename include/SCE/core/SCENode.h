@@ -96,6 +96,7 @@ void SCE_Node_DeleteGroup (SCE_SNodeGroup*);
 
 void SCE_Node_Switch (SCE_SNodeGroup*, size_t, size_t);
 int SCE_Node_AddNode (SCE_SNodeGroup*, SCE_SNode*, SCE_ENodeType);
+int SCE_Node_AddNodeRecursive (SCE_SNodeGroup*, SCE_SNode*, SCE_ENodeType);
 void SCE_Node_RemoveNode (SCE_SNode*);
 
 SCE_ENodeType SCE_Node_GetType (SCE_SNode*);

@@ -40,13 +40,14 @@
 #define SCE_NODE_HAS_MOVED (1u)
 #define SCE_NODE_FORCE (SCE_NODE_HAS_MOVED << 1)
 
-/* used to kick "if" instructions. it's more probably that the nodes have
-   user-defined callbacks, so an useless "if" can be kicked */
-/* TODO: isn't that a stupid thing? */
-static void SCE_Node_NullFunc (SCE_SNode *n)
+static void SCE_Node_UpdateSingle (SCE_SNode *node)
 {
 }
-
+static void SCE_Node_UpdateFun (SCE_SNode *node)
+{
+    if (node->marks & SCE_NODE_HAS_MOVED)
+        node->moved (node, node->movedparam);
+}
 static void SCE_Node_UpdateTree (SCE_SNode *node)
 {
     SCE_Matrix4_Mul (SCE_Node_GetFinalMatrix (node->parent),
@@ -61,11 +62,6 @@ static void SCE_Node_UpdateTreeFun (SCE_SNode *node)
     if (node->marks & SCE_NODE_HAS_MOVED)
         node->moved (node, node->movedparam);
 }
-static void SCE_Node_UpdateFun (SCE_SNode *node)
-{
-    if (node->marks & SCE_NODE_HAS_MOVED)
-        node->moved (node, node->movedparam);
-}
 
 static void SCE_Node_SetUpdateFunc (SCE_SNode *n)
 {
@@ -73,7 +69,7 @@ static void SCE_Node_SetUpdateFunc (SCE_SNode *n)
         if (n->moved == NULL) n->update = SCE_Node_UpdateTree;
         else n->update = SCE_Node_UpdateTreeFun;
     } else {
-        if (n->moved == NULL) n->update = SCE_Node_NullFunc;
+        if (n->moved == NULL) n->update = SCE_Node_UpdateSingle;
         else n->update = SCE_Node_UpdateFun;
     }
 }
@@ -91,7 +87,7 @@ static void SCE_Node_Init (SCE_SNode *node)
     SCE_List_SetFreeFunc (&node->child, SCE_Node_YouDontHaveParent);
     SCE_List_Init (&node->toupdate);
     SCE_List_SetFreeFunc (&node->toupdate, SCE_Node_YouDontHaveParent);
-    node->update = SCE_Node_NullFunc;
+    node->update = SCE_Node_UpdateSingle;
     node->matrix = NULL;
     node->group = NULL;
     SCE_List_InitIt (&node->it);
@@ -237,6 +233,25 @@ int SCE_Node_AddNode (SCE_SNodeGroup *ngroup, SCE_SNode *node, SCE_ENodeType t)
     node->group = ngroup;
     SCE_Node_SetUpdateFunc (node);
     return SCE_OK;
+}
+/**
+ * \brief 
+ */
+int SCE_Node_AddNodeRecursive (SCE_SNodeGroup *ngroup, SCE_SNode *node,
+                               SCE_ENodeType t)
+{
+    SCE_SListIterator *it = NULL;
+    if (SCE_Node_AddNode (ngroup, node, t) < 0) goto fail;
+    SCE_List_ForEach (it, &node->child) {
+        if (SCE_Node_AddNodeRecursive (ngroup, SCE_List_GetData (it),
+                                       SCE_TREE_NODE) < 0)
+            goto fail;
+    }
+    /* TODO: what about the nodes into node->toupdate ? */
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
 }
 /**
  * \brief 
