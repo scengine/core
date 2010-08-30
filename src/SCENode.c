@@ -229,7 +229,7 @@ int SCE_Node_AddNode (SCE_SNodeGroup *ngroup, SCE_SNode *node, SCE_ENodeType t)
         return SCE_ERROR;
     }
     /* TODO: fixed value 16 sux */
-    for (i = 0; i < ngroup->n_ids; i++)
+    for (i = 0; i < n_ids; i++)
         SCE_Matrix4_Identity (&node->matrix[i * 16]);
     node->type = t;
     node->group = ngroup;
