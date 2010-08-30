@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 10/07/2007
-   updated: 28/02/2010 */
+   updated: 30/08/2010 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCENode.h"
@@ -220,10 +220,11 @@ void SCE_Node_Switch (SCE_SNodeGroup *ngroup, size_t id1, size_t id2)
  */
 int SCE_Node_AddNode (SCE_SNodeGroup *ngroup, SCE_SNode *node, SCE_ENodeType t)
 {
-    size_t i;
-    size_t size = ngroup->n_ids * sizeof (SCE_TMatrix4);
+    size_t i, size, n_ids = ngroup->n_ids;
+
     if (t == SCE_TREE_NODE)
-        size += sizeof (SCE_TMatrix4);
+        n_ids++;
+    size = n_ids * sizeof (SCE_TMatrix4);
     SCE_free (node->matrix);
     if (!(node->matrix = SCE_malloc (size))) {
         SCEE_LogSrc ();
