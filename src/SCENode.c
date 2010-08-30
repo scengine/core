@@ -218,6 +218,8 @@ int SCE_Node_AddNode (SCE_SNodeGroup *ngroup, SCE_SNode *node, SCE_ENodeType t)
 {
     size_t i, size, n_ids = ngroup->n_ids;
 
+    if (t == SCE_AUTO_NODE_TYPE)
+        t = SCE_Node_HasParent (node) ? SCE_TREE_NODE : SCE_SINGLE_MATRIX_NODE;
     if (t == SCE_TREE_NODE)
         n_ids++;
     size = n_ids * sizeof (SCE_TMatrix4);

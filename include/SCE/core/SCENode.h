@@ -39,7 +39,9 @@ typedef enum {
      * their matrix */
     SCE_SINGLE_MATRIX_NODE,
     /** \brief Those nodes are designed for being used into a tree structure */
-    SCE_TREE_NODE
+    SCE_TREE_NODE,
+    /** \brief Let the SCE_Node_AddNode() decides */
+    SCE_AUTO_NODE_TYPE
 } SCE_ENodeType;
 
 /**
