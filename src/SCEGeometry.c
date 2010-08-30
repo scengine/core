@@ -371,7 +371,8 @@ void SCE_Geometry_Update (SCE_SGeometry *geom)
  * \brief Sets data for an array
  * \param attrib vertex attribute of the data
  * \param type data type (SCE_VERTICES_TYPE is recommanded)
- * \param stride stride between two consecutive vertices (in bytes)
+ * \param stride stride between two consecutive vertices (in bytes) may be 0,
+ * then it will be automatically set to \p size * SCE_Type_Sizeof(\p type)
  * \param size vertex vector's length (usually 3 for position, 2 for texcoord)
  * \param data pointer to the vertex data
  * \param canfree can \p array free \p data when SCE_Geometry_DeleteArray()
@@ -387,7 +388,10 @@ void SCE_Geometry_SetArrayData (SCE_SGeometryArray *array,
 {
     array->data.attrib = attrib;
     array->data.type = type;
-    array->data.stride = stride;
+    if (!stride)
+        array->data.stride = size * SCE_Type_Sizeof (type);
+    else
+        array->data.stride = stride;
     array->data.size = size;
     array->data.data = data;
     array->canfree_data = canfree;
