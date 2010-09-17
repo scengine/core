@@ -249,7 +249,11 @@ int SCE_Node_AddNodeRecursive (SCE_SNodeGroup *ngroup, SCE_SNode *node,
                                        SCE_TREE_NODE) < 0)
             goto fail;
     }
-    /* TODO: what about the nodes into node->toupdate ? */
+    SCE_List_ForEach (it, &node->toupdate) {
+        if (SCE_Node_AddNodeRecursive (ngroup, SCE_List_GetData (it),
+                                       SCE_TREE_NODE) < 0)
+            goto fail;
+    }
     return SCE_OK;
 fail:
     SCEE_LogSrc ();
