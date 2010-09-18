@@ -98,8 +98,8 @@ static void SCE_Node_Init (SCE_SNode *node)
     node->udata = NULL;
 }
 
-static size_t default_ids[2] = {0, 1};
-static SCE_SNodeGroup default_group = {default_ids, 2};
+static size_t default_ids[2] = {0, 0};
+static SCE_SNodeGroup default_group = {default_ids, 1};
 /**
  * \brief Creates a new node
  * \returns a newly allocated SCE_SNode on success or NULL on error
@@ -112,7 +112,7 @@ SCE_SNode* SCE_Node_Create (void)
     SCE_Node_Init (node);
     if (!(node->element = SCE_Octree_CreateElement ()))
         goto fail;
-    if (SCE_Node_AddNode (&default_group, node, SCE_SINGLE_MATRIX_NODE) < 0)
+    if (SCE_Node_AddNode (&default_group, node, SCE_TREE_NODE) < 0)
         goto fail;
     /* by default, the data of the element is the node */
     SCE_List_SetData (&node->element->it, node);
