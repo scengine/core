@@ -42,6 +42,7 @@ void SCE_Box_SetFromCenter (SCE_SBox*, const SCE_TVector3, float, float, float);
 void SCE_Box_SetFromMinMax (SCE_SBox*, const SCE_TVector3, const SCE_TVector3);
 
 void SCE_Box_SetSize (SCE_SBox*, float, float, float);
+void SCE_Box_SetSizev (SCE_SBox*, SCE_TVector3);
 
 void SCE_Box_SetCenter (SCE_SBox*, float, float, float);
 void SCE_Box_SetCenterv (SCE_SBox*, const SCE_TVector3);

@@ -116,15 +116,28 @@ void SCE_Box_SetFromMinMax (SCE_SBox *box, const SCE_TVector3 min,
 }
 
 /**
- * \brief Sets the size of a bouding box
+ * \brief Sets the size of a box
  * \param box a box
  * \param w,h,d new box's width, height and depth
+ * \sa SCE_Box_SetSizev()
  */
 void SCE_Box_SetSize (SCE_SBox *box, float w, float h, float d)
 {
     SCE_TVector3 center;
     SCE_Box_GetCenterv (box, center);
     SCE_Box_SetFromCenter (box, center, w, h, d);
+}
+/**
+ * \brief Sets the size of a box
+ * \param box a box
+ * \param d new box's dimensions
+ * \sa SCE_Box_SetSize()
+ */
+void SCE_Box_SetSizev (SCE_SBox *box, SCE_TVector3 d)
+{
+    SCE_TVector3 center;
+    SCE_Box_GetCenterv (box, center);
+    SCE_Box_SetFromCenter (box, center, d[0], d[1], d[2]);
 }
 
 /**
