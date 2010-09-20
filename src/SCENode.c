@@ -81,7 +81,7 @@ static void SCE_Node_YouDontHaveParent (void *n)
 }
 static void SCE_Node_Init (SCE_SNode *node)
 {
-    node->element = NULL;
+    SCE_Octree_InitElement (&node->element);
     node->parent = NULL;
     SCE_List_Init (&node->child);
     SCE_List_SetFreeFunc (&node->child, SCE_Node_YouDontHaveParent);
@@ -110,12 +110,10 @@ SCE_SNode* SCE_Node_Create (void)
     if (!(node = SCE_malloc (sizeof *node)))
         goto fail;
     SCE_Node_Init (node);
-    if (!(node->element = SCE_Octree_CreateElement ()))
-        goto fail;
     if (SCE_Node_AddNode (&default_group, node, SCE_TREE_NODE) < 0)
         goto fail;
     /* by default, the data of the element is the node */
-    SCE_List_SetData (&node->element->it, node);
+    SCE_List_SetData (&node->element.it, node);
     return node;
 fail:
     SCE_Node_Delete (node);
@@ -132,7 +130,7 @@ void SCE_Node_Delete (SCE_SNode *node)
 {
     if (node) {
         SCE_Node_Detach (node);
-        SCE_Octree_DeleteElement (node->element);
+        SCE_Octree_RemoveElement (&node->element);
         SCE_List_Clear (&node->child);
         SCE_List_Clear (&node->toupdate);
         SCE_Node_RemoveNode (node);
@@ -595,7 +593,7 @@ SCE_SNode* SCE_Node_GetParent (SCE_SNode *node)
  */
 SCE_SOctreeElement* SCE_Node_GetElement (SCE_SNode *node)
 {
-    return node->element;
+    return &node->element;
 }
 
 /**
@@ -615,7 +613,7 @@ SCE_SList* SCE_Node_GetChildrenList (SCE_SNode *node)
 void SCE_Node_SetData (SCE_SNode *node, void *data)
 {
     node->udata = data;
-    SCE_List_SetData (&node->element->it, data);
+    SCE_List_SetData (&node->element.it, data);
 }
 
 #if 1

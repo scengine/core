@@ -65,7 +65,7 @@ typedef struct sce_snodegroup SCE_SNodeGroup;
  * \brief Node definition structure
  */
 struct sce_snode {
-    SCE_SOctreeElement *element; /**< Element */
+    SCE_SOctreeElement element; /**< Element */
     SCE_SNode *parent;          /**< Parent node */
     /* yes: even a single matrix node can has children! */
     SCE_SList child;            /**< Children */
