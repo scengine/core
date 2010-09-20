@@ -79,7 +79,7 @@ struct sce_soctree {
     SCE_FOctreeInsertFunc insert; /**< Insert function */
     SCE_SOctree *parent;    /**< Octree's parent */
     SCE_SBoundingBox box;   /**< Octree's bounding box */
-    SCE_SList *elements;    /**< Elements contained in the octree */
+    SCE_SList elements;     /**< Elements contained in the octree */
     void *data;             /**< User defined data */
 };
 

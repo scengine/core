@@ -53,7 +53,7 @@ static void SCE_Octree_Init (SCE_SOctree *tree)
     tree->insert = SCE_Octree_Insert;
     tree->parent = NULL;
     SCE_BoundingBox_Init (&tree->box);
-    tree->elements = NULL;
+    SCE_List_Init (&tree->elements);
     tree->data = NULL;
 }
 
@@ -67,8 +67,6 @@ SCE_SOctree* SCE_Octree_Create (void)
     if (!(tree = SCE_malloc (sizeof *tree)))
         goto fail;
     SCE_Octree_Init (tree);
-    if (!(tree->elements = SCE_List_Create (NULL)))
-        goto fail;
     return tree;
 fail:
     SCE_Octree_Delete (tree);
@@ -98,7 +96,7 @@ void SCE_Octree_Delete (SCE_SOctree *tree)
 {
     if (tree) {
         SCE_Octree_Clear (tree);
-        SCE_List_Delete (tree->elements);
+        SCE_List_Clear (&tree->elements);
         SCE_free (tree);
     }
 }
@@ -389,7 +387,7 @@ int SCE_Octree_RecursiveMake (SCE_SOctree *tree, unsigned int rec,
  */
 void SCE_Octree_DefaultInsertFunc (SCE_SOctree *tree, SCE_SOctreeElement *el)
 {
-    SCE_List_Prependl (tree->elements, &el->it);
+    SCE_List_Prependl (&tree->elements, &el->it);
 }
 
 static void SCE_Octree_InsertLoose (SCE_SOctree *tree, SCE_SOctreeElement *el)
