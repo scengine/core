@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 06/05/2008
-   updated: 14/05/2010 */
+   updated: 20/09/2010 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -193,10 +193,21 @@ void SCE_Octree_GetCenterv (SCE_SOctree *tree, SCE_TVector3 c)
  * \brief Sets the size of an octree
  * \param tree an octree
  * \param w,h,d new width, height and depth of the octree
+ * \sa SCE_Octree_SetSizev()
  */
 void SCE_Octree_SetSize (SCE_SOctree *tree, float w, float h, float d)
 {
     SCE_Box_SetSize (SCE_BoundingBox_GetBox (&tree->box), w, h, d);
+}
+/**
+ * \brief Sets the size of an octree
+ * \param tree an octree
+ * \param d new dimensions of the octree
+ * \sa SCE_Octree_SetSize()
+ */
+void SCE_Octree_SetSizev (SCE_SOctree *tree, SCE_TVector3 d)
+{
+    SCE_Box_SetSizev (SCE_BoundingBox_GetBox (&tree->box), d);
 }
 
 /**

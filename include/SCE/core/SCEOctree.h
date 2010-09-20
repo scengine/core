@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 06/05/2008
-   updated: 04/08/2009 */
+   updated: 20/09/2010 */
 
 #ifndef SCEOCTREE_H
 #define SCEOCTREE_H
@@ -98,6 +98,7 @@ void SCE_Octree_SetCenter (SCE_SOctree*, float, float, float);
 void SCE_Octree_SetCenterv (SCE_SOctree*, SCE_TVector3);
 void SCE_Octree_GetCenterv (SCE_SOctree*, SCE_TVector3);
 void SCE_Octree_SetSize (SCE_SOctree*, float, float, float);
+void SCE_Octree_SetSizev (SCE_SOctree*, SCE_TVector3);
 
 SCE_SBox* SCE_Octree_GetBox (SCE_SOctree*);
 SCE_SBoundingBox* SCE_Octree_GetBoundingBox (SCE_SOctree*);
