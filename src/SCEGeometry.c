@@ -215,10 +215,12 @@ static void SCE_Geometry_DeleteIndexArray (SCE_SGeometry *geom)
 void SCE_Geometry_Delete (SCE_SGeometry *geom)
 {
     if (geom) {
-        SCE_List_Clear (&geom->arrays);
-        SCE_List_Clear (&geom->modified);
-        SCE_Geometry_DeleteIndexArray (geom);
-        SCE_free (geom);
+        if (SCE_Resource_Free (geom)) {
+            SCE_List_Clear (&geom->arrays);
+            SCE_List_Clear (&geom->modified);
+            SCE_Geometry_DeleteIndexArray (geom);
+            SCE_free (geom);
+        }
     }
 }
 
