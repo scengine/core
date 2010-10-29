@@ -1197,6 +1197,42 @@ void SCE_Geometry_SphereUpToDate (SCE_SGeometry *geom)
 
 
 /* bonus functions */
+void SCE_Geometry_ForEachTriangle (SCE_SGeometry *geom, SCE_FGeometryForEach f,
+                                   void *data)
+{
+    size_t i, j;
+    size_t n_prim, stride;
+    char *v = NULL;
+    SCE_TVector3 a, b, c;
+
+    if (SCE_Geometry_GetPrimitiveType (geom) != SCE_TRIANGLES)
+        return;                 /* o lol */
+
+    n_prim = SCE_Geometry_GetNumPrimitives (geom);
+    v = geom->pos_data;
+    stride = geom->pos_array->data.stride;
+
+    if (geom->index_data) {
+        SCEindices *ind = geom->index_data;
+        for (i = 0, j = 0; i < n_prim; i++, j += 3) {
+            SCE_Vector3_Copy (a, &v[ind[j + 0] * stride]);
+            SCE_Vector3_Copy (b, &v[ind[j + 1] * stride]);
+            SCE_Vector3_Copy (c, &v[ind[j + 2] * stride]);
+            if (f (a, b, c, ind[j], data))
+                break;
+        }
+    } else {
+        for (i = 0, j = 0; i < n_prim; i++, j += 3) {
+            SCE_Vector3_Copy (a, &v[(j + 0) * stride]);
+            SCE_Vector3_Copy (b, &v[(j + 1) * stride]);
+            SCE_Vector3_Copy (c, &v[(j + 2) * stride]);
+            if (f (a, b, c, j, data))
+                break;
+        }
+    }
+}
+
+
 static int SCE_Geometry_UpdatePrimArray (SCE_SGeometry *geom, size_t vpp,
                                          size_t n_prim)
 {
