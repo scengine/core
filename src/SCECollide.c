@@ -43,7 +43,7 @@ int SCE_Collide_PlanesWithPoint (SCE_SPlane *planes, size_t n,
 {
     size_t i;
     for (i = 0; i < n; i++) {
-        if (SCE_Plane_DistanceToPoint (&planes[i], x, y, z) <= 0.0f)
+        if (SCE_Plane_DistanceToPoint (&planes[i], x, y, z) > 0.0f)
             return SCE_FALSE;
     }
     return SCE_TRUE;
@@ -53,7 +53,7 @@ int SCE_Collide_PlanesWithPointv (SCE_SPlane *planes, size_t n,
 {
     size_t i;
     for (i = 0; i < n; i++) {
-        if (SCE_Plane_DistanceToPointv (&planes[i], p) <= 0.0f)
+        if (SCE_Plane_DistanceToPointv (&planes[i], p) > 0.0f)
             return SCE_FALSE;
     }
     return SCE_TRUE;
@@ -111,7 +111,7 @@ int SCE_Collide_PlanesWithBS (SCE_SPlane *planes, size_t n,
         d = SCE_Plane_DistanceToPointv (&planes[i], c);
         if (d >= r)
             passed++;
-        else if (d < -r)
+        else if (d < -r)        /* TODO: requires a normalized plane */
             return SCE_COLLIDE_OUT;
         else
             passed--;     /* the sphere can't be totally in (maybe partially) */
@@ -213,7 +213,7 @@ int SCE_Collide_BBWithPoint (SCE_SBoundingBox *box, float x, float y, float z)
     size_t i;
     SCE_SPlane *planes = SCE_BoundingBox_GetPlanes (box);
     for (i = 0; i < 6; i++) {
-        if (SCE_Plane_DistanceToPoint (&planes[i], x, y, z) <= 0.0f)
+        if (SCE_Plane_DistanceToPoint (&planes[i], x, y, z) > 0.0f)
             return SCE_FALSE;
     }
     return SCE_TRUE;
@@ -223,7 +223,7 @@ int SCE_Collide_BBWithPointv (SCE_SBoundingBox *box, SCE_TVector3 p)
     size_t i;
     SCE_SPlane *planes = SCE_BoundingBox_GetPlanes (box);
     for (i = 0; i < 6; i++) {
-        if (SCE_Plane_DistanceToPointv (&planes[i], p) <= 0.0f)
+        if (SCE_Plane_DistanceToPointv (&planes[i], p) > 0.0f)
             return SCE_FALSE;
     }
     return SCE_TRUE;
