@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 11/04/2010
-   updated: 17/04/2010 */
+   updated: 29/10/2010 */
 
 #ifndef SCENGINE_H
 #define SCENGINE_H
@@ -29,6 +29,7 @@
 /* internal dependencies */
 #include "SCE/core/SCEBoundingBox.h"
 #include "SCE/core/SCEBoundingSphere.h"
+#include "SCE/core/SCECollide.h"
 #include "SCE/core/SCEFrustum.h"
 #include "SCE/core/SCELevelOfDetail.h"
 #include "SCE/core/SCEOctree.h"
