@@ -263,7 +263,7 @@ int SCE_Collide_BSWithBB (SCE_SBoundingSphere *s, SCE_SBoundingBox *box)
     unsigned int n = 0;
     float *points = SCE_BoundingBox_GetPoints (box);
     for (i = 0; i < 8; i++) {
-        if (SCE_Collide_BSWithPointv (s, &points[i]))
+        if (SCE_Collide_BSWithPointv (s, &points[i * 3]))
             n++;
     }
     if (n == 0) {
