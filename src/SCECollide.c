@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 08/01/2009
-   updated: 16/06/2009 */
+   updated: 29/10/2010 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCECollide.h"
@@ -172,6 +172,10 @@ int SCE_Collide_AABBWithPointv (SCE_SBoundingBox *box, SCE_TVector3 p)
 {
     return SCE_Collide_AABBWithPoint (box, p[0], p[1], p[2]);
 }
+int SCE_Collide_AABBWithLine (SCE_SBoundingBox *box, SCE_SLine3 *l)
+{
+    return SCE_Collide_BBWithLine (box, l);
+}
 int SCE_Collide_AABBWithBS (SCE_SBoundingBox *b, SCE_SBoundingSphere *s)
 {
     float r, *c, *p;
@@ -227,6 +231,30 @@ int SCE_Collide_BBWithPointv (SCE_SBoundingBox *box, SCE_TVector3 p)
             return SCE_FALSE;
     }
     return SCE_TRUE;
+}
+int SCE_Collide_BBWithLine (SCE_SBoundingBox *box, SCE_SLine3 *l)
+{
+    size_t i, j, k[6] = {1, 2, 3, 4, 5, 6};
+    SCE_TVector3 p;
+    SCE_SPlane *planes = SCE_BoundingBox_GetPlanes (box);
+
+    for (i = 0; i < 6; i++) {
+        if (SCE_Plane_LineIntersection (&planes[i], l, p)) {
+            int foo = SCE_TRUE;
+            for (j = 0; j < 5; j++) {
+                float a = SCE_Plane_DistanceToPointv (&planes[k[j]], p);
+                if (a > 0.0f) {
+                    foo = SCE_FALSE;
+                    break;
+                }
+            }
+            if (foo)
+                return SCE_TRUE;
+        }
+        /* h4x, we need to skip the test with the current plane */
+        k[i] = i;
+    }
+    return SCE_FALSE;
 }
 int SCE_Collide_BBWithBS (SCE_SBoundingBox *box, SCE_SBoundingSphere *sphere)
 {

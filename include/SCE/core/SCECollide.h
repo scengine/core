@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 08/01/2009
-   updated: 04/08/2009 */
+   updated: 29/10/2010 */
 
 #ifndef SCECOLLIDE_H
 #define SCECOLLIDE_H
@@ -46,11 +46,13 @@ int SCE_Collide_PlanesWithBSBool (SCE_SPlane*, size_t, SCE_SBoundingSphere*);
 
 int SCE_Collide_AABBWithPoint (SCE_SBoundingBox*, float, float, float);
 int SCE_Collide_AABBWithPointv (SCE_SBoundingBox*, SCE_TVector3);
+int SCE_Collide_AABBWithLine (SCE_SBoundingBox*, SCE_SLine3*);
 int SCE_Collide_AABBWithBS (SCE_SBoundingBox*, SCE_SBoundingSphere*);
 int SCE_Collide_AABBWithBSBool (SCE_SBoundingBox*, SCE_SBoundingSphere*);
 
 int SCE_Collide_BBWithPoint (SCE_SBoundingBox*, float, float, float);
 int SCE_Collide_BBWithPointv (SCE_SBoundingBox*, SCE_TVector3);
+int SCE_Collide_BBWithLine (SCE_SBoundingBox*, SCE_SLine3*);
 int SCE_Collide_BBWithBS (SCE_SBoundingBox*, SCE_SBoundingSphere*);
 int SCE_Collide_BBWithBB (SCE_SBoundingBox*, SCE_SBoundingBox*);
 
