@@ -1209,7 +1209,7 @@ void SCE_Geometry_ForEachTriangle (SCE_SGeometry *geom, SCE_FGeometryForEach f,
         return;                 /* o lol */
 
     n_prim = SCE_Geometry_GetNumPrimitives (geom);
-    v = geom->pos_data;
+    v = (char*)geom->pos_data;
     stride = geom->pos_array->data.stride;
 
     if (geom->index_data) {
