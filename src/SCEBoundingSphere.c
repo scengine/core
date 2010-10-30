@@ -17,10 +17,9 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 06/01/2009
-   updated: 04/08/2009 */
+   updated: 30/10/2010 */
 
 #include <SCE/utils/SCEUtils.h>
-#include "SCE/core/SCEBox.h"
 #include "SCE/core/SCEBoundingSphere.h"
 
 /**
@@ -111,28 +110,17 @@ float SCE_BoundingSphere_GetRadius (SCE_SBoundingSphere *sphere)
     return sphere->sphere.radius;
 }
 
-static void SCE_BoundingSphere_MakeBoxFrom (SCE_SSphere *sphere, SCE_SBox *box)
-{
-    SCE_Box_SetFromCenter (box, sphere->center, sphere->radius,
-                           sphere->radius, sphere->radius);
-}
 static void SCE_BoundingSphere_ApplyMatrix (SCE_SSphere *sphere,
                                             SCE_TMatrix4x3 m)
 {
-    float highest, h, d;
-    SCE_SBox box;
+    float greatest;
+    SCE_TVector3 scale;
 
-    /* use box to determine highest radius after transformation */
-    SCE_BoundingSphere_MakeBoxFrom (sphere, &box);
-    SCE_Box_ApplyMatrix4x3 (&box, m);
-    highest = SCE_Box_GetWidth (&box);
-    h = SCE_Box_GetHeight (&box);
-    d = SCE_Box_GetDepth (&box);
-    highest = MAX (highest, h);
-    highest = MAX (highest, d);
-    /* apply the matrix to the center vector */
+    SCE_Matrix4x3_GetScale (m, scale);
+    greatest = MAX (scale[0], scale[1]);
+    greatest = MAX (scale[2], greatest);
     SCE_Matrix4x3_MulV3Copy (m, sphere->center);
-    sphere->radius = highest;
+    sphere->radius *= greatest;
 }
 
 /**
