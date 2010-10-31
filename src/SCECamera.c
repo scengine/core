@@ -199,6 +199,18 @@ float* SCE_Camera_GetFinalViewInverse (SCE_SCamera *cam)
 }
 
 /**
+ * \brief Gets the base vectors of a camera
+ * \sa SCE_Camera_GetPositionv(), SCE_Camera_GetFinalViewInverse()
+ */
+void SCE_Camera_GetBase (SCE_SCamera *cam, SCE_TVector3 x, SCE_TVector3 y,
+                         SCE_TVector3 z)
+{
+    SCE_GetMat4C3 (0, cam->finalviewinv, x);
+    SCE_GetMat4C3 (1, cam->finalviewinv, y);
+    SCE_GetMat4C3 (2, cam->finalviewinv, z);
+}
+
+/**
  * \brief Returns the iterator of a camera
  */
 SCE_SListIterator* SCE_Camera_GetIterator (SCE_SCamera *cam)

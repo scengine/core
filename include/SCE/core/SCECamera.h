@@ -97,6 +97,8 @@ SCE_SFrustum* SCE_Camera_GetFrustum (SCE_SCamera*);
 float* SCE_Camera_GetFinalView (SCE_SCamera*);
 float* SCE_Camera_GetFinalViewInverse (SCE_SCamera*);
 
+void SCE_Camera_GetBase(SCE_SCamera*, SCE_TVector3, SCE_TVector3, SCE_TVector3);
+
 SCE_SListIterator* SCE_Camera_GetIterator (SCE_SCamera*);
 
 void SCE_Camera_Update (SCE_SCamera*);
