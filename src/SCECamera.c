@@ -283,4 +283,55 @@ void SCE_Camera_Use (SCE_SCamera *cam)
 }
 #endif
 
+
+/**
+ * \brief Projects a point from world space to the screen space of a camera
+ * \param cam a camera
+ * \param u the point to project
+ * \sa SCE_Camera_UnProject(), SCE_Camera_Line()
+ */
+void SCE_Camera_Project (SCE_SCamera *cam, SCE_TVector3 u)
+{
+    float inv;
+    SCE_TVector4 v;
+    SCE_Vector4_Set (v, u[0], u[1], u[2], 1.0);
+    SCE_Matrix4_MulV4Copy (cam->finalviewproj, v);
+    inv = 1.0 / v[3];
+    SCE_Vector3_Operator2 (u, =, v, *, inv);
+}
+/**
+ * \brief Unprojects a point from the screen space of a camera to world space
+ * \param cam a camera
+ * \param u the point to unproject, coordinates must be between -1 and 1
+ * \sa SCE_Camera_Project(), SCE_Camera_Line()
+ */
+void SCE_Camera_UnProject (SCE_SCamera *cam, SCE_TVector3 u)
+{
+    float inv;
+    SCE_TVector4 v;
+    SCE_Vector4_Set (v, u[0], u[1], u[2], 1.0);
+    SCE_Matrix4_MulV4Copy (cam->finalviewprojinv, v);
+    inv = 1.0 / v[3];
+    SCE_Vector3_Operator2 (u, =, v, *, inv);
+}
+/**
+ * \brief Gets the world space line that crosses both an unprojected point
+ * and the position of the camera
+ * \param cam a camera
+ * \param p a 2D point on the screen, coordinates must be between -1 and 1
+ * \param l the resulting line
+ *
+ * For example if \p is 0,0 then the line will be the view vector of the camera
+ * \sa SCE_Camera_Project(), SCE_Camera_UnProject()
+ */
+void SCE_Camera_Line (SCE_SCamera *cam, SCE_TVector2 p, SCE_SLine3 *l)
+{
+    SCE_TVector3 v;
+    SCE_Camera_GetPositionv (cam, l->o);
+    SCE_Vector3_Set (v, p[0], p[1], 0.0);
+    SCE_Camera_UnProject (cam, v);
+    SCE_Line3_Set (l, l->o, v);
+    SCE_Line3_Normalize (l);
+}
+
 /** @} */

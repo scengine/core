@@ -108,6 +108,10 @@ void SCE_Camera_Update (SCE_SCamera*);
 void SCE_Camera_Use (SCE_SCamera*);
 #endif
 
+void SCE_Camera_Project (SCE_SCamera*, SCE_TVector3);
+void SCE_Camera_UnProject (SCE_SCamera*, SCE_TVector3);
+void SCE_Camera_Line (SCE_SCamera*, SCE_TVector2, SCE_SLine3*);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
