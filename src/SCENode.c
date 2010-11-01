@@ -433,7 +433,7 @@ static void SCE_Node_ToUpdateRec (SCE_SNode *node)
 void SCE_Node_HasMoved (SCE_SNode *node)
 {
     SCE_FLAG_ADD (node->marks, SCE_NODE_HAS_MOVED);
-    SCE_Node_ToUpdate (node);
+    SCE_Node_ToUpdateRec (node);
 }
 static void SCE_Node_NotToUpdate (SCE_SNode *node)
 {
