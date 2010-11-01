@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 10/07/2007
-   updated: 24/01/2010 */
+   updated: 01/11/2010 */
 
 #ifndef SCENODE_H
 #define SCENODE_H
@@ -129,6 +129,7 @@ void SCE_Node_Force (SCE_SNode*);
 void SCE_Node_DontForce (SCE_SNode*);
 int SCE_Node_IsForced (SCE_SNode*);
 
+void SCE_Node_Update (SCE_SNode*);
 void SCE_Node_UpdateRecursive (SCE_SNode*);
 void SCE_Node_UpdateRootRecursive (SCE_SNode*);
 #if 0

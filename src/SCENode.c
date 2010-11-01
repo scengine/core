@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 10/07/2007
-   updated: 30/08/2010 */
+   updated: 01/11/2010 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCENode.h"
@@ -489,6 +489,20 @@ int SCE_Node_IsForced (SCE_SNode *node)
     return SCE_FLAG_TEST (node->marks, SCE_NODE_FORCE);
 }
 
+/**
+ * \brief Simply call the update function assigned to the given node
+ *
+ * Use this function with caution since you may not know what is the
+ * update function of your node, depending on its type, to whether it is
+ * attached to a parent node or not, etc. Some update functions assume that
+ * the node has a parent set, so if yours doesn't, it may cause your program
+ * to segfault.
+ * \sa SCE_Node_UpdateRootRecursive()
+ */
+void SCE_Node_Update (SCE_SNode *node)
+{
+    node->update (node);
+}
 
 static void SCE_Node_UpdateRecForce (SCE_SNode *node)
 {
