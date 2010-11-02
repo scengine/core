@@ -333,8 +333,8 @@ void SCE_Geometry_BoxUpToDate (SCE_SGeometry*);
 void SCE_Geometry_SphereUpToDate (SCE_SGeometry*);
 
 /* bonus functions */
-typedef (*SCE_FGeometryForEach)(SCE_TVector3, SCE_TVector3, SCE_TVector3,
-                                SCEindices, void*);
+typedef int (*SCE_FGeometryForEach)(SCE_TVector3, SCE_TVector3, SCE_TVector3,
+                                    SCEindices, void*);
 
 void SCE_Geometry_ForEachTriangle (SCE_SGeometry*, SCE_FGeometryForEach, void*);
 
