@@ -507,6 +507,7 @@ void SCE_Node_Update (SCE_SNode *node)
 static void SCE_Node_UpdateRecForce (SCE_SNode *node)
 {
     SCE_SListIterator *i = NULL;
+    node->marks = SCE_NODE_HAS_MOVED | SCE_NODE_FORCE;
     node->update (node);
     SCE_List_AppendAll (&node->child, &node->toupdate);
     SCE_List_ForEach (i, &node->child)
