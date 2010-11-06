@@ -284,6 +284,15 @@ SCE_SOctree** SCE_Octree_GetChildren (SCE_SOctree *tree)
 }
 
 /**
+ * \brief Gets the parent of an octree, NULL if none
+ */
+SCE_SOctree* SCE_Octree_GetParent (SCE_SOctree *tree)
+{
+    return tree->parent;
+}
+
+
+/**
  * \brief Creates the eight children of an octree
  * \param tree an octree
  * \param useloose use loose octrees?

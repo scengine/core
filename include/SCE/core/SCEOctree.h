@@ -113,6 +113,8 @@ unsigned int SCE_Octree_GetLevel (SCE_SOctree*);
 int SCE_Octree_HasChildren (SCE_SOctree*);
 SCE_SOctree** SCE_Octree_GetChildren (SCE_SOctree*);
 
+SCE_SOctree* SCE_Octree_GetParent (SCE_SOctree*);
+
 int SCE_Octree_MakeChildren (SCE_SOctree*, int, float);
 int SCE_Octree_RecursiveMake (SCE_SOctree*, unsigned int,
                               SCE_FOctreeLimitFunc, void*, int, float);
