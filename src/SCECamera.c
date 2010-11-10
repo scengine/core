@@ -326,11 +326,11 @@ void SCE_Camera_UnProject (SCE_SCamera *cam, SCE_TVector3 u)
  */
 void SCE_Camera_Line (SCE_SCamera *cam, SCE_TVector2 p, SCE_SLine3 *l)
 {
-    SCE_TVector3 v;
-    SCE_Camera_GetPositionv (cam, l->o);
+    SCE_TVector3 v, pos;
+    SCE_Camera_GetPositionv (cam, pos);
     SCE_Vector3_Set (v, p[0], p[1], 0.0);
     SCE_Camera_UnProject (cam, v);
-    SCE_Line3_Set (l, l->o, v);
+    SCE_Line3_Set (l, pos, v);
     SCE_Line3_Normalize (l);
 }
 
