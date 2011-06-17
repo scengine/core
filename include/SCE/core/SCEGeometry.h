@@ -91,7 +91,7 @@ enum sce_evertexattribute {
     /* these are used by the geometry manager but shall be re-interpreted
        by the renderer to assign the good vertex attribute */
     SCE_POSITION = 1,
-    SCE_ROLOR,
+    SCE_COLOR,
     SCE_NORMAL,
 
     SCE_TEXCOORD0,
