@@ -76,6 +76,7 @@ typedef SCEushort SCEindices;
 enum sce_eprimitivetype {
     SCE_POINTS = 0,
     SCE_LINES,
+    SCE_LINE_STRIP,
     SCE_TRIANGLES,
     /* those are not recommanded: */
     SCE_TRIANGLE_STRIP,
