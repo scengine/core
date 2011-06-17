@@ -100,5 +100,8 @@ See the file ./doc/html/todo.html
 - Fix skyboxes problem
 - Multi-threaded particles (treat range of particles).
 - Improve node's update function, dont use a callback node->update().
+- Add LOD configuration structure which LOD structures are bound to,
+  add such a configuration structure to the scene manager. This config
+  would include: maximum and minimum levels, some coeffs, etc.
 
-54
+55
