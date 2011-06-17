@@ -301,6 +301,7 @@ SCE_SOctree* SCE_Octree_GetParent (SCE_SOctree *tree)
  * 
  * This function creates the eight children of the given octree.
  * \sa SCE_Octree_RecursiveMake()
+ * \todo loose octrees are wrong
  */
 int SCE_Octree_MakeChildren (SCE_SOctree *tree, int useloose, float ratio)
 {
