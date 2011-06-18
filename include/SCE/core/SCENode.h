@@ -35,10 +35,12 @@ extern "C" {
  */
 
 typedef enum {
-    /** \brief Those nodes have SCE_SNode::data pointing to a float that is
+    /** \brief Those nodes have SCE_SNode::matrix pointing to a float that is
      * their matrix */
     SCE_SINGLE_MATRIX_NODE,
-    /** \brief Those nodes are designed for being used into a tree structure */
+    /** \brief Those nodes are designed for being used into a tree structure.
+     * basically, you may want to use this type if your node is attached to a
+     * parent node. */
     SCE_TREE_NODE,
     /** \brief Let the SCE_Node_AddNode() decides */
     SCE_AUTO_NODE_TYPE
