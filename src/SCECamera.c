@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 21/12/2006
-   updated: 28/02/2010 */
+   updated: 24/06/2011 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCECamera.h"
@@ -103,6 +103,16 @@ void SCE_Camera_SetViewport (SCE_SCamera *cam, int x, int y, int w, int h)
     cam->viewport.w = w;
     cam->viewport.h = h;
 }
+
+/**
+ * \brief Gets the viewport of a camera
+ * \sa SCE_SViewport
+ */
+SCE_SViewport* SCE_Camera_GetViewport (SCE_SCamera *cam)
+{
+    return &cam->viewport;
+}
+
 
 /**
  * \brief Gets the view matrix of a camera

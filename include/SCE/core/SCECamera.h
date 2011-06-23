@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 21/12/2006
-   updated: 28/02/2010 */
+   updated: 24/06/2011 */
 
 #ifndef SCECAMERA_H
 #define SCECAMERA_H
@@ -82,6 +82,7 @@ SCE_SCamera* SCE_Camera_Create (void);
 void SCE_Camera_Delete (SCE_SCamera*);
 
 void SCE_Camera_SetViewport (SCE_SCamera*, int, int, int, int);
+SCE_SViewport* SCE_Camera_GetViewport (SCE_SCamera*);
 
 float* SCE_Camera_GetView (SCE_SCamera*);
 float* SCE_Camera_GetViewInverse (SCE_SCamera*);
