@@ -35,6 +35,7 @@ extern "C" {
  * @{
  */
 
+  /* TODO: add them to the EVertexAttribute enum */
 #define SCE_TANGENT SCE_TEXCOORD1
 #define SCE_BINORMAL SCE_TEXCOORD2
 
@@ -80,7 +81,8 @@ enum sce_eprimitivetype {
     SCE_TRIANGLES,
     /* those are not recommanded: */
     SCE_TRIANGLE_STRIP,
-    SCE_TRIANGLE_FAN
+    SCE_TRIANGLE_FAN,
+    SCE_NUM_PRIMITIVE_TYPES
 };
 typedef enum sce_eprimitivetype SCE_EPrimitiveType;
 
