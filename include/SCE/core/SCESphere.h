@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 04/08/2009
-   updated: 13/08/2009 */
+   updated: 07/08/2011 */
 
 #ifndef SCESPHERE_H
 #define SCESPHERE_H
@@ -36,6 +36,13 @@ struct sce_ssphere {
 
 void SCE_Sphere_Init (SCE_SSphere*);
 void SCE_Sphere_Copy (SCE_SSphere*, const SCE_SSphere*);
+
+void SCE_Sphere_SetCenter (SCE_SSphere*, float, float, float);
+void SCE_Sphere_SetCenterv (SCE_SSphere*, const SCE_TVector3);
+void SCE_Sphere_SetRadius (SCE_SSphere*, float);
+
+void SCE_Sphere_GetCenterv (const SCE_SSphere*, SCE_TVector3);
+float SCE_Sphere_GetRadius (const SCE_SSphere*);
 
 #ifdef __cplusplus
 } /* extern "C" */
