@@ -269,21 +269,17 @@ int SCE_Collide_BSWithPoint (SCE_SBoundingSphere *s,
                              float x, float y, float z)
 {
     SCE_TVector3 p;
-    float *c, r;
-    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere (s);
-    c = sphere->center;
-    r = sphere->radius;
     SCE_Vector3_Set (p, x, y, z);
-    return (SCE_Math_Fabsf (SCE_Vector3_Dot (c, p)) < r * r);
+    return SCE_Collide_BSWithPointv (s, p);
 }
 int SCE_Collide_BSWithPointv (SCE_SBoundingSphere *s, SCE_TVector3 p)
 {
-    float *c;
-    float r;
+    float *c, r;
+    SCE_TVector3 diff;
     SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere (s);
-    c = sphere->center;
     r = sphere->radius;
-    return (SCE_Math_Fabsf (SCE_Vector3_Dot (c, p)) < r * r);
+    SCE_Vector3_Operator2v (diff, =, sphere->center, -, p);
+    return (SCE_Math_Fabsf (SCE_Vector3_Dot (diff, diff)) < r * r);
 }
 int SCE_Collide_BSWithBB (SCE_SBoundingSphere *s, SCE_SBoundingBox *box)
 {
