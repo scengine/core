@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 21/12/2006
-   updated: 24/06/2011 */
+   updated: 10/08/2011 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCECamera.h"
@@ -187,10 +187,26 @@ SCE_SNode* SCE_Camera_GetNode (SCE_SCamera *cam)
 /**
  * \brief Gets the frustum of a camera
  * \sa SCE_SFrustum
+ * \sa SCE_Camera_GetNear()
  */
 SCE_SFrustum* SCE_Camera_GetFrustum (SCE_SCamera *cam)
 {
     return &cam->frustum;
+}
+
+/**
+ * \brief Gets the distance of the near plane of a camera projection matrix
+ * \param cam a camera
+ * \returns distance of the near plane
+ * \sa SCE_Camera_GetFrustum()
+ */
+float SCE_Camera_GetNear (SCE_SCamera *cam)
+{
+    SCE_TVector3 pos;
+    SCE_Camera_GetPositionv (cam, pos);
+    /* TODO: hack, DistanceToPointv() can return a negative value */
+    return SCE_Math_Fabsf (SCE_Plane_DistanceToPointv (&cam->frustum.planes[5],
+                                                       pos));
 }
 
 /**

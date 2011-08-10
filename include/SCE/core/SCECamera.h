@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 21/12/2006
-   updated: 24/06/2011 */
+   updated: 10/08/2011 */
 
 #ifndef SCECAMERA_H
 #define SCECAMERA_H
@@ -57,8 +57,7 @@ typedef struct sce_scamera SCE_SCamera;
  * A camera structure stores information about the view point to render the
  * scene, the vision's angle, the orientation of the view, etc.
  */
-struct sce_scamera
-{
+struct sce_scamera {
     SCE_TMatrix4 finalview;    /**< Combined \c view and \c world matrices */
     SCE_TMatrix4 finalviewinv; /**< Inverse of \c finalview */
     SCE_TMatrix4 view;         /**< View matrix */
@@ -94,6 +93,7 @@ float* SCE_Camera_GetFinalViewProjInverse (SCE_SCamera*);
 void SCE_Camera_GetPositionv (SCE_SCamera*, SCE_TVector3);
 SCE_SNode* SCE_Camera_GetNode (SCE_SCamera*);
 SCE_SFrustum* SCE_Camera_GetFrustum (SCE_SCamera*);
+float SCE_Camera_GetNear (SCE_SCamera*);
 
 float* SCE_Camera_GetFinalView (SCE_SCamera*);
 float* SCE_Camera_GetFinalViewInverse (SCE_SCamera*);
@@ -103,11 +103,6 @@ void SCE_Camera_GetBase(SCE_SCamera*, SCE_TVector3, SCE_TVector3, SCE_TVector3);
 SCE_SListIterator* SCE_Camera_GetIterator (SCE_SCamera*);
 
 void SCE_Camera_Update (SCE_SCamera*);
-
-#if 0
-/* deprecated */
-void SCE_Camera_Use (SCE_SCamera*);
-#endif
 
 void SCE_Camera_Project (SCE_SCamera*, SCE_TVector3);
 void SCE_Camera_UnProject (SCE_SCamera*, SCE_TVector3);
