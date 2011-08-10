@@ -83,6 +83,8 @@ void SCE_Camera_Delete (SCE_SCamera*);
 void SCE_Camera_SetViewport (SCE_SCamera*, int, int, int, int);
 SCE_SViewport* SCE_Camera_GetViewport (SCE_SCamera*);
 
+void SCE_Camera_SetProjection (SCE_SCamera*, float, float, float, float);
+
 float* SCE_Camera_GetView (SCE_SCamera*);
 float* SCE_Camera_GetViewInverse (SCE_SCamera*);
 float* SCE_Camera_GetProj (SCE_SCamera*);

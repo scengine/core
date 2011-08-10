@@ -115,6 +115,22 @@ SCE_SViewport* SCE_Camera_GetViewport (SCE_SCamera *cam)
 
 
 /**
+ * \brief Sets the projection matrix of a camera
+ * \param cam a camera
+ * \param a FOV angle
+ * \param r frustum ratio
+ * \param n near plane
+ * \param f far plane
+ * \sa SCE_Camera_GetProj()
+ */
+void SCE_Camera_SetProjection (SCE_SCamera *cam, float a, float r,
+                               float n, float f)
+{
+    SCE_Matrix4_Projection (cam->proj, a, r, n, f);
+}
+
+
+/**
  * \brief Gets the view matrix of a camera
  * \returns a pointer to the internal matrix of \p cam
  */
@@ -133,6 +149,7 @@ float* SCE_Camera_GetViewInverse (SCE_SCamera *cam)
 /**
  * \brief Gets the projection's matrix of a camera
  * \returns a pointer to the internal matrix of \p cam
+ * \sa SCE_Camera_SetProjection()
  */
 float* SCE_Camera_GetProj (SCE_SCamera *cam)
 {
