@@ -5,6 +5,7 @@ libscecore_la_SOURCES = libwar.c \
                         lib4fm.c \
                         SCEBox.c \
                         SCESphere.c \
+                        SCECone.c \
                         SCEBoundingBox.c \
                         SCEBoundingSphere.c \
                         SCECollide.c \
