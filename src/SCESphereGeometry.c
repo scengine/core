@@ -42,8 +42,8 @@
  * \param iout indices output (will allocate memory)
  * \sa SCE_SphereGeom_CreateUV(), SCE_SphereGeom_CreateDefaultUV()
  */
-int
-SCE_SphereGeom_GetUV (SCE_SSphere *sphere, SCEuint segments,
+static int
+SCE_SphereGeom_GetUV (const SCE_SSphere *sphere, SCEuint segments,
                       SCEuint rings, SCEvertices **pout, SCEuint *n_pos,
                       SCEindices **iout)
 {
@@ -133,7 +133,7 @@ failure:
  * via \p center, \p radius, \p segments and \p rings
  * \sa SCE_SphereGeom_CreateUV()
  */
-int SCE_SphereGeom_GenerateUV (SCE_SSphere *sphere, SCEuint segments,
+int SCE_SphereGeom_GenerateUV (const SCE_SSphere *sphere, SCEuint segments,
                                SCEuint rings, SCE_SGeometry *geom)
 {
     SCEvertices *pos = NULL;
@@ -160,7 +160,7 @@ fail:
  * \param sphere,segments,rings defines the sphere to create
  * \sa SCE_SphereGeom_CreateDefaultUV(), SCE_SphereGeom_GenerateUV()
  */
-SCE_SGeometry* SCE_SphereGeom_CreateUV (SCE_SSphere *sphere,
+SCE_SGeometry* SCE_SphereGeom_CreateUV (const SCE_SSphere *sphere,
                                         SCEuint segments, SCEuint rings)
 {
     SCE_SGeometry *geom = NULL;
@@ -184,7 +184,7 @@ fail:
  * SCE_SPHEREGEOMETRY_SEGMENTS and SCE_SPHEREGEOMETRY_RINGS
  * \sa SCE_SphereGeom_CreateUV(), SCE_SphereGeom_GenerateUV()
  */
-SCE_SGeometry* SCE_SphereGeom_CreateDefaultUV (SCE_SSphere *sphere)
+SCE_SGeometry* SCE_SphereGeom_CreateDefaultUV (const SCE_SSphere *sphere)
 {
     return SCE_SphereGeom_CreateUV (sphere, SCE_SPHEREGEOMETRY_SEGMENTS,
                                     SCE_SPHEREGEOMETRY_RINGS);

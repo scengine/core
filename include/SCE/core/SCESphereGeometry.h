@@ -33,9 +33,10 @@ extern "C" {
 #define SCE_SPHEREGEOMETRY_SEGMENTS 16
 #define SCE_SPHEREGEOMETRY_RINGS 16
 
-int SCE_SphereGeom_GenerateUV (SCE_SSphere*, SCEuint, SCEuint, SCE_SGeometry*);
-SCE_SGeometry* SCE_SphereGeom_CreateUV (SCE_SSphere*, SCEuint, SCEuint);
-SCE_SGeometry* SCE_SphereGeom_CreateDefaultUV (SCE_SSphere*);
+int SCE_SphereGeom_GenerateUV (const SCE_SSphere*, SCEuint, SCEuint,
+                               SCE_SGeometry*);
+SCE_SGeometry* SCE_SphereGeom_CreateUV (const SCE_SSphere*, SCEuint, SCEuint);
+SCE_SGeometry* SCE_SphereGeom_CreateDefaultUV (const SCE_SSphere*);
 
 #ifdef __cplusplus
 } /* extern "C" */
