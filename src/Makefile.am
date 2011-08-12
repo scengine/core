@@ -18,6 +18,7 @@ libscecore_la_SOURCES = libwar.c \
                         SCEOBJLoader.c \
                         SCESphereGeometry.c \
                         SCEBoxGeometry.c \
+                        SCEConeGeometry.c \
                         SCEParticle.c \
                         SCEParticleEmitter.c \
                         SCEParticleModifier.c \

@@ -29,6 +29,7 @@
 /* internal dependencies */
 #include "SCE/core/SCEBoundingBox.h"
 #include "SCE/core/SCEBoundingSphere.h"
+#include "SCE/core/SCECone.h"
 #include "SCE/core/SCECollide.h"
 #include "SCE/core/SCEFrustum.h"
 #include "SCE/core/SCELevelOfDetail.h"
@@ -39,6 +40,7 @@
 #include "SCE/core/SCEOBJLoader.h"
 #include "SCE/core/SCESphereGeometry.h"
 #include "SCE/core/SCEBoxGeometry.h"
+#include "SCE/core/SCEConeGeometry.h"
 #include "SCE/core/SCEParticle.h"
 #include "SCE/core/SCEParticleEmitter.h"
 #include "SCE/core/SCEParticleModifier.h"

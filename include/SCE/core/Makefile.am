@@ -15,6 +15,7 @@ sce_include_core_HEADERS = lib4fm.h \
                            SCEOctree.h \
                            SCESphereGeometry.h \
                            SCEBoxGeometry.h \
+                           SCEConeGeometry.h \
                            SCEParticle.h \
                            SCEParticleEmitter.h \
                            SCEParticleModifier.h \
