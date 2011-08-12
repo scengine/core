@@ -317,4 +317,28 @@ int SCE_Collide_BSWithBS (SCE_SBoundingSphere *s,
         return SCE_COLLIDE_OUT;
 }
 
+int SCE_Collide_BCWithPoint (const SCE_SCone *c, float x, float y, float z)
+{
+    SCE_TVector3 p;
+    SCE_Vector3_Set (p, x, y, z);
+    return SCE_Collide_BCWithPointv (c, p);
+}
+int SCE_Collide_BCWithPointv (const SCE_SCone *c, const SCE_TVector3 p)
+{
+    SCE_SPlane plane;
+    SCE_TVector3 pos, dir;
+    float dist;
+    SCE_Cone_GetPositionv (c, pos);
+    SCE_Cone_GetOrientationv (c, dir);
+    SCE_Plane_SetFromPointv (&plane, dir, pos);
+    dist = SCE_Plane_DistanceToPointv (&plane, p);
+    if (0.0 < dist && dist < SCE_Cone_GetHeight (c)) {
+        float angle = SCE_Cone_GetAngle (c);
+        SCE_Vector3_Operator2v (pos, =, p, -, pos);
+        SCE_Vector3_Normalize (pos);
+        return acos (SCE_Vector3_Dot (pos, dir)) < angle;
+    }
+    return SCE_FALSE;
+}
+
 /** @} */

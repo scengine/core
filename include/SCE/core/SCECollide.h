@@ -25,6 +25,7 @@
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEBoundingBox.h"
 #include "SCE/core/SCEBoundingSphere.h"
+#include "SCE/core/SCECone.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +61,9 @@ int SCE_Collide_BSWithPoint (SCE_SBoundingSphere*, float, float, float);
 int SCE_Collide_BSWithPointv (SCE_SBoundingSphere*, SCE_TVector3);
 int SCE_Collide_BSWithBB (SCE_SBoundingSphere*, SCE_SBoundingBox*);
 int SCE_Collide_BSWithBS (SCE_SBoundingSphere*, SCE_SBoundingSphere*);
+
+int SCE_Collide_BCWithPoint (const SCE_SCone*, float, float, float);
+int SCE_Collide_BCWithPointv (const SCE_SCone*, const SCE_TVector3);
 
 #ifdef __cplusplus
 } /* extern "C" */
