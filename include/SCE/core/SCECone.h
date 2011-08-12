@@ -47,11 +47,11 @@ void SCE_Cone_SetAngle (SCE_SCone*, float);
 float SCE_Cone_GetAngle (const SCE_SCone*);
 
 void SCE_Cone_SetPosition (SCE_SCone*, float, float, float);
-void SCE_Cone_SetPositionv (SCE_SCone*, SCE_TVector3);
+void SCE_Cone_SetPositionv (SCE_SCone*, const SCE_TVector3);
 void SCE_Cone_GetPositionv (const SCE_SCone*, SCE_TVector3);
 
 void SCE_Cone_SetOrientation (SCE_SCone*, float, float, float);
-void SCE_Cone_SetOrientationv (SCE_SCone*, SCE_TVector3);
+void SCE_Cone_SetOrientationv (SCE_SCone*, const SCE_TVector3);
 void SCE_Cone_GetOrientationv (const SCE_SCone*, SCE_TVector3);
 
 void SCE_Cone_Offset (SCE_SCone*, float);

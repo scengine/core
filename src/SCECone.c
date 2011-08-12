@@ -120,7 +120,7 @@ void SCE_Cone_SetPosition (SCE_SCone *cone, float x, float y, float z)
 {
     SCE_Vector3_Set (cone->position, x, y, z);
 }
-void SCE_Cone_SetPositionv (SCE_SCone *cone, SCE_TVector3 pos)
+void SCE_Cone_SetPositionv (SCE_SCone *cone, const SCE_TVector3 pos)
 {
     SCE_Vector3_Copy (cone->position, pos);
 }
@@ -133,7 +133,7 @@ void SCE_Cone_SetOrientation (SCE_SCone *cone, float x, float y, float z)
 {
     SCE_Vector3_Set (cone->orientation, x, y, z);
 }
-void SCE_Cone_SetOrientationv (SCE_SCone *cone, SCE_TVector3 ori)
+void SCE_Cone_SetOrientationv (SCE_SCone *cone, const SCE_TVector3 ori)
 {
     SCE_Vector3_Copy (cone->orientation, ori);
 }
