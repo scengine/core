@@ -17,9 +17,10 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 21/12/2006
-   updated: 10/08/2011 */
+   updated: 15/08/2011 */
 
 #include <SCE/utils/SCEUtils.h>
+#include "SCE/core/SCECone.h"
 #include "SCE/core/SCECamera.h"
 
 /**
@@ -129,6 +130,20 @@ void SCE_Camera_SetProjection (SCE_SCamera *cam, float a, float r,
     SCE_Matrix4_Projection (cam->proj, a, r, n, f);
 }
 
+/**
+ * \brief Sets a camera's projection matrix that wraps a cone
+ * \param cam a camera
+ * \param cone a cone
+ * \param near distance of the near plane
+ */
+void SCE_Camera_SetProjectionFromCone (SCE_SCamera *cam, const SCE_SCone *cone,
+                                       float near)
+{
+    /* little threshold for the far plane :> */
+    SCE_Camera_SetProjection (cam, SCE_Cone_GetAngle (cone) * 2.0, 1.0, near,
+                              SCE_Cone_GetHeight (cone) + 0.0001);
+}
+
 
 /**
  * \brief Gets the view matrix of a camera
@@ -184,9 +199,38 @@ float* SCE_Camera_GetFinalViewProjInverse (SCE_SCamera *cam)
 
 
 /**
+ * \brief Sets a camera's position
+ * \param cam a camera
+ * \param x,y,z new position of the camera
+ * \note This function modifies the position of the camera node but not the
+ * camera view matrix (SCE_Camera_GetView())
+ * \sa SCE_Camera_SetPositionv()
+ */
+void SCE_Camera_SetPosition (SCE_SCamera *cam, float x, float y, float z)
+{
+    SCE_TVector3 pos;
+    SCE_Vector3_Set (pos, x, y, z);
+    SCE_Camera_SetPositionv (cam, pos);
+}
+/**
+ * \brief Sets a camera's position
+ * \param cam a camera
+ * \param pos new position of the camera
+ * \note This function modifies the position of the camera node but not the
+ * camera view matrix (SCE_Camera_GetView())
+ * \sa SCE_Camera_SetPosition()
+ */
+void SCE_Camera_SetPositionv (SCE_SCamera *cam, const SCE_TVector3 pos)
+{
+    /* TODO: float maybe wrong matrix type */
+    float *mat = SCE_Node_GetMatrix (cam->node, SCE_NODE_WRITE_MATRIX);
+    SCE_Matrix4_SetTranslation (mat, pos);
+    SCE_Node_HasMoved (cam->node);
+}
+/**
  * \brief Gets the position of a camera
  */
-void SCE_Camera_GetPositionv (SCE_SCamera *cam, SCE_TVector3 pos)
+void SCE_Camera_GetPositionv (const SCE_SCamera *cam, SCE_TVector3 pos)
 {
     SCE_Matrix4_GetTranslation (cam->finalviewinv, pos);
 }
@@ -262,6 +306,7 @@ SCE_SListIterator* SCE_Camera_GetIterator (SCE_SCamera *cam)
 }
 
 
+/* TODO: node's matrix isn't updated, false positionning in the octree! */
 static void SCE_Camera_UpdateView (SCE_SCamera *cam)
 {
     SCE_TMatrix4 mat;

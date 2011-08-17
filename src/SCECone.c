@@ -177,6 +177,7 @@ void SCE_Cone_Offset (SCE_SCone *cone, float n)
  * \param m a matrix
  * \param save a backup cone where \p cone will be stored, can be NULL
  * \sa SCE_Cone_Pop()
+ * \todo Does not behave like SCE_BoundingBox_Push(): check performed on \p save
  */
 void SCE_Cone_Push (SCE_SCone *cone, const SCE_TMatrix4 m, SCE_SCone *save)
 {

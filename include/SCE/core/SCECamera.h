@@ -24,6 +24,7 @@
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEBoundingSphere.h"
+#include "SCE/core/SCECone.h"
 #include "SCE/core/SCEFrustum.h"
 #include "SCE/core/SCENode.h"
 
@@ -41,12 +42,11 @@ typedef struct sce_sviewport SCE_SViewport;
 /**
  * \brief An OpenGL's viewport that defines and rectangular region where render
  */
-struct sce_sviewport
-{
-    int x, /**< X coordinate of the origin of the viewport */
-        y; /**< Y coordinate of the origin of the viewport */
-    int w, /**< width of the viewport */
-        h; /**< height of the viewport */
+struct sce_sviewport {
+    int x; /**< X coordinate of the origin of the viewport */
+    int y; /**< Y coordinate of the origin of the viewport */
+    int w; /**< width of the viewport */
+    int h; /**< height of the viewport */
 }; 
 
 /** \copydoc sce_scamera */
@@ -84,6 +84,7 @@ void SCE_Camera_SetViewport (SCE_SCamera*, int, int, int, int);
 SCE_SViewport* SCE_Camera_GetViewport (SCE_SCamera*);
 
 void SCE_Camera_SetProjection (SCE_SCamera*, float, float, float, float);
+void SCE_Camera_SetProjectionFromCone (SCE_SCamera*, const SCE_SCone*, float);
 
 float* SCE_Camera_GetView (SCE_SCamera*);
 float* SCE_Camera_GetViewInverse (SCE_SCamera*);
@@ -92,7 +93,14 @@ float* SCE_Camera_GetProjInverse (SCE_SCamera*);
 float* SCE_Camera_GetFinalViewProj (SCE_SCamera*);
 float* SCE_Camera_GetFinalViewProjInverse (SCE_SCamera*);
 
-void SCE_Camera_GetPositionv (SCE_SCamera*, SCE_TVector3);
+void SCE_Camera_SetPosition (SCE_SCamera*, float, float, float);
+void SCE_Camera_SetPositionv (SCE_SCamera*, const SCE_TVector3);
+void SCE_Camera_GetPositionv (const SCE_SCamera*, SCE_TVector3);
+
+#if 0
+void SCE_Camera_SetDirectionv (SCE_SCamera*, const SCE_TVector3);
+#endif
+
 SCE_SNode* SCE_Camera_GetNode (SCE_SCamera*);
 SCE_SFrustum* SCE_Camera_GetFrustum (SCE_SCamera*);
 float SCE_Camera_GetNear (SCE_SCamera*);
