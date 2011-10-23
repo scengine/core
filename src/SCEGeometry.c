@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 25/07/2009
-   updated: 17/04/2010 */
+   updated: 23/10/2011 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -1074,6 +1074,7 @@ SCE_SGeometry* SCE_Geometry_Load (const char *fname, int force)
  * \brief Computes a bounding box from a lot of vertices' positions
  * \param v the vertices' positions (must be 3 components vectors)
  * \param vcount the number of vertices into \p v
+ * \param stride offset between two consecutive vertices, in bytes
  * \param box write out the bounding box here
  * \sa SCE_Geometry_GenerateBoundingBox()
  * \todo manage number of vector's components (3 or 2)
@@ -1089,7 +1090,9 @@ void SCE_Geometry_ComputeBoundingBox (SCEvertices *v, size_t vcount,
 
     /* TODO: use a "Rectangle3D" ? */
     count = vcount * stride;
-    for (i = 0; i < count; i += stride) {
+    SCE_Vector3_Copy (min, (float*)cv);
+    SCE_Vector3_Copy (max, min);
+    for (i = stride; i < count; i += stride) {
         /* TODO: float type used for vectors */
         SCE_Vector3_GetMin (min, min, (float*)&cv[i]);
         SCE_Vector3_GetMax (max, max, (float*)&cv[i]);
@@ -1100,6 +1103,7 @@ void SCE_Geometry_ComputeBoundingBox (SCEvertices *v, size_t vcount,
  * \brief Computes a bounding sphere from a lot of vertices
  * \param v the vertices
  * \param vcount the number of vertices
+ * \param stride offset between two consecutive vertices, in bytes
  * \param box needed to compute the bounding sphere, you can obtain the
  * bounding box using SCE_Geometry_ComputeBoundingBox()
  * \param sphere write out the sphere here
