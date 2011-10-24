@@ -79,3 +79,167 @@ int SCE_Frustum_BoundingSphereInBool (SCE_SFrustum *f, SCE_SBoundingSphere *s)
 {
     return SCE_Collide_PlanesWithBSBool (f->planes, N_PL, s);
 }
+
+/*
+ * How points are indexed:
+ *
+ *              far
+ *        4_____________5
+ *        |\           |\
+ *        | \          | \
+ *        |  \         |  \
+ *        |   \        |   \
+ *        |    \3___________\2
+ *        |    |            |         z   y
+ *   left |7__ | ______|6   | right    \ |
+ *         \   |        \   |           \|__ x
+ *          \  |         \  |
+ *           \ |          \ |
+ *            \|___________\|
+ *             0            1
+ *                  near
+ */
+static void SCE_Frustum_GetPoints (const SCE_SPlane p[6], SCE_TVector3 v[8])
+{
+    SCE_Plane_Intersection3 (&p[SCE_FRUSTUM_NEAR], &p[SCE_FRUSTUM_LEFT],
+                             &p[SCE_FRUSTUM_BOTTOM], v[0]);
+    SCE_Plane_Intersection3 (&p[SCE_FRUSTUM_NEAR], &p[SCE_FRUSTUM_RIGHT],
+                             &p[SCE_FRUSTUM_BOTTOM], v[1]);
+    SCE_Plane_Intersection3 (&p[SCE_FRUSTUM_NEAR], &p[SCE_FRUSTUM_RIGHT],
+                             &p[SCE_FRUSTUM_TOP], v[2]);
+    SCE_Plane_Intersection3 (&p[SCE_FRUSTUM_NEAR], &p[SCE_FRUSTUM_LEFT],
+                             &p[SCE_FRUSTUM_TOP], v[3]);
+
+    SCE_Plane_Intersection3 (&p[SCE_FRUSTUM_FAR], &p[SCE_FRUSTUM_LEFT],
+                             &p[SCE_FRUSTUM_BOTTOM], v[7]);
+    SCE_Plane_Intersection3 (&p[SCE_FRUSTUM_FAR], &p[SCE_FRUSTUM_RIGHT],
+                             &p[SCE_FRUSTUM_BOTTOM], v[6]);
+    SCE_Plane_Intersection3 (&p[SCE_FRUSTUM_FAR], &p[SCE_FRUSTUM_RIGHT],
+                             &p[SCE_FRUSTUM_TOP], v[5]);
+    SCE_Plane_Intersection3 (&p[SCE_FRUSTUM_FAR], &p[SCE_FRUSTUM_LEFT],
+                             &p[SCE_FRUSTUM_TOP], v[4]);
+}
+
+/**
+ * \brief Extracts corners of a frustum
+ * \param f a frustum
+ * \param near change near plane, negative values hold it unchanged
+ * \param far change far plane, negative values hold it unchanged
+ * \param p 8 corner points
+ * \sa SCE_Box_MakePlanes(), SCE_Frustum_ExtractBoundingSphere()
+ */
+void SCE_Frustum_ExtractCorners (const SCE_SFrustum *f, float near, float far,
+                                 SCE_TVector3 p[8])
+{
+    if (near < 0.0f || far < 0.0f)
+        SCE_Frustum_GetPoints (f->planes, p);
+    else {
+        int i;
+        SCE_SPlane planes[6];
+
+        for (i = 0; i < 6; i++)
+            SCE_Plane_Copy (&planes[i], &f->planes[i]);
+
+        /* far plane hax */
+        SCE_Plane_Copy (&planes[SCE_FRUSTUM_FAR], &f->planes[SCE_FRUSTUM_NEAR]);
+
+        planes[SCE_FRUSTUM_FAR].d -= far;
+        planes[SCE_FRUSTUM_NEAR].d -= near;
+
+        SCE_Frustum_GetPoints (planes, p);
+    }
+}
+
+/**
+ * \brief Computes a bounding sphere around the corners of the given frustum
+ * \param f a frustum
+ * \param near change near plane
+ * \param far change far plane
+ * \param sphere bounding sphere
+ * \sa SCE_Frustum_ExtractCorners()
+ */
+void SCE_Frustum_ExtractBoundingSphere (const SCE_SFrustum *f, float near,
+                                        float far, SCE_SSphere *sphere)
+{
+    SCE_SBox box;
+    SCE_TVector3 p[8];
+
+    SCE_Box_Init (&box);
+    SCE_Frustum_ExtractCorners (f, near, far, p);
+    SCE_Geometry_ComputeBoundingBox (p, 8, sizeof *p, &box);
+    SCE_Geometry_ComputeBoundingSphere (p, 8, sizeof *p, &box, sphere);
+}
+
+
+/**
+ * \brief Extracts the base of a cube along a given axis
+ * \param dir a direction vector that will be the z axis of the base
+ * \param base resulting base
+ *
+ * Some decisions have to be made regarding the direction of the two
+ * other axis of the base; this function tries to maintain these axis
+ * consistent.
+ * \todo I'd like to move it move it, I'd like to move it move it §
+ */
+static void SCE_Frustum_SliceBase (const SCE_TVector3 dir, SCE_TMatrix3 base)
+{
+    SCE_SPlane p;
+    /* axis are in world space */
+    SCE_TVector3 X, Z; /* {X, dir, Z} shall be an ORTHOGONAL BASE WESH BRO */
+    SCE_TVector3 Y;
+
+    SCE_Plane_SetFromPoint (&p, dir, 0.0, 0.0, 0.0);
+
+    SCE_Vector3_Copy (Z, dir);
+    /* check for special cases */
+    if (SCE_Math_IsZero (dir[0]) && SCE_Math_IsZero (dir[1])) {
+        /* colinear with Z axis */
+        Z[1] += 42.0f;
+    } else {
+        Z[2] += 42.0f;
+    }
+
+    SCE_Plane_Project (&p, Z);
+    SCE_Vector3_Normalize (Z);
+    SCE_Vector3_Operator1v (Y, = -, dir);
+    SCE_Vector3_Cross (X, Z, Y);
+    SCE_Vector3_Normalize (X);
+
+    /* axis are in camera space */
+    SCE_Matrix3_Base (base, X, Z, Y);
+}
+
+/**
+ * \brief
+ * \param f a frustum
+ * \param near distance between origin and the near clip plane of the slice
+ * \param far distance between origin and the far clip plane of the slice
+ * \param dir light direction, must be normalized
+ * \param dist distance between the center of the slice and the light source
+ * \param proj
+ * \param cam
+ */
+void SCE_Frustum_Slice (const SCE_SFrustum *f, float near, float far,
+                        SCE_TVector3 dir, float dist, SCE_TMatrix4 proj,
+                        SCE_TMatrix4 cam)
+{
+    SCE_TMatrix3 base;
+    SCE_SSphere sphere;
+    SCE_TVector3 center;
+    float radius;
+
+    SCE_Frustum_ExtractBoundingSphere (f, near, far, &sphere);
+
+    SCE_Sphere_GetCenterv (&sphere, center);
+    radius = SCE_Sphere_GetRadius (&sphere);
+
+    SCE_Frustum_SliceBase (dir, base);
+    SCE_Matrix4_Identity (cam);
+    SCE_Matrix4_CopyM3 (cam, base);
+
+    SCE_Matrix4_SetTranslation (cam, center);
+    SCE_Matrix4_MulTranslate (cam, 0.0, 0.0, dist);
+
+    SCE_Matrix4_Identity (proj);
+    SCE_Matrix4_Ortho (proj, 2.0 * radius, 2.0 * radius, 0.0, dist + radius);
+}

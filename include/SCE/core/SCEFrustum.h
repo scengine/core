@@ -59,6 +59,14 @@ int SCE_Frustum_BoundingSphereIn (SCE_SFrustum*, SCE_SBoundingSphere*);
 int SCE_Frustum_BoundingBoxInBool (SCE_SFrustum*, SCE_SBoundingBox*);
 int SCE_Frustum_BoundingSphereInBool (SCE_SFrustum*, SCE_SBoundingSphere*);
 
+void SCE_Frustum_ExtractCorners (const SCE_SFrustum *f, float, float,
+                                 SCE_TVector3[8]);
+void SCE_Frustum_ExtractBoundingSphere (const SCE_SFrustum *f, float, float,
+                                        SCE_SSphere*);
+
+void SCE_Frustum_Slice (const SCE_SFrustum *f, float, float, SCE_TVector3,
+                        float, SCE_TMatrix4, SCE_TMatrix4);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
