@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 21/12/2006
-   updated: 15/08/2011 */
+   updated: 24/10/2011 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCECone.h"
@@ -259,15 +259,31 @@ SCE_SFrustum* SCE_Camera_GetFrustum (SCE_SCamera *cam)
  * \brief Gets the distance of the near plane of a camera projection matrix
  * \param cam a camera
  * \returns distance of the near plane
- * \sa SCE_Camera_GetFrustum()
+ * \sa SCE_Camera_GetFar(), SCE_Camera_GetFrustum()
  */
-float SCE_Camera_GetNear (SCE_SCamera *cam)
+float SCE_Camera_GetNear (const SCE_SCamera *cam)
 {
     SCE_TVector3 pos;
     SCE_Camera_GetPositionv (cam, pos);
     /* TODO: hack, DistanceToPointv() can return a negative value */
-    return SCE_Math_Fabsf (SCE_Plane_DistanceToPointv (&cam->frustum.planes[5],
-                                                       pos));
+    return SCE_Math_Fabsf (
+        SCE_Plane_DistanceToPointv (&cam->frustum.planes[SCE_FRUSTUM_NEAR],
+                                    pos));
+}
+/**
+ * \brief Gets the distance of the far plane of a camera projection matrix
+ * \param cam a camera
+ * \returns distance of the far plane
+ * \sa SCE_Camera_GetNear(), SCE_Camera_GetFrustum()
+ */
+float SCE_Camera_GetFar (const SCE_SCamera *cam)
+{
+    SCE_TVector3 pos;
+    SCE_Camera_GetPositionv (cam, pos);
+    /* TODO: hack, DistanceToPointv() can return a negative value */
+    return SCE_Math_Fabsf (
+        SCE_Plane_DistanceToPointv (&cam->frustum.planes[SCE_FRUSTUM_FAR],
+                                    pos));
 }
 
 /**
