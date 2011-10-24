@@ -218,7 +218,7 @@ float* SCE_Box_GetPoints (SCE_SBox *box)
  * This function is the vectorial version of SCE_Box_GetPoints().
  * \see SCE_Box_GetPoints()
  */
-void SCE_Box_GetPointsv (SCE_SBox *box, SCE_TVector3 p[6])
+void SCE_Box_GetPointsv (SCE_SBox *box, SCE_TVector3 p[8])
 {
     int i;
     for (i = 0; i < 8; i++)
@@ -228,6 +228,7 @@ void SCE_Box_GetPointsv (SCE_SBox *box, SCE_TVector3 p[6])
 /**
  * \brief Builds the planes of a box
  * \param planes write out the planes here
+ * \sa SCE_Box_Make()
  */
 void SCE_Box_MakePlanes (SCE_SBox *box, SCE_SPlane planes[6])
 {
