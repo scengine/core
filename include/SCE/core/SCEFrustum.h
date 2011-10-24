@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 28/02/2008
-   updated: 23/06/2009 */
+   updated: 23/10/2011 */
 
 #ifndef SCEFRUSTUM_H
 #define SCEFRUSTUM_H
@@ -28,17 +28,24 @@
 #include "SCE/core/SCEBoundingSphere.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #define SCE_FRUSTUM_OUT 0
 #define SCE_FRUSTUM_IN 1
 #define SCE_FRUSTUM_PARTIALLY 2
 
+typedef enum {
+    SCE_FRUSTUM_RIGHT = 0,
+    SCE_FRUSTUM_LEFT,
+    SCE_FRUSTUM_BOTTOM,
+    SCE_FRUSTUM_TOP,
+    SCE_FRUSTUM_FAR,
+    SCE_FRUSTUM_NEAR
+} SCE_EFrustumFace;
+
 typedef struct sce_sfrustum SCE_SFrustum;
-struct sce_sfrustum
-{
+struct sce_sfrustum {
     SCE_SPlane planes[6];
 };
 

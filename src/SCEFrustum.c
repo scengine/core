@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,10 +17,11 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 28/02/2008
-   updated: 16/06/2009 */
+   updated: 23/10/2011 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCECollide.h"
+#include "SCE/core/SCEGeometry.h" /* compute bounding sphere */
 #include "SCE/core/SCEFrustum.h"
 
 void SCE_Frustum_Init (SCE_SFrustum *f)
@@ -37,28 +38,22 @@ void SCE_Frustum_MakeFromMatrices (SCE_SFrustum *f, SCE_TMatrix4 view,
     SCE_TMatrix4 clip; /* combined matrices */
 
     SCE_Matrix4_Mul (proj, view, clip);
-    /* right plane */
-    SCE_Plane_Set (&f->planes[0],
+    SCE_Plane_Set (&f->planes[SCE_FRUSTUM_RIGHT],
                    clip[12]-clip[0], clip[13]-clip[1],
                    clip[14]-clip[2], clip[15]-clip[3]);
-    /* left plane */
-    SCE_Plane_Set (&f->planes[1],
+    SCE_Plane_Set (&f->planes[SCE_FRUSTUM_LEFT],
                    clip[12]+clip[0], clip[13]+clip[1],
                    clip[14]+clip[2], clip[15]+clip[3]);
-    /* bottom plane */
-    SCE_Plane_Set (&f->planes[2],
+    SCE_Plane_Set (&f->planes[SCE_FRUSTUM_BOTTOM],
                    clip[12]+clip[4], clip[13]+clip[5],
                    clip[14]+clip[6], clip[15]+clip[7]);
-    /* top plane */
-    SCE_Plane_Set (&f->planes[3],
+    SCE_Plane_Set (&f->planes[SCE_FRUSTUM_TOP],
                    clip[12]-clip[4], clip[13]-clip[5],
                    clip[14]-clip[6], clip[15]-clip[7]);
-    /* far plane */
-    SCE_Plane_Set (&f->planes[4],
+    SCE_Plane_Set (&f->planes[SCE_FRUSTUM_FAR],
                    clip[12]-clip[8], clip[13]-clip[9],
                    clip[14]-clip[10], clip[15]-clip[11]);
-    /* near plane */
-    SCE_Plane_Set (&f->planes[5],
+    SCE_Plane_Set (&f->planes[SCE_FRUSTUM_NEAR],
                    clip[12]+clip[8], clip[13]+clip[9],
                    clip[14]+clip[10], clip[15]+clip[11]);
     /* normalisation */
