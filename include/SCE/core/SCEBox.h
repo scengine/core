@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 03/08/2009
-   updated: 24/08/2009 */
+   updated: 25/10/2011 */
 
 #ifndef SCEBOX_H
 #define SCEBOX_H
@@ -27,6 +27,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+    SCE_BOX_POSX = 0,
+    SCE_BOX_NEGX,
+    SCE_BOX_POSY,
+    SCE_BOX_NEGY,
+    SCE_BOX_POSZ,
+    SCE_BOX_NEGZ
+} SCE_EBoxFace;
 
 typedef struct sce_sbox SCE_SBox;
 struct sce_sbox {
