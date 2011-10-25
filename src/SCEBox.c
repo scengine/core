@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 03/08/2009
-   updated: 24/08/2009 */
+   updated: 25/10/2011 */
 
 #include <string.h>             /* memcpy */
 #include <SCE/utils/SCEUtils.h>
@@ -327,4 +327,38 @@ void SCE_Box_ApplyMatrix4x3 (SCE_SBox *box, SCE_TMatrix4x3 m)
     size_t i;
     for (i = 0; i < 8; i++)
         SCE_Matrix4x3_MulV3Copy (m, box->p[i]);
+}
+
+
+/**
+ * \brief Gets the camera matrix for cubemap rendering of the given face
+ * \param f a face
+ * \param m camera node matrix
+ */
+void SCE_Box_FaceOrientation (SCE_EBoxFace f, SCE_TMatrix4 m)
+{
+    switch (f) {
+    case SCE_BOX_POSX:
+        SCE_Matrix4_RotY (m, M_PI / 2.0);
+        SCE_Matrix4_MulRotZ (m, M_PI);
+        break;
+    case SCE_BOX_NEGX:
+        SCE_Matrix4_RotY (m, - M_PI / 2.0);
+        SCE_Matrix4_MulRotZ (m, M_PI);
+        break;
+    case SCE_BOX_POSY:
+        SCE_Matrix4_RotX (m, M_PI / 2.0);
+        break;
+    case SCE_BOX_NEGY:
+        SCE_Matrix4_RotX (m, - M_PI / 2.0);
+        break;
+    case SCE_BOX_POSZ:
+        SCE_Matrix4_RotY (m, M_PI);
+        SCE_Matrix4_MulRotZ (m, M_PI);
+        break;
+    case SCE_BOX_NEGZ:
+        SCE_Matrix4_RotZ (m, M_PI);
+        break;
+    default:;                   /* omg */
+    }
 }
