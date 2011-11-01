@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 28/02/2008
-   updated: 23/10/2011 */
+   updated: 01/11/2011 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCECollide.h"
@@ -163,11 +163,39 @@ void SCE_Frustum_ExtractBoundingSphere (const SCE_SFrustum *f, float near,
 {
     SCE_SBox box;
     SCE_TVector3 p[8];
+    float d, r;
+    SCE_TVector3 middle;
 
     SCE_Box_Init (&box);
     SCE_Frustum_ExtractCorners (f, near, far, p);
-    SCE_Geometry_ComputeBoundingBox (p, 8, sizeof *p, &box);
-    SCE_Geometry_ComputeBoundingSphere (p, 8, sizeof *p, &box, sphere);
+
+    SCE_Vector3_Operator2v (middle, =, p[4], +, p[6]);
+    SCE_Vector3_Operator1 (middle, *=, 0.5);
+    d = 0.5 * SCE_Vector3_Distance (p[4], p[6]);
+    r = SCE_Vector3_Distance (middle, p[0]);
+
+    if (r > d) {
+        SCE_Sphere_SetRadius (sphere, r);
+        SCE_Sphere_SetCenterv (sphere, middle);
+    } else {
+        SCE_TVector3 middle2, dir;
+        float x, a, b;
+
+        r = d;
+        SCE_Sphere_SetRadius (sphere, r);
+
+        SCE_Vector3_Operator2v (middle2, =, p[0], +, p[2]);
+        SCE_Vector3_Operator1 (middle2, *=, 0.5);
+        SCE_Vector3_Operator2v (dir, =, middle, -, middle2);
+        SCE_Vector3_Normalize (dir);
+        a = SCE_Vector3_Distance (middle, middle2);
+        d = (SCE_Vector3_Distance (p[0], p[1]) * 0.5);
+        x = cos (asin (d / r)) - a / r;
+        x *= r;
+
+        SCE_Vector3_Operator2 (middle, +=, dir, *, x);
+        SCE_Sphere_SetCenterv (sphere, middle);
+    }
 }
 
 
