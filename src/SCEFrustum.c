@@ -179,7 +179,7 @@ void SCE_Frustum_ExtractBoundingSphere (const SCE_SFrustum *f, float near,
         SCE_Sphere_SetCenterv (sphere, middle);
     } else {
         SCE_TVector3 middle2, dir;
-        float x, a, b;
+        float x, a;
 
         r = d;
         SCE_Sphere_SetRadius (sphere, r);
@@ -189,7 +189,7 @@ void SCE_Frustum_ExtractBoundingSphere (const SCE_SFrustum *f, float near,
         SCE_Vector3_Operator2v (dir, =, middle, -, middle2);
         SCE_Vector3_Normalize (dir);
         a = SCE_Vector3_Distance (middle, middle2);
-        d = (SCE_Vector3_Distance (p[0], p[1]) * 0.5);
+        d = (SCE_Vector3_Distance (p[0], p[2]) * 0.5);
         x = cos (asin (d / r)) - a / r;
         x *= r;
 
