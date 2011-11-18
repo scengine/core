@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 10/07/2007
-   updated: 01/11/2010 */
+   updated: 18/11/2011 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCENode.h"
@@ -62,12 +62,27 @@ static void SCE_Node_UpdateTreeFun (SCE_SNode *node)
     if (node->marks & SCE_NODE_HAS_MOVED)
         node->moved (node, node->movedparam);
 }
+static void SCE_Node_UpdateTreeUser (SCE_SNode *node)
+{
+    node->transform (node->parent, node);
+}
+static void SCE_Node_UpdateTreeFunUser (SCE_SNode *node)
+{
+    node->transform (node->parent, node);
+    if (node->marks & SCE_NODE_HAS_MOVED)
+        node->moved (node, node->movedparam);
+}
 
 static void SCE_Node_SetUpdateFunc (SCE_SNode *n)
 {
     if (n->type == SCE_TREE_NODE) {
-        if (n->moved == NULL) n->update = SCE_Node_UpdateTree;
-        else n->update = SCE_Node_UpdateTreeFun;
+        if (n->transform) {
+            if (n->moved == NULL) n->update = SCE_Node_UpdateTreeUser;
+            else n->update = SCE_Node_UpdateTreeFunUser;
+        } else {
+            if (n->moved == NULL) n->update = SCE_Node_UpdateTree;
+            else n->update = SCE_Node_UpdateTreeFun;
+        }
     } else {
         if (n->moved == NULL) n->update = SCE_Node_UpdateSingle;
         else n->update = SCE_Node_UpdateFun;
@@ -95,6 +110,7 @@ static void SCE_Node_Init (SCE_SNode *node)
     node->marks = 0;
     node->moved = NULL;
     node->movedparam = NULL;
+    node->transform = NULL;
     node->udata = NULL;
 }
 
@@ -411,6 +427,47 @@ void SCE_Node_SetOnMovedCallback (SCE_SNode *node, SCE_FNodeCallback f, void *p)
     node->moved = f;
     node->movedparam = p;
     SCE_Node_SetUpdateFunc (node);
+}
+void SCE_Node_SetTransformCallback (SCE_SNode *node,
+                                    SCE_FNodeTransformCallback f)
+{
+    node->transform = f;
+    SCE_Node_SetUpdateFunc (node);
+}
+static void SCE_Node_Transform1 (const SCE_SNode *parent, SCE_SNode *node)
+{
+    SCE_TVector3 p1, p2;
+    /* TODO: matrix type, */
+    float *m = NULL;
+    SCE_SNode *p = (SCE_SNode*)parent;
+    m = SCE_Node_GetMatrix (node, SCE_NODE_READ_MATRIX);
+    SCE_Matrix4_GetTranslation (SCE_Node_GetFinalMatrix (p), p1);
+    SCE_Matrix4_GetTranslation (m, p2);
+    SCE_Vector3_Operator1v (p1, +=, p2);
+    SCE_Matrix4_Copy (SCE_Node_GetFinalMatrix (node), m);
+    SCE_Matrix4_SetTranslation (SCE_Node_GetFinalMatrix (node), p1);
+}
+static void SCE_Node_Transform2 (const SCE_SNode *parent, SCE_SNode *node)
+{
+    SCE_TVector3 p1, p2;
+    /* TODO: matrix type, */
+    float *m = NULL;
+    SCE_SNode *p = (SCE_SNode*)parent;
+    m = SCE_Node_GetMatrix (node, SCE_NODE_READ_MATRIX);
+    SCE_Matrix4_GetTranslation (SCE_Node_GetFinalMatrix (p), p1);
+    SCE_Matrix4_GetTranslation (m, p2);
+    SCE_Vector3_Normalize (p2);
+    SCE_Vector3_Operator1v (p1, +=, p2);
+    SCE_Matrix4_Copy (SCE_Node_GetFinalMatrix (node), m);
+    SCE_Matrix4_SetTranslation (SCE_Node_GetFinalMatrix (node), p1);
+}
+void SCE_Node_TransformTranslation (SCE_SNode *node)
+{
+    SCE_Node_SetTransformCallback (node, SCE_Node_Transform1);
+}
+void SCE_Node_TransformTranslationNormalize (SCE_SNode *node)
+{
+    SCE_Node_SetTransformCallback (node, SCE_Node_Transform2);
 }
 
 

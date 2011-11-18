@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 10/07/2007
-   updated: 01/11/2010 */
+   updated: 18/11/2011 */
 
 #ifndef SCENODE_H
 #define SCENODE_H
@@ -59,6 +59,7 @@ typedef enum {
 typedef struct sce_snode SCE_SNode;
 typedef float* (*SCE_FGetNodeMatrix)(SCE_SNode*, size_t);
 typedef void (*SCE_FNodeCallback)(SCE_SNode*, void*);
+typedef void (*SCE_FNodeTransformCallback)(const SCE_SNode*, SCE_SNode*);
 typedef void (*SCE_FNodeUpdate)(SCE_SNode*);
 
 typedef struct sce_snodegroup SCE_SNodeGroup;
@@ -81,6 +82,7 @@ struct sce_snode {
     unsigned int marks;         /**< Has the node moved since the last update?*/
     SCE_FNodeCallback moved;
     void *movedparam;
+    SCE_FNodeTransformCallback transform;
     void *udata;                /**< User-defined data */
 };
 
@@ -122,6 +124,9 @@ void SCE_Node_GetFinalMatrixv (SCE_SNode*, SCE_TMatrix4);
 void SCE_Node_CopyMatrix (SCE_SNode*, SCE_SNode*);
 
 void SCE_Node_SetOnMovedCallback (SCE_SNode*, SCE_FNodeCallback, void*);
+void SCE_Node_SetTransformCallback (SCE_SNode*, SCE_FNodeTransformCallback);
+void SCE_Node_TransformTranslation (SCE_SNode*);
+void SCE_Node_TransformTranslationNormalize (SCE_SNode*);
 
 void SCE_Node_HasMoved (SCE_SNode*);
 void SCE_Node_HasNotMoved (SCE_SNode*);
