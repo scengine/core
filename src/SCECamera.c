@@ -392,9 +392,10 @@ void SCE_Camera_Use (SCE_SCamera *cam)
  * \brief Projects a point from world space to the screen space of a camera
  * \param cam a camera
  * \param u the point to project
+ * \returns 1 / w
  * \sa SCE_Camera_UnProject(), SCE_Camera_Line()
  */
-void SCE_Camera_Project (SCE_SCamera *cam, SCE_TVector3 u)
+float SCE_Camera_Project (SCE_SCamera *cam, SCE_TVector3 u)
 {
     float inv;
     SCE_TVector4 v;
@@ -402,6 +403,7 @@ void SCE_Camera_Project (SCE_SCamera *cam, SCE_TVector3 u)
     SCE_Matrix4_MulV4Copy (cam->finalviewproj, v);
     inv = 1.0 / v[3];
     SCE_Vector3_Operator2 (u, =, v, *, inv);
+    return inv;
 }
 /**
  * \brief Unprojects a point from the screen space of a camera to world space

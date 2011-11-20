@@ -115,7 +115,7 @@ SCE_SListIterator* SCE_Camera_GetIterator (SCE_SCamera*);
 
 void SCE_Camera_Update (SCE_SCamera*);
 
-void SCE_Camera_Project (SCE_SCamera*, SCE_TVector3);
+float SCE_Camera_Project (SCE_SCamera*, SCE_TVector3);
 void SCE_Camera_UnProject (SCE_SCamera*, SCE_TVector3);
 void SCE_Camera_Line (SCE_SCamera*, SCE_TVector2, SCE_SLine3*);
 
