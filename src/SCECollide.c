@@ -33,11 +33,22 @@
 /**
  * \defgroup collide Collider
  * \ingroup interface
- * \brief Collider module that manages collisions between some simple shapesg
+ * \brief Collider module that manages collisions between some simple shapes
  */
 
 /** @{ */
 
+/**
+ * \brief Checks if a point is inside a convex shape represented by a set
+ * of planes.
+ * \param planes a convex shape
+ * \param n number of planes
+ * \param x,y,z a point
+ *
+ * The normals of the planes must be oriented inside the convex shape.
+ * \return SCE_TRUE if the point is inside the shape, SCE_FALSE otherwise
+ * \sa SCE_Collide_PlanesWithPointv()
+ */
 int SCE_Collide_PlanesWithPoint (SCE_SPlane *planes, size_t n,
                                  float x, float y, float z)
 {
@@ -48,6 +59,14 @@ int SCE_Collide_PlanesWithPoint (SCE_SPlane *planes, size_t n,
     }
     return SCE_TRUE;
 }
+/**
+ * \brief Vectorial version of SCE_Collide_PlanesWithPoint()
+ * \param planes a convex shape
+ * \param n number of planes
+ * \param p a point
+ * \return SCE_TRUE if the point is inside the shape, SCE_FALSE otherwise
+ * \sa SCE_Collide_PlanesWithPoint()
+ */
 int SCE_Collide_PlanesWithPointv (SCE_SPlane *planes, size_t n,
                                   SCE_TVector3 p)
 {
