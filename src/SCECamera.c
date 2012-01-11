@@ -89,6 +89,7 @@ void SCE_Camera_Delete (SCE_SCamera *cam)
 {
     if (cam) {
         SCE_Node_Delete (cam->node);
+        SCE_List_Remove (&cam->it);
         SCE_free (cam);
     }
 }
