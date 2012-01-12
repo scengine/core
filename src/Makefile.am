@@ -3,7 +3,8 @@ lib_LTLIBRARIES = libscecore.la
 libscecore_la_CPPFLAGS  = -I$(srcdir)/../include
 libscecore_la_CFLAGS    = @SCE_UTILS_CFLAGS@ \
                           @PTHREAD_CFLAGS@ \
-                          @SCE_DEBUG_CFLAGS@
+                          @SCE_DEBUG_CFLAGS@ \
+                          @SCE_DEBUG_CFLAGS_EXPORT@
 libscecore_la_LIBADD    = @SCE_UTILS_LIBS@ \
                           @PTHREAD_LIBS@
 libscecore_la_LDFLAGS   = -version-info @SCE_CORE_LTVERSION@
