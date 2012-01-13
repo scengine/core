@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 10/07/2007
-   updated: 10/01/2012 */
+   updated: 13/01/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCENode.h"
@@ -468,6 +468,18 @@ void SCE_Node_TransformTranslation (SCE_SNode *node)
 void SCE_Node_TransformTranslationNormalize (SCE_SNode *node)
 {
     SCE_Node_SetTransformCallback (node, SCE_Node_Transform2);
+}
+static void SCE_Node_Transform3 (const SCE_SNode *parent, SCE_SNode *node)
+{
+    SCE_TMatrix4 p;
+    SCE_Node_GetFinalMatrixv (parent, p);
+    SCE_Matrix4_NoScaling (p);
+    SCE_Matrix4_Mul (p, SCE_Node_GetMatrix (node, SCE_NODE_READ_MATRIX),
+                     SCE_Node_GetFinalMatrix (node));
+}
+void SCE_Node_TransformNoScale (SCE_SNode *node)
+{
+    SCE_Node_SetTransformCallback (node, SCE_Node_Transform3);
 }
 
 

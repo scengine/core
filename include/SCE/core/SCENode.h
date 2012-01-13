@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 10/07/2007
-   updated: 10/01/2012 */
+   updated: 13/01/2012 */
 
 #ifndef SCENODE_H
 #define SCENODE_H
@@ -127,6 +127,7 @@ void SCE_Node_SetOnMovedCallback (SCE_SNode*, SCE_FNodeCallback, void*);
 void SCE_Node_SetTransformCallback (SCE_SNode*, SCE_FNodeTransformCallback);
 void SCE_Node_TransformTranslation (SCE_SNode*);
 void SCE_Node_TransformTranslationNormalize (SCE_SNode*);
+void SCE_Node_TransformNoScale (SCE_SNode*);
 
 void SCE_Node_HasMoved (SCE_SNode*);
 void SCE_Node_HasNotMoved (SCE_SNode*);
