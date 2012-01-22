@@ -134,13 +134,17 @@ fail:
 }
 
 
+size_t SCE_Grid_GetOffset (const SCE_SGrid *grid, int x, int y, int z)
+{
+    size_t offset;
+    offset = grid->height * (grid->width * z + y) + x;
+    return offset;
+}
+
 void SCE_Grid_GetPoint (const SCE_SGrid *grid, int x, int y, int z, void *p)
 {
     unsigned char *src = NULL;
-    size_t offset;
-    offset = grid->width * grid->height * z;
-    offset += grid->height * y;
-    offset += x;
+    size_t offset = SCE_Grid_GetOffset (grid, x, y, z);
     offset *= SCE_Type_Sizeof (grid->type);
     src = grid->data;
     memcpy (p, &src[offset], SCE_Type_Sizeof (grid->type));

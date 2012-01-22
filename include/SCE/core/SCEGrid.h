@@ -63,6 +63,7 @@ int SCE_Grid_Build (SCE_SGrid*);
 
 void SCE_Grid_Serialize (SCE_SGrid*, SCE_FSerializeGrid, void*);
 
+size_t SCE_Grid_GetOffset (const SCE_SGrid*, int, int, int);
 void SCE_Grid_GetPoint (const SCE_SGrid*, int, int, int, void*);
 
 #ifdef __cplusplus
