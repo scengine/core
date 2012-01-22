@@ -132,3 +132,16 @@ fail:
     SCEE_LogSrc ();
     return SCE_ERROR;
 }
+
+
+void SCE_Grid_GetPoint (const SCE_SGrid *grid, int x, int y, int z, void *p)
+{
+    unsigned char *src = NULL;
+    size_t offset;
+    offset = grid->width * grid->height * z;
+    offset += grid->height * y;
+    offset += x;
+    offset *= SCE_Type_Sizeof (grid->type);
+    src = grid->data;
+    memcpy (p, &src[offset], SCE_Type_Sizeof (grid->type));
+}
