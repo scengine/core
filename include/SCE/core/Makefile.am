@@ -8,6 +8,7 @@ sce_include_core_HEADERS = lib4fm.h \
                            SCEBoundingSphere.h \
                            SCECollide.h \
                            SCEFrustum.h \
+                           SCEGrid.h \
                            SCECamera.h \
                            SCELevelOfDetail.h \
                            SCEGeometry.h \
