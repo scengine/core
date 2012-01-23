@@ -40,6 +40,17 @@ typedef enum {
     /* SCE_IMAGE_CUBE */
 } SCE_EImageType;
 
+typedef enum {
+    SCE_IMAGE_RED = 0,
+    SCE_IMAGE_RG,
+    SCE_IMAGE_RGB,
+    SCE_IMAGE_BGR,
+    SCE_IMAGE_RGBA,
+    SCE_IMAGE_BGRA,
+    /* SCE_IMAGE_DEPTH, SCE_IMAGE_STENCIL */
+    SCE_NUM_IMAGE_FORMATS
+} SCE_EImageFormat;
+
 /**
  * \brief Pixel formats
  * \warning see SCE_RSCEPxfToGL() before modifying this enum
@@ -113,8 +124,8 @@ int SCE_Image_Update (SCE_SImage*);
 int SCE_Image_GetWidth (SCE_SImage*);
 int SCE_Image_GetHeight (SCE_SImage*);
 int SCE_Image_GetDepth (SCE_SImage*);
-int SCE_Image_GetFormat (SCE_SImage*);
 int SCE_Image_GetPixelSize (SCE_SImage*);
+SCE_EImageFormat SCE_Image_GetFormat (SCE_SImage*);
 SCE_EType SCE_Image_GetDataType (SCE_SImage*);
 
 SCE_EImageType SCE_Image_GetType (SCE_SImage*);

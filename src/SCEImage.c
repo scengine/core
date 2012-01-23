@@ -417,10 +417,28 @@ int SCE_Image_Get##name (SCE_SImage *img)\
 SCE_RIMGGET (Width,     IL_IMAGE_WIDTH)
 SCE_RIMGGET (Height,    IL_IMAGE_HEIGHT)
 SCE_RIMGGET (Depth,     IL_IMAGE_DEPTH)
-SCE_RIMGGET (Format,    IL_IMAGE_FORMAT)
 SCE_RIMGGET (PixelSize, IL_IMAGE_BYTES_PER_PIXEL)
 /* SCE_RIMGGET (DataType,  IL_IMAGE_TYPE) */
 #undef SCE_RIMGGET
+
+static SCE_EImageFormat SCE_Image_FormatFromIL (SCEenum f)
+{
+    switch (f) {
+    case IL_BGR: return SCE_IMAGE_BGR;
+    case IL_BGRA: return SCE_IMAGE_BGRA;
+    case IL_LUMINANCE: return SCE_IMAGE_RED;
+    case IL_LUMINANCE_ALPHA: return SCE_IMAGE_RG;
+    case IL_RGB: return SCE_IMAGE_RGB;
+    case IL_RGBA: return SCE_IMAGE_RGBA;
+    default: return SCE_IMAGE_RED; /* herp derp */
+    }
+}
+
+SCE_EImageFormat SCE_Image_GetFormat (SCE_SImage *img)
+{
+    SCE_Image_Bind (img);
+    return SCE_Image_FormatFromIL (ilGetInteger (IL_IMAGE_FORMAT));
+}
 
 static SCE_EType SCE_Image_ILTypeToSCE (SCEenum t)
 {
