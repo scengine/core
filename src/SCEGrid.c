@@ -158,3 +158,56 @@ void SCE_Grid_SetPoint (const SCE_SGrid *grid, int x, int y, int z, void *p)
     memcpy (&dst[offset], p, SCE_Type_Sizeof (grid->type));
 }
 
+
+int SCE_Grid_ToGeometry (const SCE_SGrid *grid, SCE_SGeometry *geom)
+{
+    SCEvertices *vertices = NULL;
+    size_t n_points;
+    int x, y, z;
+    const int size = 3;
+
+    n_points = (grid->width - 1) * (grid->height - 1) * (grid->depth - 1);
+
+    if (!(vertices = SCE_malloc (size * n_points * sizeof *vertices)))
+        goto fail;
+
+    for (z = 0; z < grid->depth - 1; z++) {
+        for (y = 0; y < grid->height - 1; y++) {
+            for (x = 0; x < grid->width - 1; x++) {
+                char buffer[16] = {0};
+                size_t offset = SCE_Grid_GetOffset (grid, x, y, z);
+                offset *= size;
+                SCE_Grid_GetPoint (grid, x, y, z, buffer);
+                vertices[offset + 0] = (float)x / grid->width;
+                vertices[offset + 1] = (float)y / grid->height;
+                vertices[offset + 2] = (float)z / grid->depth;
+            }
+        }
+    }
+
+    if (!SCE_Geometry_AddNewArray (geom, SCE_POSITION, SCE_VERTICES_TYPE,
+                                   0, size, vertices, SCE_TRUE))
+        goto fail;
+    SCE_Geometry_SetNumVertices (geom, n_points);
+    SCE_Geometry_SetPrimitiveType (geom, SCE_POINTS);
+
+    return SCE_OK;
+fail:
+    SCE_free (vertices);
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+SCE_SGeometry* SCE_Grid_CreateGeometryFrom (const SCE_SGrid *grid)
+{
+    SCE_SGeometry *geom = NULL;
+    if (!(geom = SCE_Geometry_Create ()))
+        goto fail;
+    if (SCE_Grid_ToGeometry (grid, geom) < 0)
+        goto fail;
+    return geom;
+fail:
+    SCE_Geometry_Delete (geom);
+    SCEE_LogSrc ();
+    return NULL;
+}

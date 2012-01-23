@@ -22,6 +22,8 @@
 #ifndef SCEGRID_H
 #define SCEGRID_H
 
+#include "SCE/core/SCEGeometry.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,6 +68,9 @@ void SCE_Grid_Serialize (SCE_SGrid*, SCE_FSerializeGrid, void*);
 size_t SCE_Grid_GetOffset (const SCE_SGrid*, int, int, int);
 void SCE_Grid_GetPoint (const SCE_SGrid*, int, int, int, void*);
 void SCE_Grid_SetPoint (const SCE_SGrid*, int, int, int, void*);
+
+int SCE_Grid_ToGeometry (const SCE_SGrid*, SCE_SGeometry*);
+SCE_SGeometry* SCE_Grid_CreateGeometryFrom (const SCE_SGrid*);
 
 #ifdef __cplusplus
 } /* extern "C" */
