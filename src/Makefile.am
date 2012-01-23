@@ -19,11 +19,12 @@ libscecore_la_SOURCES   = libwar.c \
                           SCEFrustum.c \
                           SCEOctree.c \
                           SCENode.c \
-                          SCEGrid.c \
                           SCECamera.c \
                           SCELevelOfDetail.c \
                           SCEImage.c \
+                          SCETextureData.c \
                           SCEGeometry.c \
+                          SCEGrid.c \
                           SCEOBJLoader.c \
                           SCESphereGeometry.c \
                           SCEBoxGeometry.c \
