@@ -11,6 +11,7 @@ sce_include_core_HEADERS = lib4fm.h \
                            SCEGrid.h \
                            SCECamera.h \
                            SCELevelOfDetail.h \
+                           SCEImage.h \
                            SCEGeometry.h \
                            SCEOBJLoader.h \
                            SCEOctree.h \

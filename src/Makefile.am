@@ -22,6 +22,7 @@ libscecore_la_SOURCES   = libwar.c \
                           SCEGrid.c \
                           SCECamera.c \
                           SCELevelOfDetail.c \
+                          SCEImage.c \
                           SCEGeometry.c \
                           SCEOBJLoader.c \
                           SCESphereGeometry.c \
