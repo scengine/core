@@ -170,23 +170,25 @@ int SCE_Grid_ToGeometry (const SCE_SGrid *grid, SCE_SGeometry *geom)
     SCEvertices *vertices = NULL;
     size_t n_points;
     int x, y, z;
+    SCE_SGrid g;
     const int size = 3;
 
-    n_points = (grid->width - 1) * (grid->height - 1) * (grid->depth - 1);
+    g = *grid;
+    g.width--; g.height--; g.depth--;
+    g.wrap_x = g.wrap_y = g.wrap_z = 0;
+    n_points = SCE_Grid_GetNumPoints (&g);
 
     if (!(vertices = SCE_malloc (size * n_points * sizeof *vertices)))
         goto fail;
 
-    for (z = 0; z < grid->depth - 1; z++) {
-        for (y = 0; y < grid->height - 1; y++) {
-            for (x = 0; x < grid->width - 1; x++) {
-                char buffer[16] = {0};
-                size_t offset = SCE_Grid_GetOffset (grid, x, y, z);
+    for (z = 0; z < g.depth; z++) {
+        for (y = 0; y < g.height; y++) {
+            for (x = 0; x < g.width; x++) {
+                size_t offset = SCE_Grid_GetOffset (&g, x, y, z);
                 offset *= size;
-                SCE_Grid_GetPoint (grid, x, y, z, buffer);
-                vertices[offset + 0] = (float)x / grid->width;
-                vertices[offset + 1] = (float)y / grid->height;
-                vertices[offset + 2] = (float)z / grid->depth;
+                vertices[offset + 0] = (float)x / g.width;
+                vertices[offset + 1] = (float)y / g.height;
+                vertices[offset + 2] = (float)z / g.depth;
             }
         }
     }
