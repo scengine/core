@@ -262,27 +262,51 @@ SCE_SListIterator* SCE_TexData_GetIterator (SCE_STexData *d)
 
 void SCE_TexData_Modified1 (SCE_STexData *d, int x, int w)
 {
-    d->mod_x = MIN (x, d->mod_x);
-    d->mod_w = MAX (x + w, d->mod_w);
+    if (d->modified) {
+        /* enlarge current modified zone */
+        d->mod_x = MIN (x, d->mod_x);
+        d->mod_w = MAX (x + w, d->mod_w);
+    } else {
+        d->mod_x = x;
+        d->mod_w = x + w;
+    }
     d->modified = SCE_TRUE;
 }
 void SCE_TexData_Modified2 (SCE_STexData *d, int x, int y, int w, int h)
 {
-    d->mod_x = MIN (x, d->mod_x);
-    d->mod_w = MAX (x + w, d->mod_w);
-    d->mod_y = MIN (y, d->mod_y);
-    d->mod_h = MAX (y + h, d->mod_h);
+    if (d->modified) {
+        /* enlarge current modified zone */
+        d->mod_x = MIN (x, d->mod_x);
+        d->mod_w = MAX (x + w, d->mod_w);
+        d->mod_y = MIN (y, d->mod_y);
+        d->mod_h = MAX (y + h, d->mod_h);
+    } else {
+        d->mod_x = x;
+        d->mod_w = x + w;
+        d->mod_y = y;
+        d->mod_h = y + h;
+    }
     d->modified = SCE_TRUE;
 }
 void SCE_TexData_Modified3 (SCE_STexData *td, int x, int y, int z,
                             int w, int h, int d)
 {
-    td->mod_x = MIN (x, td->mod_x);
-    td->mod_w = MAX (x + w, td->mod_w);
-    td->mod_y = MIN (y, td->mod_y);
-    td->mod_h = MAX (y + h, td->mod_h);
-    td->mod_z = MIN (z, td->mod_z);
-    td->mod_d = MAX (z + d, td->mod_d);
+    if (td->modified) {
+        /* enlarge current modified zone */
+        td->mod_x = MIN (x, td->mod_x);
+        td->mod_w = MAX (x + w, td->mod_w);
+        td->mod_y = MIN (y, td->mod_y);
+        td->mod_h = MAX (y + h, td->mod_h);
+        td->mod_z = MIN (z, td->mod_z);
+        td->mod_d = MAX (z + d, td->mod_d);
+    } else {
+        td->mod_x = x;
+        td->mod_w = x + w;
+        td->mod_y = y;
+        td->mod_h = y + h;
+        td->mod_z = z;
+        td->mod_d = z + d;
+    }
     td->modified = SCE_TRUE;
 }
 void SCE_TexData_Unmofidied (SCE_STexData *d)
