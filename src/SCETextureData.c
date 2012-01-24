@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 23/01/2012
-   updated: 23/01/2012 */
+   updated: 24/01/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -64,11 +64,11 @@ SCE_STexData* SCE_TexData_Create (void)
         SCE_TexData_Init (d);
     return d;
 }
-SCE_STexData* SCE_TexData_CreateFromImage (SCE_SImage *img)
+SCE_STexData* SCE_TexData_CreateFromImage (SCE_SImage *img, int canfree)
 {
     SCE_STexData *d = NULL;
     if (!(d = SCE_TexData_Create ())) goto fail;
-    if (SCE_TexData_SetImage (d, img) < 0) goto fail;
+    if (SCE_TexData_SetImage (d, img, canfree) < 0) goto fail;
     return d;
 fail:
     SCE_TexData_Delete (d);
@@ -135,7 +135,7 @@ SCE_STexData* SCE_TexData_Dup (SCE_STexData *d)
 }
 
 
-int SCE_TexData_SetImage (SCE_STexData *d, SCE_SImage *img)
+int SCE_TexData_SetImage (SCE_STexData *d, SCE_SImage *img, int canfree)
 {
     d->data_size = SCE_Image_GetDataSize (img);
     d->data_user = SCE_FALSE;
@@ -145,6 +145,7 @@ int SCE_TexData_SetImage (SCE_STexData *d, SCE_SImage *img)
     }
     memcpy (d->data, SCE_Image_GetData (img), d->data_size);
     d->img = img;
+    d->canfree = canfree;
     d->target = SCE_Image_GetType (img);
     d->level = SCE_Image_GetMipmapLevel (img);
     d->w = SCE_Image_GetWidth (img);

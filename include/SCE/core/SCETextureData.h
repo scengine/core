@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 23/01/2012
-   updated: 23/01/2012 */
+   updated: 24/01/2012 */
 
 #ifndef SCETEXTUREDATA_H
 #define SCETEXTUREDATA_H
@@ -63,12 +63,12 @@ struct sce_stexdata {
 void SCE_TexData_Init (SCE_STexData*);
 void SCE_TexData_Clear (SCE_STexData*);
 SCE_STexData* SCE_TexData_Create (void);
-SCE_STexData* SCE_TexData_CreateFromImage (SCE_SImage*);
+SCE_STexData* SCE_TexData_CreateFromImage (SCE_SImage*, int);
 void SCE_TexData_Delete (SCE_STexData*);
 
 SCE_STexData* SCE_TexData_Dup (SCE_STexData*);
 
-int SCE_TexData_SetImage (SCE_STexData*, SCE_SImage*);
+int SCE_TexData_SetImage (SCE_STexData*, SCE_SImage*, int);
 void SCE_TexData_SetTarget (SCE_STexData*, SCEenum);
 void SCE_TexData_SetType (SCE_STexData*, SCE_EImageType);
 void SCE_TexData_SetMipmapLevel (SCE_STexData*, int);
