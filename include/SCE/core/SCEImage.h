@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 28/07/2007
-   updated: 23/01/2012 */
+   updated: 24/01/2012 */
 
 #ifndef SCERIMAGE_H
 #define SCERIMAGE_H
@@ -137,7 +137,7 @@ SCE_EImageType SCE_Image_GetType (SCE_SImage*);
 SCE_EPixelFormat SCE_Image_GetPixelFormat (SCE_SImage*);
 size_t SCE_Image_GetDataSize (SCE_SImage*);
 
-int SCE_Image_GetIsCompressed (SCE_SImage*);
+int SCE_Image_IsCompressed (SCE_SImage*);
 
 void* SCE_Image_GetData (SCE_SImage*);
 

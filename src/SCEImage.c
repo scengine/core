@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 28/07/2007
-   updated: 23/01/2012 */
+   updated: 24/01/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 #include <IL/il.h>
@@ -291,7 +291,7 @@ int SCE_Image_SetMipmapLevel (SCE_SImage *img, unsigned int level)
 
 
 
-static int SCE_RIsCompressedPixelFormat (SCEenum fmt)
+static int SCE_Image_IsCompressedILPixelFormat (SCEenum fmt)
 {
     if (fmt == IL_DXT1 || fmt == IL_DXT2 ||
         fmt == IL_DXT3 || fmt == IL_DXT4 ||
@@ -321,7 +321,7 @@ int SCE_Image_UpdateMipmap (SCE_SImage *img)
         SCE_free (d->data);
     d->data = NULL;
 
-    if (SCE_Image_GetIsCompressed (img)) {
+    if (SCE_Image_IsCompressed (img)) {
         size_t data_size = SCE_Image_GetDataSize (img);
         d->free_data = 1;
         d->data = SCE_malloc (data_size);
@@ -535,7 +535,7 @@ SCE_EPixelFormat SCE_Image_GetPixelFormat (SCE_SImage *img)
 size_t SCE_Image_GetDataSize (SCE_SImage *img)
 {
     SCE_Image_Bind (img);
-    if (SCE_Image_GetIsCompressed (img))
+    if (SCE_Image_IsCompressed (img))
         return ilGetDXTCData (NULL, 0, img->data->pxf);
     else
         return ilGetInteger (IL_IMAGE_SIZE_OF_DATA);
@@ -545,9 +545,9 @@ size_t SCE_Image_GetDataSize (SCE_SImage *img)
  * \brief Indicates if the active mipmap level has a compressed pixel format
  * \returns a boolean
  */
-int SCE_Image_GetIsCompressed (SCE_SImage *img)
+int SCE_Image_IsCompressed (SCE_SImage *img)
 {
-    return SCE_RIsCompressedPixelFormat (img->data->pxf);
+    return SCE_Image_IsCompressedILPixelFormat (img->data->pxf);
 }
 
 /**

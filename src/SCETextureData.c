@@ -154,7 +154,7 @@ int SCE_TexData_SetImage (SCE_STexData *d, SCE_SImage *img, int canfree)
     d->pxf = SCE_Image_GetPixelFormat (img);
     d->data_fmt = SCE_Image_GetFormat (img);
     d->data_type = SCE_Image_GetDataType (img);
-    d->comp = SCE_Image_GetIsCompressed (img);
+    d->comp = SCE_Image_IsCompressed (img);
     return SCE_OK;
 }
 void SCE_TexData_SetTarget (SCE_STexData *d, SCEenum t)
