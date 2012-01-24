@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 11/04/2010
-   updated: 29/10/2010 */
+   updated: 23/01/2012 */
 
 #ifndef SCENGINE_H
 #define SCENGINE_H
@@ -37,6 +37,8 @@
 #include "SCE/core/SCENode.h"
 #include "SCE/core/SCECamera.h"
 #include "SCE/core/SCEGeometry.h"
+#include "SCE/core/SCEImage.h"
+#include "SCE/core/SCETextureData.h"
 #include "SCE/core/SCEGrid.h"
 #include "SCE/core/SCEOBJLoader.h"
 #include "SCE/core/SCESphereGeometry.h"
