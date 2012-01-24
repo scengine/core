@@ -41,13 +41,15 @@ typedef enum {
 } SCE_EImageType;
 
 typedef enum {
-    SCE_IMAGE_RED = 0,
+    SCE_IMAGE_NONE = 0,
+    SCE_IMAGE_RED,
     SCE_IMAGE_RG,
     SCE_IMAGE_RGB,
     SCE_IMAGE_BGR,
     SCE_IMAGE_RGBA,
     SCE_IMAGE_BGRA,
-    /* SCE_IMAGE_DEPTH, SCE_IMAGE_STENCIL */
+    SCE_IMAGE_DEPTH,
+    /* SCE_IMAGE_STENCIL */
     SCE_NUM_IMAGE_FORMATS
 } SCE_EImageFormat;
 
@@ -56,7 +58,8 @@ typedef enum {
  * \warning see SCE_RSCEPxfToGL() before modifying this enum
  */
 typedef enum {
-    SCE_PXF_LUMINANCE = 0,
+    SCE_PXF_NONE = 0,
+    SCE_PXF_LUMINANCE,
     SCE_PXF_LUMINANCE_ALPHA,
     SCE_PXF_RGB,
     SCE_PXF_RGBA,
@@ -66,6 +69,8 @@ typedef enum {
     SCE_PXF_DXT3,
     SCE_PXF_DXT5,
     SCE_PXF_3DC,
+    SCE_PXF_DEPTH24,
+    SCE_PXF_DEPTH32,
     SCE_NUM_PIXEL_FORMATS
 } SCE_EPixelFormat;
 

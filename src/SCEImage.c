@@ -499,7 +499,8 @@ static SCE_EPixelFormat SCE_Image_PxfFromIL (int pxf)
 }
 static int SCE_Image_PxfToIL (SCE_EPixelFormat pxf)
 {
-    int p[10] = {
+    int p[SCE_NUM_PIXEL_FORMATS] = {
+        IL_LUMINANCE,           /* SCE_PXF_NONE */
         IL_LUMINANCE,
         IL_LUMINANCE_ALPHA,
         IL_RGB,
@@ -509,7 +510,9 @@ static int SCE_Image_PxfToIL (SCE_EPixelFormat pxf)
         IL_DXT1,
         IL_DXT3,
         IL_DXT5,
-        IL_3DC
+        IL_3DC,
+        IL_RGB,                 /* depth 24 */
+        IL_RGBA                 /* depth 32 */
     };
     return p[pxf];
 }
