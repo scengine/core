@@ -21,6 +21,8 @@
 
 #include <SCE/utils/SCEUtils.h>
 
+#include "SCE/core/SCEGeometry.h"
+#include "SCE/core/SCETextureData.h"
 #include "SCE/core/SCEGrid.h"
 
 void SCE_Grid_Init (SCE_SGrid *grid)
@@ -218,4 +220,16 @@ fail:
     SCE_Geometry_Delete (geom);
     SCEE_LogSrc ();
     return NULL;
+}
+
+
+void SCE_Grid_ToTexture (const SCE_SGrid *grid, SCE_STexData *tex,
+                         SCE_EPixelFormat pxf)
+{
+    SCE_TexData_SetDataType (tex, grid->type);
+    SCE_TexData_SetDimensions (tex, grid->width, grid->height, grid->depth);
+    SCE_TexData_SetPixelFormat (tex, pxf);
+    SCE_TexData_SetDataFormat (tex, SCE_IMAGE_RED);
+    SCE_TexData_SetType (tex, SCE_IMAGE_3D);
+    SCE_TexData_SetData (tex, grid->data, SCE_FALSE);
 }

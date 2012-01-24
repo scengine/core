@@ -23,6 +23,7 @@
 #define SCEGRID_H
 
 #include "SCE/core/SCEGeometry.h"
+#include "SCE/core/SCETextureData.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +73,8 @@ void SCE_Grid_SetPoint (SCE_SGrid*, int, int, int, void*);
 
 int SCE_Grid_ToGeometry (const SCE_SGrid*, SCE_SGeometry*);
 SCE_SGeometry* SCE_Grid_CreateGeometryFrom (const SCE_SGrid*);
+
+void SCE_Grid_ToTexture (const SCE_SGrid*, SCE_STexData*, SCE_EPixelFormat);
 
 #ifdef __cplusplus
 } /* extern "C" */
