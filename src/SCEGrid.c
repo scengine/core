@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 21/01/2012
-   updated: 22/01/2012 */
+   updated: 24/01/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -137,7 +137,7 @@ fail:
 size_t SCE_Grid_GetOffset (const SCE_SGrid *grid, int x, int y, int z)
 {
     size_t offset;
-    offset = grid->height * (grid->width * z + y) + x;
+    offset = grid->width * (grid->height * z + y) + x;
     return offset;
 }
 
