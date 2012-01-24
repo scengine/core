@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 21/01/2012
-   updated: 22/01/2012 */
+   updated: 24/01/2012 */
 
 #ifndef SCEGRID_H
 #define SCEGRID_H
@@ -67,7 +67,7 @@ void SCE_Grid_Serialize (SCE_SGrid*, SCE_FSerializeGrid, void*);
 
 size_t SCE_Grid_GetOffset (const SCE_SGrid*, int, int, int);
 void SCE_Grid_GetPoint (const SCE_SGrid*, int, int, int, void*);
-void SCE_Grid_SetPoint (const SCE_SGrid*, int, int, int, void*);
+void SCE_Grid_SetPoint (SCE_SGrid*, int, int, int, void*);
 
 int SCE_Grid_ToGeometry (const SCE_SGrid*, SCE_SGeometry*);
 SCE_SGeometry* SCE_Grid_CreateGeometryFrom (const SCE_SGrid*);
