@@ -233,3 +233,67 @@ void SCE_Grid_ToTexture (const SCE_SGrid *grid, SCE_STexData *tex,
     SCE_TexData_SetType (tex, SCE_IMAGE_3D);
     SCE_TexData_SetData (tex, grid->data, SCE_FALSE);
 }
+
+
+void SCE_Grid_UpdateFace (SCE_SGrid *grid, SCE_EBoxFace f, void *data)
+{
+    int x, y, z;
+    unsigned char buffer[64] = {0};   /* let's hope 64 is enough */
+
+    SCE_SGrid g;
+
+    SCE_Grid_Init (&g);
+    SCE_Grid_SetDimensions (&g, grid->width, grid->height, grid->depth);
+    g.type = grid->type;
+    g.data = data;
+
+    x = y = z = 0;
+
+    switch (f) {
+    case SCE_BOX_NEGX:
+        x = grid->width - 1;
+    case SCE_BOX_POSX:
+        g.width = 1;
+        for (z = 0; z < grid->depth; z++) {
+            for (y = 0; y < grid->height; y++) {
+                /* TODO: use of temporary buffer isn't optimized */
+                SCE_Grid_GetPoint (&g, 0, y, z, buffer);
+                SCE_Grid_SetPoint (grid, x, y, z, buffer);
+            }
+        }
+        break;
+
+    case SCE_BOX_NEGY:
+        y = grid->height - 1;
+    case SCE_BOX_POSY:
+        g.height = 1;
+        for (z = 0; z < grid->depth; z++) {
+            for (x = 0; x < grid->width; x++) {
+                SCE_Grid_GetPoint (&g, x, 0, z, buffer);
+                SCE_Grid_SetPoint (grid, x, y, z, buffer);
+            }
+        }
+        break;
+
+    case SCE_BOX_NEGZ:
+        z = grid->depth - 1;
+    case SCE_BOX_POSZ:
+        g.depth = 1;
+        for (y = 0; y < grid->height; y++) {
+            for (x = 0; x < grid->width; x++) {
+                SCE_Grid_GetPoint (&g, x, y, 0, buffer);
+                SCE_Grid_SetPoint (grid, x, y, z, buffer);
+            }
+        }
+        break;
+    }
+
+    switch (f) {
+    case SCE_BOX_NEGX: grid->wrap_x--; break;
+    case SCE_BOX_POSX: grid->wrap_x++; break;
+    case SCE_BOX_NEGY: grid->wrap_y--; break;
+    case SCE_BOX_POSY: grid->wrap_y++; break;
+    case SCE_BOX_NEGZ: grid->wrap_z--; break;
+    case SCE_BOX_POSZ: grid->wrap_z++; break;
+    }
+}
