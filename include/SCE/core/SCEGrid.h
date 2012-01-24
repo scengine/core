@@ -34,6 +34,7 @@ typedef struct sce_sgrid SCE_SGrid;
 struct sce_sgrid {
     void *data;
     int width, height, depth;
+    int wrap_x, wrap_y, wrap_z;
     SCE_EType type;
     int built;
     void *udata;

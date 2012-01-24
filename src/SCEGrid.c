@@ -27,6 +27,7 @@ void SCE_Grid_Init (SCE_SGrid *grid)
 {
     grid->data = NULL;
     grid->width = grid->height = grid->depth = 0;
+    grid->wrap_x = grid->wrap_y = grid->wrap_z = 0;
     grid->type = SCE_BYTE;
     grid->built = SCE_FALSE;
     grid->udata = NULL;
@@ -134,9 +135,14 @@ fail:
 }
 
 
+#define ring(x, w) ((((x) % (w)) + (w)) % (w))
+
 size_t SCE_Grid_GetOffset (const SCE_SGrid *grid, int x, int y, int z)
 {
     size_t offset;
+    x = ring (x + grid->wrap_x, grid->width);
+    y = ring (y + grid->wrap_y, grid->height);
+    z = ring (z + grid->wrap_z, grid->depth);
     offset = grid->width * (grid->height * z + y) + x;
     return offset;
 }
