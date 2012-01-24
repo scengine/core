@@ -251,6 +251,10 @@ void* SCE_TexData_GetData (SCE_STexData *d)
 {
     return d->data;
 }
+int SCE_TexData_IsCompressed (SCE_STexData *d)
+{
+    return d->comp;
+}
 SCE_SListIterator* SCE_TexData_GetIterator (SCE_STexData *d)
 {
     return &d->it;

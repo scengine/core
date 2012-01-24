@@ -93,6 +93,7 @@ SCE_EImageFormat SCE_TexData_GetDataFormat (const SCE_STexData*);
 SCE_EType SCE_TexData_GetDataType (const SCE_STexData*);
 size_t SCE_TexData_GetDataSize (const SCE_STexData*);
 void* SCE_TexData_GetData (SCE_STexData*);
+int SCE_TexData_IsCompressed (SCE_STexData*);
 SCE_SListIterator* SCE_TexData_GetIterator (SCE_STexData*);
 
 void SCE_TexData_Modified1 (SCE_STexData*, int, int);
