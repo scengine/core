@@ -55,6 +55,8 @@ AC_DEFINE([FFM_VERSION_STRING], ["0.1"], [Version of the FFM sublib])
 dnl check for libs & headers
 
 SCE_CHECK_PTHREAD
+SCE_CHECK_IL
+SCE_CHECK_ILU
 PKG_CHECK_MODULES([SCE_UTILS], [sceutils])
 
 dnl Checks for header files.
