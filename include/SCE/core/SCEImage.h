@@ -22,8 +22,6 @@
 #ifndef SCERIMAGE_H
 #define SCERIMAGE_H
 
-#include <IL/il.h>
-#include <IL/ilu.h>
 #include <SCE/utils/SCEUtils.h>
 
 #ifdef __cplusplus
@@ -96,7 +94,7 @@ struct sce_simagedata {
  */
 typedef struct sce_simage SCE_SImage;
 struct sce_simage {
-    ILuint id;            /**< DevIL's identifier */
+    SCEuint id;           /**< DevIL's identifier */
     SCE_SList mipmaps;    /**< All mipmap levels \sa SCE_SImageData  */
     unsigned int level;   /**< Activated mipmap level */
     SCE_SImageData *data; /**< Activated mipmap level's data */
