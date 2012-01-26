@@ -188,9 +188,9 @@ int SCE_Grid_ToGeometry (const SCE_SGrid *grid, SCE_SGeometry *geom)
             for (x = 0; x < g.width; x++) {
                 size_t offset = SCE_Grid_GetOffset (&g, x, y, z);
                 offset *= size;
-                vertices[offset + 0] = (float)x / g.width;
-                vertices[offset + 1] = (float)y / g.height;
-                vertices[offset + 2] = (float)z / g.depth;
+                vertices[offset + 0] = (float)x / grid->width;
+                vertices[offset + 1] = (float)y / grid->height;
+                vertices[offset + 2] = (float)z / grid->depth;
             }
         }
     }
