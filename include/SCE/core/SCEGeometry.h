@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 25/07/2009
-   updated: 17/04/2010 */
+   updated: 29/01/2012 */
 
 #ifndef SCEGEOMETRY_H
 #define SCEGEOMETRY_H
@@ -313,6 +313,7 @@ void SCE_Geometry_SetNumIndices (SCE_SGeometry*, size_t);
 
 size_t SCE_Geometry_GetNumVertices (SCE_SGeometry*);
 size_t SCE_Geometry_GetNumIndices (SCE_SGeometry*);
+size_t SCE_Geometry_GetPrimitiveVertices (SCE_EPrimitiveType);
 size_t SCE_Geometry_GetNumVerticesPerPrimitive (SCE_SGeometry*);
 size_t SCE_Geometry_GetNumPrimitives (SCE_SGeometry*);
 

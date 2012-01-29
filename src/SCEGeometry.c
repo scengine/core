@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2011  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 25/07/2009
-   updated: 23/10/2011 */
+   updated: 29/01/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -997,14 +997,15 @@ size_t SCE_Geometry_GetNumIndices (SCE_SGeometry *geom)
     return geom->n_indices;
 }
 /**
- * \brief Gets the number of vertices used for each primitive (or 'face'),
+ * \brief Gets the number of vertices for the given primitive type
  * 3 for triangles, 2 for lines, etc.
- * \sa SCE_Geometry_GetNumPrimitives()
+ * \sa SCE_Geometry_GetNumVerticesPerPrimitive(),
+ * SCE_Geometry_GetNumPrimitives()
  */
-size_t SCE_Geometry_GetNumVerticesPerPrimitive (SCE_SGeometry *geom)
+size_t SCE_Geometry_GetPrimitiveVertices (SCE_EPrimitiveType prim)
 {
     size_t vpp = 0;
-    switch (geom->prim) {
+    switch (prim) {
     case SCE_POINTS:         vpp = 1; break;
     case SCE_LINES:          vpp = 2; break;
     case SCE_TRIANGLES:      vpp = 3; break;
@@ -1016,6 +1017,15 @@ size_t SCE_Geometry_GetNumVerticesPerPrimitive (SCE_SGeometry *geom)
 #endif
     }
     return vpp;
+}
+/**
+ * \brief Gets the number of vertices used for each primitive (or 'face'),
+ * 3 for triangles, 2 for lines, etc.
+ * \sa SCE_Geometry_GetPrimitiveVertices(), SCE_Geometry_GetNumPrimitives()
+ */
+size_t SCE_Geometry_GetNumVerticesPerPrimitive (SCE_SGeometry *geom)
+{
+    return SCE_Geometry_GetPrimitiveVertices (geom->prim);
 }
 /**
  * \brief Gets the total number of primitives of a geometry
