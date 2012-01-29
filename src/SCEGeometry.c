@@ -1093,21 +1093,23 @@ SCE_SGeometry* SCE_Geometry_Load (const char *fname, int force)
 void SCE_Geometry_ComputeBoundingBox (SCEvertices *v, size_t vcount,
                                       size_t stride, SCE_SBox *box)
 {
-    SCE_TVector3 max = {0., 0., 0.};
-    SCE_TVector3 min = {0., 0., 0.};
-    size_t i, count;
-    char *cv = (char*)v;
+    if (vcount > 0) {
+        SCE_TVector3 max = {0., 0., 0.};
+        SCE_TVector3 min = {0., 0., 0.};
+        size_t i, count;
+        char *cv = (char*)v;
 
-    /* TODO: use a "Rectangle3D" ? */
-    count = vcount * stride;
-    SCE_Vector3_Copy (min, (float*)cv);
-    SCE_Vector3_Copy (max, min);
-    for (i = stride; i < count; i += stride) {
-        /* TODO: float type used for vectors */
-        SCE_Vector3_GetMin (min, min, (float*)&cv[i]);
-        SCE_Vector3_GetMax (max, max, (float*)&cv[i]);
+        /* TODO: use a "Rectangle3D" ? */
+        count = vcount * stride;
+        SCE_Vector3_Copy (min, (float*)cv);
+        SCE_Vector3_Copy (max, min);
+        for (i = stride; i < count; i += stride) {
+            /* TODO: float type used for vectors */
+            SCE_Vector3_GetMin (min, min, (float*)&cv[i]);
+            SCE_Vector3_GetMax (max, max, (float*)&cv[i]);
+        }
+        SCE_Box_SetFromMinMax (box, min, max);
     }
-    SCE_Box_SetFromMinMax (box, min, max);
 }
 /**
  * \brief Computes a bounding sphere from a lot of vertices
