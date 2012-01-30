@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 25/07/2009
-   updated: 29/01/2012 */
+   updated: 30/01/2012 */
 
 #ifndef SCEGEOMETRY_H
 #define SCEGEOMETRY_H
@@ -95,7 +95,12 @@ enum sce_evertexattribute {
     SCE_POSITION = 1,
     SCE_COLOR,
     SCE_NORMAL,
+    /* integer (only works when using shader attributes mapping) */
+    SCE_IPOSITION,
+    SCE_ICOLOR,
+    SCE_INORMAL,
 
+    /* TODO: add integers for those */
     SCE_TEXCOORD0,
     SCE_TEXCOORD1,
     SCE_TEXCOORD2,
@@ -122,7 +127,25 @@ enum sce_evertexattribute {
     SCE_ATTRIB12,
     SCE_ATTRIB13,
     SCE_ATTRIB14,
-    SCE_ATTRIB15
+    SCE_ATTRIB15,
+
+    /* integer attributes */
+    SCE_IATTRIB0,
+    SCE_IATTRIB1,
+    SCE_IATTRIB2,
+    SCE_IATTRIB3,
+    SCE_IATTRIB4,
+    SCE_IATTRIB5,
+    SCE_IATTRIB6,
+    SCE_IATTRIB7,
+    SCE_IATTRIB8,
+    SCE_IATTRIB9,
+    SCE_IATTRIB10,
+    SCE_IATTRIB11,
+    SCE_IATTRIB12,
+    SCE_IATTRIB13,
+    SCE_IATTRIB14,
+    SCE_IATTRIB15
 };
 /** \copydoc sce_evertexattribute */
 typedef enum sce_evertexattribute SCE_EVertexAttribute;
