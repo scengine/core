@@ -17,8 +17,9 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 21/01/2012
-   updated: 24/01/2012 */
+   updated: 02/02/2012 */
 
+#include <string.h>             /* memcpy() */
 #include <SCE/utils/SCEUtils.h>
 
 #include "SCE/core/SCEGeometry.h"
@@ -54,6 +55,19 @@ void SCE_Grid_Delete (SCE_SGrid *grid)
         SCE_free (grid);
     }
 }
+
+
+/**
+ * \brief Copies the data from one grid to another,
+ * assumes dimensions are identical
+ * \param dst destination grid
+ * \param src source grid
+ */
+void SCE_Grid_CopyData (SCE_SGrid *dst, const SCE_SGrid *src)
+{
+    memcpy (dst->data, src->data, SCE_Grid_GetSize (dst));
+}
+
 
 void SCE_Grid_SetType (SCE_SGrid *grid, SCE_EType type)
 {

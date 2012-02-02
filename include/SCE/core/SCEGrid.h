@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 21/01/2012
-   updated: 24/01/2012 */
+   updated: 02/02/2012 */
 
 #ifndef SCEGRID_H
 #define SCEGRID_H
@@ -45,6 +45,8 @@ void SCE_Grid_Init (SCE_SGrid*);
 void SCE_Grid_Clear (SCE_SGrid*);
 SCE_SGrid* SCE_Grid_Create (void);
 void SCE_Grid_Delete (SCE_SGrid*);
+
+void SCE_Grid_CopyData (SCE_SGrid*, const SCE_SGrid*);
 
 void SCE_Grid_SetType (SCE_SGrid*, SCE_EType);
 void SCE_Grid_SetDimensions (SCE_SGrid*, int, int, int);
