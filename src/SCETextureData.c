@@ -110,7 +110,7 @@ void SCE_TexData_Copy (SCE_STexData *dst, const SCE_STexData *src)
  * This function duplicates the data of the texture but not the image.
  * \returns the copy of \p d
  */
-SCE_STexData* SCE_TexData_Dup (SCE_STexData *d)
+SCE_STexData* SCE_TexData_Dup (const SCE_STexData *d)
 {
     SCE_STexData *data = NULL;
 

@@ -66,7 +66,7 @@ SCE_STexData* SCE_TexData_Create (void);
 SCE_STexData* SCE_TexData_CreateFromImage (SCE_SImage*, int);
 void SCE_TexData_Delete (SCE_STexData*);
 
-SCE_STexData* SCE_TexData_Dup (SCE_STexData*);
+SCE_STexData* SCE_TexData_Dup (const SCE_STexData*);
 
 int SCE_TexData_SetImage (SCE_STexData*, SCE_SImage*, int);
 void SCE_TexData_SetTarget (SCE_STexData*, SCEenum);
