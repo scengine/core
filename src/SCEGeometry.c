@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 25/07/2009
-   updated: 29/01/2012 */
+   updated: 02/02/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -177,7 +177,7 @@ static void SCE_Geometry_FreeArray (void *array)
 {
     SCE_Geometry_DeleteArray (array);
 }
-static void SCE_Geometry_Init (SCE_SGeometry *geom)
+void SCE_Geometry_Init (SCE_SGeometry *geom)
 {
     SCE_List_Init (&geom->arrays);
     SCE_List_SetFreeFunc (&geom->arrays, SCE_Geometry_FreeArray);
@@ -198,6 +198,18 @@ static void SCE_Geometry_Init (SCE_SGeometry *geom)
     SCE_Sphere_Init (&geom->sphere);
     geom->box_uptodate = geom->sphere_uptodate = SCE_FALSE;
 }
+static void SCE_Geometry_DeleteIndexArray (SCE_SGeometry *geom)
+{
+    if (geom->canfree_index)
+        SCE_Geometry_DeleteArray (geom->index_array);
+}
+void SCE_Geometry_Clear (SCE_SGeometry *geom)
+{
+    SCE_List_Clear (&geom->arrays);
+    SCE_List_Clear (&geom->modified);
+    SCE_Geometry_DeleteIndexArray (geom);
+}
+
 SCE_SGeometry* SCE_Geometry_Create (void)
 {
     SCE_SGeometry *geom = NULL;
@@ -207,18 +219,11 @@ SCE_SGeometry* SCE_Geometry_Create (void)
         SCE_Geometry_Init (geom);
     return geom;
 }
-static void SCE_Geometry_DeleteIndexArray (SCE_SGeometry *geom)
-{
-    if (geom->canfree_index)
-        SCE_Geometry_DeleteArray (geom->index_array);
-}
 void SCE_Geometry_Delete (SCE_SGeometry *geom)
 {
     if (geom) {
         if (SCE_Resource_Free (geom)) {
-            SCE_List_Clear (&geom->arrays);
-            SCE_List_Clear (&geom->modified);
-            SCE_Geometry_DeleteIndexArray (geom);
+            SCE_Geometry_Clear (geom);
             SCE_free (geom);
         }
     }

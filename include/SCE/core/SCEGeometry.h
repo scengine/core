@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 25/07/2009
-   updated: 30/01/2012 */
+   updated: 02/02/2012 */
 
 #ifndef SCEGEOMETRY_H
 #define SCEGEOMETRY_H
@@ -255,6 +255,8 @@ SCE_SGeometryArrayUser* SCE_Geometry_CreateArrayUser (void);
 void SCE_Geometry_ClearArrayUser (SCE_SGeometryArrayUser*);
 void SCE_Geometry_DeleteArrayUser (SCE_SGeometryArrayUser*);
 
+void SCE_Geometry_Init (SCE_SGeometry*);
+void SCE_Geometry_Clear (SCE_SGeometry*);
 SCE_SGeometry* SCE_Geometry_Create (void);
 void SCE_Geometry_Delete (SCE_SGeometry*);
 
