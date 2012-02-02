@@ -78,7 +78,7 @@ SCE_SGeometry* SCE_Grid_CreateGeometryFrom (const SCE_SGrid*);
 
 void SCE_Grid_ToTexture (const SCE_SGrid*, SCE_STexData*, SCE_EPixelFormat);
 
-void SCE_Grid_UpdateFace (SCE_SGrid*, SCE_EBoxFace, void*);
+void SCE_Grid_UpdateFace (SCE_SGrid*, SCE_EBoxFace, const void*);
 
 #ifdef __cplusplus
 } /* extern "C" */

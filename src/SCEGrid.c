@@ -249,7 +249,7 @@ void SCE_Grid_ToTexture (const SCE_SGrid *grid, SCE_STexData *tex,
 }
 
 
-void SCE_Grid_UpdateFace (SCE_SGrid *grid, SCE_EBoxFace f, void *data)
+void SCE_Grid_UpdateFace (SCE_SGrid *grid, SCE_EBoxFace f, const void *data)
 {
     int x, y, z;
     unsigned char buffer[64] = {0};   /* let's hope 64 is enough */
