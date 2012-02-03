@@ -131,6 +131,19 @@ void* SCE_Grid_GetData (SCE_SGrid *grid)
 }
 
 
+static void SCE_Grid_FillupZeros (SCE_SGrid *grid)
+{
+    unsigned char buf[256] = {0};
+    int x, y, z;
+
+    for (z = 0; z < grid->depth; z++) {
+        for (y = 0; y < grid->height; y++) {
+            for (x = 0; x < grid->width; x++)
+                SCE_Grid_SetPoint (grid, x, y, z, buf);
+        }
+    }
+}
+
 int SCE_Grid_Build (SCE_SGrid *grid)
 {
     size_t size;
@@ -142,7 +155,9 @@ int SCE_Grid_Build (SCE_SGrid *grid)
     if (!(grid->data = SCE_malloc (size)))
         goto fail;
 
-    /* TODO: fillup the grid with something */
+    SCE_Grid_FillupZeros (grid);
+
+    grid->built = SCE_TRUE;
 
     return SCE_OK;
 fail:
