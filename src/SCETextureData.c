@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 23/01/2012
-   updated: 24/01/2012 */
+   updated: 04/02/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -251,9 +251,14 @@ void* SCE_TexData_GetData (SCE_STexData *d)
 {
     return d->data;
 }
+/* TODO: d->comp is only set when using images */
 int SCE_TexData_IsCompressed (SCE_STexData *d)
 {
     return d->comp;
+}
+int SCE_TexData_IsDepthFormat (SCE_STexData *d)
+{
+    return d->pxf == SCE_PXF_DEPTH24 || d->pxf == SCE_PXF_DEPTH32;
 }
 SCE_SListIterator* SCE_TexData_GetIterator (SCE_STexData *d)
 {
