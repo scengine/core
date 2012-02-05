@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 23/01/2012
-   updated: 04/02/2012 */
+   updated: 05/02/2012 */
 
 #ifndef SCETEXTUREDATA_H
 #define SCETEXTUREDATA_H
@@ -45,7 +45,7 @@ struct sce_stexdata {
     int level;        /**< Mipmap level of this texture data */
     int w, h, d;      /**< Image's dimensions */
     SCE_EPixelFormat pxf; /**< Desired internal (in VRAM) pixel format */
-    SCEenum data_fmt;     /**< Format of \c data */
+    SCE_EImageFormat data_fmt;  /**< Format of \c data */
     SCE_EType data_type; /**< Type of \c data (SCE_UNSIGNED_BYTE, ...) */
     size_t data_size; /**< Size of \c data in bytes */
     int data_user;    /**< Is user the owner of \c data ? */
