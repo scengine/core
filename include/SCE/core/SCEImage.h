@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 28/07/2007
-   updated: 24/01/2012 */
+   updated: 05/02/2012 */
 
 #ifndef SCERIMAGE_H
 #define SCERIMAGE_H
@@ -48,6 +48,13 @@ typedef enum {
     SCE_IMAGE_BGRA,
     SCE_IMAGE_DEPTH,
     /* SCE_IMAGE_STENCIL */
+    /* integers versions */
+    SCE_IMAGE_REDI,
+    SCE_IMAGE_RGI,
+    SCE_IMAGE_RGBI,
+    SCE_IMAGE_BGRI,
+    SCE_IMAGE_RGBAI,
+    SCE_IMAGE_BGRAI,
     SCE_NUM_IMAGE_FORMATS
 } SCE_EImageFormat;
 
