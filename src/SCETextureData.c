@@ -151,6 +151,7 @@ int SCE_TexData_SetImage (SCE_STexData *d, SCE_SImage *img, int canfree)
     d->w = SCE_Image_GetWidth (img);
     d->h = SCE_Image_GetHeight (img);
     d->d = SCE_Image_GetDepth (img);
+    /* NOTE: warning, not calling SCE_TexData_SetPixelFormat() */
     d->pxf = SCE_Image_GetPixelFormat (img);
     d->data_fmt = SCE_Image_GetFormat (img);
     d->data_type = SCE_Image_GetDataType (img);
@@ -185,13 +186,32 @@ void SCE_TexData_SetDepth (SCE_STexData *td, int d)
 {
     td->d = d;
 }
+static SCE_EImageFormat SCE_TexData_ToIntegerFormat (SCE_EImageFormat fmt)
+{
+    switch (fmt) {
+    case SCE_IMAGE_REDI:
+    case SCE_IMAGE_RGI:
+    case SCE_IMAGE_RGBI:
+    case SCE_IMAGE_BGRI:
+    case SCE_IMAGE_RGBAI:
+    case SCE_IMAGE_BGRAI:
+        return fmt;
+    default:
+        return fmt + SCE_IMAGE_REDI - 1;
+    }
+}
 void SCE_TexData_SetPixelFormat (SCE_STexData *d, SCE_EPixelFormat p)
 {
     d->pxf = p;
+    if (SCE_TexData_IsPixelFormatInteger (p))
+        d->data_fmt = SCE_TexData_ToIntegerFormat (d->data_fmt);
 }
 void SCE_TexData_SetDataFormat (SCE_STexData *d, SCE_EImageFormat f)
 {
-    d->data_fmt = f;
+    if (SCE_TexData_IsPixelFormatInteger (d->pxf))
+        d->data_fmt = SCE_TexData_ToIntegerFormat (f);
+    else
+        d->data_fmt = f;
 }
 void SCE_TexData_SetDataType (SCE_STexData *d, SCE_EType t)
 {
