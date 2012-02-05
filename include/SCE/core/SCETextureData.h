@@ -97,6 +97,8 @@ int SCE_TexData_IsCompressed (SCE_STexData*);
 int SCE_TexData_IsDepthFormat (SCE_STexData*);
 SCE_SListIterator* SCE_TexData_GetIterator (SCE_STexData*);
 
+int SCE_TexData_IsPixelFormatInteger (SCE_EPixelFormat);
+
 void SCE_TexData_Modified1 (SCE_STexData*, int, int);
 void SCE_TexData_Modified2 (SCE_STexData*, int, int, int, int);
 void SCE_TexData_Modified3 (SCE_STexData*, int, int, int, int, int, int);

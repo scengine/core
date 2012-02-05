@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 23/01/2012
-   updated: 04/02/2012 */
+   updated: 05/02/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -263,6 +263,16 @@ int SCE_TexData_IsDepthFormat (SCE_STexData *d)
 SCE_SListIterator* SCE_TexData_GetIterator (SCE_STexData *d)
 {
     return &d->it;
+}
+
+int SCE_TexData_IsPixelFormatInteger (SCE_EPixelFormat pxf)
+{
+    switch (pxf) {
+    case SCE_PXF_R32UI:
+        return SCE_TRUE;
+    default:
+        return SCE_FALSE;
+    }
 }
 
 void SCE_TexData_Modified1 (SCE_STexData *d, int x, int w)
