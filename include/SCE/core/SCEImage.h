@@ -77,6 +77,7 @@ typedef enum {
     SCE_PXF_DEPTH24,
     SCE_PXF_DEPTH32,
     SCE_PXF_R32UI,
+    SCE_PXF_RGBA8UI,
     SCE_NUM_PIXEL_FORMATS
 } SCE_EPixelFormat;
 
