@@ -205,7 +205,6 @@ int SCE_Grid_ToGeometry (const SCE_SGrid *grid, SCE_SGeometry *geom)
     const int size = 3;
 
     g = *grid;
-    g.width--; g.height--; g.depth--;
     g.wrap_x = g.wrap_y = g.wrap_z = 0;
     n_points = SCE_Grid_GetNumPoints (&g);
 
