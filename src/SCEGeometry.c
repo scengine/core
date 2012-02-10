@@ -476,6 +476,7 @@ void SCE_Geometry_SetArrayIndices (SCE_SGeometryArray *array, SCE_EType type,
 {
     array->data.type = type;
     array->data.data = data;
+    array->canfree_data = canfree;
 }
 
 /**
@@ -727,6 +728,7 @@ void SCE_Geometry_SetIndexArray (SCE_SGeometry *geom, SCE_SGeometryArray *array,
 /**
  * \brief Duplicates and set an index array
  * \returns the new array, duplicated from \p array
+ * \todo canfree parameter is just completely stupid omg.
  *
  * Duplicates \p array but not its vertex data. \p canfree indicates if
  * SCE_Geometry_Delete() will free the vertex data of \p array.
