@@ -74,7 +74,9 @@ void SCE_Grid_GetPoint (const SCE_SGrid*, int, int, int, void*);
 void SCE_Grid_SetPoint (SCE_SGrid*, int, int, int, void*);
 
 int SCE_Grid_ToGeometry (const SCE_SGrid*, SCE_SGeometry*);
+int SCE_Grid_ToGeometryDiv (const SCE_SGrid*, SCE_SGeometry*, int, int, int);
 SCE_SGeometry* SCE_Grid_CreateGeometryFrom (const SCE_SGrid*);
+SCE_SGeometry* SCE_Grid_CreateGeometryFromDiv (const SCE_SGrid*, int, int, int);
 
 void SCE_Grid_ToTexture (const SCE_SGrid*, SCE_STexData*, SCE_EPixelFormat);
 

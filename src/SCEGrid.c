@@ -198,6 +198,12 @@ void SCE_Grid_SetPoint (SCE_SGrid *grid, int x, int y, int z, void *p)
 
 int SCE_Grid_ToGeometry (const SCE_SGrid *grid, SCE_SGeometry *geom)
 {
+    return SCE_Grid_ToGeometryDiv (grid, geom, grid->width,
+                                   grid->height, grid->depth);
+}
+int SCE_Grid_ToGeometryDiv (const SCE_SGrid *grid, SCE_SGeometry *geom,
+                            int w, int h, int d)
+{
     SCEvertices *vertices = NULL;
     size_t n_points;
     int x, y, z;
@@ -216,9 +222,9 @@ int SCE_Grid_ToGeometry (const SCE_SGrid *grid, SCE_SGeometry *geom)
             for (x = 0; x < g.width; x++) {
                 size_t offset = SCE_Grid_GetOffset (&g, x, y, z);
                 offset *= size;
-                vertices[offset + 0] = (float)x / grid->width;
-                vertices[offset + 1] = (float)y / grid->height;
-                vertices[offset + 2] = (float)z / grid->depth;
+                vertices[offset + 0] = (float)x / w;
+                vertices[offset + 1] = (float)y / h;
+                vertices[offset + 2] = (float)z / d;
             }
         }
     }
@@ -238,10 +244,16 @@ fail:
 
 SCE_SGeometry* SCE_Grid_CreateGeometryFrom (const SCE_SGrid *grid)
 {
+    return SCE_Grid_CreateGeometryFromDiv (grid, grid->width, grid->height,
+                                           grid->depth);
+}
+SCE_SGeometry* SCE_Grid_CreateGeometryFromDiv (const SCE_SGrid *grid,
+                                               int w, int h, int d)
+{
     SCE_SGeometry *geom = NULL;
     if (!(geom = SCE_Geometry_Create ()))
         goto fail;
-    if (SCE_Grid_ToGeometry (grid, geom) < 0)
+    if (SCE_Grid_ToGeometryDiv (grid, geom, w, h, d) < 0)
         goto fail;
     return geom;
 fail:
