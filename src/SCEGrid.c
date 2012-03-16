@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 21/01/2012
-   updated: 02/02/2012 */
+   updated: 17/03/2012 */
 
 #include <string.h>             /* memcpy() */
 #include <SCE/utils/SCEUtils.h>
@@ -166,14 +166,12 @@ fail:
 }
 
 
-#define ring(x, w) ((((x) % (w)) + (w)) % (w))
-
 size_t SCE_Grid_GetOffset (const SCE_SGrid *grid, int x, int y, int z)
 {
     size_t offset;
-    x = ring (x + grid->wrap_x, grid->width);
-    y = ring (y + grid->wrap_y, grid->height);
-    z = ring (z + grid->wrap_z, grid->depth);
+    x = SCE_Math_Ring (x + grid->wrap_x, grid->width);
+    y = SCE_Math_Ring (y + grid->wrap_y, grid->height);
+    z = SCE_Math_Ring (z + grid->wrap_z, grid->depth);
     offset = grid->width * (grid->height * z + y) + x;
     return offset;
 }
