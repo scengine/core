@@ -273,6 +273,7 @@ void SCE_Grid_ToTexture (const SCE_SGrid *grid, SCE_STexData *tex,
 }
 
 
+/* TODO: update this, use a more generic design like in VStore */
 void SCE_Grid_UpdateFace (SCE_SGrid *grid, SCE_EBoxFace f, const void *data)
 {
     int x, y, z;

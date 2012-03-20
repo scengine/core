@@ -29,6 +29,7 @@ libscecore_la_SOURCES   = libwar.c \
                           SCETextureData.c \
                           SCEGeometry.c \
                           SCEGrid.c \
+                          SCEVStore.c \
                           SCEOBJLoader.c \
                           SCESphereGeometry.c \
                           SCEBoxGeometry.c \
