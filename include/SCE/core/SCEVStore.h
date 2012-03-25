@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 18/03/2012
-   updated: 24/03/2012 */
+   updated: 25/03/2012 */
 
 #ifndef SCEVSTORE_H
 #define SCEVSTORE_H
@@ -53,6 +53,7 @@ struct sce_svoxelstorage {
     unsigned char *vacuum;      /**< Void voxel */
 
     SCE_SIntRect3 zones[SCE_MAX_UPDATE_ZONES];
+    int zones_level[SCE_MAX_UPDATE_ZONES];
     int last, first;
 };
 
@@ -90,8 +91,11 @@ void SCE_VStore_GetRegion (const SCE_SVoxelStorage*, SCEuint,
 void SCE_VStore_GetGridRegion (const SCE_SVoxelStorage*, SCEuint,
                                const SCE_SIntRect3*, SCE_SGrid*, int, int, int);
 
-void SCE_VStore_ForceUpdate (SCE_SVoxelStorage*, const SCE_SIntRect3*);
+void SCE_VStore_ForceUpdate (SCE_SVoxelStorage*, const SCE_SIntRect3*, int);
 int SCE_VStore_GetNextUpdatedZone (SCE_SVoxelStorage*, SCE_SIntRect3*);
+
+void SCE_VStore_GenerateLOD (SCE_SVoxelStorage*, SCEuint, const SCE_SIntRect3*,
+                             SCE_SIntRect3*);
 
 #ifdef __cplusplus
 } /* extern "C" */

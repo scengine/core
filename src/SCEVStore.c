@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 18/03/2012
-   updated: 24/03/2012 */
+   updated: 25/03/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -42,8 +42,10 @@ void SCE_VStore_Init (SCE_SVoxelStorage *vs)
     vs->data_size = 0;
     vs->width = vs->height = vs->depth = 0;
     vs->vacuum = NULL;
-    for (i = 0; i < SCE_MAX_UPDATE_ZONES; i++)
+    for (i = 0; i < SCE_MAX_UPDATE_ZONES; i++) {
         SCE_Rectangle3_Init (&vs->zones[i]);
+        vs->zones_level[i] = 0;
+    }
     vs->last = vs->first = 0;
 }
 void SCE_VStore_Clear (SCE_SVoxelStorage *vs)
@@ -195,19 +197,21 @@ fail:
 
 
 static void SCE_VStore_PushZone (SCE_SVoxelStorage *vs,
-                                 const SCE_SIntRect3 *r)
+                                 const SCE_SIntRect3 *r, int level)
 {
     vs->zones[vs->last] = *r;
+    vs->zones_level[vs->last] = level;
     vs->last = SCE_Math_Ring (vs->last + 1, SCE_MAX_UPDATE_ZONES);
 }
 static int SCE_VStore_PopZone (SCE_SVoxelStorage *vs, SCE_SIntRect3 *r)
 {
     if (vs->first == vs->last)
-        return SCE_FALSE;
+        return -1;
     else {
+        int level = vs->zones_level[vs->first];
         *r = vs->zones[vs->first];
         vs->first = SCE_Math_Ring (vs->first + 1, SCE_MAX_UPDATE_ZONES);
-        return SCE_TRUE;
+        return level;
     }
 }
 
@@ -225,7 +229,7 @@ void SCE_VStore_SetPoint (SCE_SVoxelStorage *vs, SCEuint x, SCEuint y,
     offset = getoffset (vs, 0, x, y, z);
     memcpy (&vs->levels[0].data[offset], data, vs->data_size);
     SCE_Rectangle3_Set (&r, x, y, z, x+1, y+1, z+1);
-    SCE_VStore_PushZone (vs, &r);
+    SCE_VStore_PushZone (vs, &r, 0);
 }
 void SCE_VStore_GetPoint (const SCE_SVoxelStorage *vs, SCEuint level,
                           SCEuint x, SCEuint y, SCEuint z, void *data)
@@ -277,7 +281,7 @@ void SCE_VStore_SetRegion (SCE_SVoxelStorage *vs, const SCE_SIntRect3 *area_,
         }
     }
 
-    SCE_VStore_PushZone (vs, &area);
+    SCE_VStore_PushZone (vs, &area, 0);
 }
 
 void SCE_VStore_GetRegion (const SCE_SVoxelStorage *vs, SCEuint level,
@@ -380,11 +384,86 @@ void SCE_VStore_GetGridRegion (const SCE_SVoxelStorage *vs, SCEuint level,
 }
 
 
-void SCE_VStore_ForceUpdate (SCE_SVoxelStorage *vs, const SCE_SIntRect3 *r)
+void SCE_VStore_ForceUpdate (SCE_SVoxelStorage *vs, const SCE_SIntRect3 *r,
+                             int level)
 {
-    SCE_VStore_PushZone (vs, r);
+    SCE_VStore_PushZone (vs, r, level);
 }
 int SCE_VStore_GetNextUpdatedZone (SCE_SVoxelStorage *vs, SCE_SIntRect3 *zone)
 {
     return SCE_VStore_PopZone (vs, zone);
+}
+
+static void SCE_VStore_ComputeLOD (SCE_SVoxelStorage *vs, SCEuint level,
+                                   int x, int y, int z)
+{
+    unsigned char buf[28] = {0}; /* pray the Lord that data_size = 1 */
+    float kernel[28] = {
+        /* slice 0 */
+        1.0/8.0, 1.0/4.0, 1.0/8.0,
+        1.0/4.0, 1.0/2.0, 1.0/4.0,
+        1.0/8.0, 1.0/4.0, 1.0/8.0,
+
+        /* slice 1 */
+        1.0/4.0, 1.0/2.0, 1.0/4.0,
+        1.0/2.0, 1.0/1.0, 1.0/2.0,
+        1.0/4.0, 1.0/2.0, 1.0/4.0,
+
+        /* slice 2 */
+        1.0/8.0, 1.0/4.0, 1.0/8.0,
+        1.0/4.0, 1.0/2.0, 1.0/4.0,
+        1.0/8.0, 1.0/4.0, 1.0/8.0,
+    };
+    int p1[3], p2[3];
+    SCE_SIntRect3 r;
+    float value = 0.0;
+    size_t offset;
+    int i;
+
+    p1[0] = x * 2 - 1;
+    p1[1] = y * 2 - 1;
+    p1[2] = z * 2 - 1;
+    p2[0] = x * 2 + 2;
+    p2[1] = y * 2 + 2;
+    p2[2] = z * 2 + 2;
+
+    SCE_Rectangle3_Setv (&r, p1, p2);
+    SCE_VStore_GetRegion (vs, level - 1, &r, buf);
+
+    for (i = 0; i < 28; i++)
+        value += (kernel[i] * buf[i]) / 256.0;
+
+    value /= 8.0;
+
+    offset = getoffset (vs, level, x, y, z);
+    vs->levels[level].data[offset] = value * 256.0;
+}
+
+void SCE_VStore_GenerateLOD (SCE_SVoxelStorage *vs, SCEuint level,
+                             const SCE_SIntRect3 *zone, SCE_SIntRect3 *updated)
+{
+    int i;
+    int x, y, z;
+    SCE_SIntRect3 r;
+    int p1[3], p2[3];
+
+    r = *zone;
+    SCE_Rectangle3_GetPointsv (&r, p1, p2);
+    for (i = 0; i < 3; i++) {
+        p1[i] = p1[i] / 2;
+        p2[i] = (p2[i] + 1) / 2;
+    }
+    SCE_Rectangle3_Setv (&r, p1, p2);
+
+    for (z = p1[2]; z < p2[2]; z++) {
+        for (y = p1[1]; y < p2[1]; y++) {
+            for (x = p1[0]; x < p2[0]; x++) {
+                SCE_VStore_ComputeLOD (vs, level, x, y, z);
+            }
+        }
+    }
+
+    SCE_VStore_PushZone (vs, &r, level);
+    if (updated)
+        *updated = r;
 }
