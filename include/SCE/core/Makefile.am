@@ -14,7 +14,7 @@ sce_include_core_HEADERS = lib4fm.h \
                            SCETextureData.h \
                            SCEGeometry.h \
                            SCEGrid.h \
-                           SCEVStore.h \
+                           SCEVoxelStore.h \
                            SCEOBJLoader.h \
                            SCEOctree.h \
                            SCESphereGeometry.h \

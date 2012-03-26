@@ -19,8 +19,8 @@
 /* created: 18/03/2012
    updated: 25/03/2012 */
 
-#ifndef SCEVSTORE_H
-#define SCEVSTORE_H
+#ifndef SCEVOXELSTORE_H
+#define SCEVOXELSTORE_H
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGrid.h"

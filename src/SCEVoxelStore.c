@@ -21,7 +21,7 @@
 
 #include <SCE/utils/SCEUtils.h>
 
-#include "SCE/core/SCEVStore.h"
+#include "SCE/core/SCEVoxelStore.h"
 
 static void SCE_VStore_InitLevel (SCE_SVoxelStorageLevel *sl)
 {
