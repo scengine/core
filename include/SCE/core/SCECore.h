@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 11/04/2010
-   updated: 19/03/2012 */
+   updated: 29/03/2012 */
 
 #ifndef SCENGINE_H
 #define SCENGINE_H
@@ -41,6 +41,7 @@
 #include "SCE/core/SCETextureData.h"
 #include "SCE/core/SCEGrid.h"
 #include "SCE/core/SCEVoxelStore.h"
+#include "SCE/core/SCEMarchingTetrahedra.h"
 #include "SCE/core/SCEOBJLoader.h"
 #include "SCE/core/SCESphereGeometry.h"
 #include "SCE/core/SCEBoxGeometry.h"
