@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 28/03/2012
-   updated: 29/03/2012 */
+   updated: 30/03/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -68,7 +68,7 @@ static size_t SCE_MT_Tetrahedron (SCEvertices *v, const int code,
 
     /* frontfacing triangles are clockwise */
     const int lt_triangles[N_CASES * 4] = {
-        // 3210 vertex index
+                                    // 3210 vertex index
         0, 0, 0, 0,                 // 0000
         0, 1, 2, 0,                 // 0001
         0, 3, 4, 0,                 // 0010
@@ -100,6 +100,7 @@ static size_t SCE_MT_Tetrahedron (SCEvertices *v, const int code,
     int i, index, v1, v2;
     size_t offset = 0;
 
+#if 0
     for (i = 0; i < 3; i++, offset++) {
         index = lt_triangles[code * 4 + i];
         v1 = lt_edges[index * 2];
@@ -117,6 +118,26 @@ static size_t SCE_MT_Tetrahedron (SCEvertices *v, const int code,
             vlerp (&v[offset * 3], p[v1], p[v2], d[v1], d[v2]);
         }
     }
+#else
+    /* counter-clockwise (wtf ?) */
+    for (i = 2; i >= 0; i--, offset++) {
+        index = lt_triangles[code * 4 + i];
+        v1 = lt_edges[index * 2];
+        v2 = lt_edges[index * 2 + 1];
+        vlerp (&v[offset * 3], p[v1], p[v2], d[v1], d[v2]);
+    }
+
+    if (lt_triangles_count[code]) {
+        SCE_Vector3_Copy (&v[offset * 3], &v[(offset - 1) * 3]);
+        offset++;
+        for (i = 3; i >= 2; i--, offset++) {
+            index = lt_triangles[code * 4 + i];
+            v1 = lt_edges[index * 2];
+            v2 = lt_edges[index * 2 + 1];
+            vlerp (&v[offset * 3], p[v1], p[v2], d[v1], d[v2]);
+        }
+    }
+#endif
 
     return offset;
 }
