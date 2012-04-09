@@ -512,7 +512,19 @@ static int SCE_Image_PxfToIL (SCE_EPixelFormat pxf)
         IL_DXT5,
         IL_3DC,
         IL_RGB,                 /* depth 24 */
-        IL_RGBA                 /* depth 32 */
+        IL_RGBA,                /* depth 32 */
+        /* ming face. */
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA,
+        IL_RGBA
     };
     return p[pxf];
 }
