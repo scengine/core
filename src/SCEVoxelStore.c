@@ -467,3 +467,13 @@ void SCE_VStore_GenerateLOD (SCE_SVoxelStorage *vs, SCEuint level,
     if (updated)
         *updated = r;
 }
+
+void SCE_VStore_GenerateAllLOD (SCE_SVoxelStorage *vs, SCEuint level,
+                                const SCE_SIntRect3 *zone)
+{
+    SCEuint i;
+    SCE_SIntRect3 area = *zone;
+
+    for (i = level; i < vs->n_lod; i++)
+        SCE_VStore_GenerateLOD (vs, i, &area, &area);
+}

@@ -96,6 +96,7 @@ int SCE_VStore_GetNextUpdatedZone (SCE_SVoxelStorage*, SCE_SIntRect3*);
 
 void SCE_VStore_GenerateLOD (SCE_SVoxelStorage*, SCEuint, const SCE_SIntRect3*,
                              SCE_SIntRect3*);
+void SCE_VStore_GenerateAllLOD (SCE_SVoxelStorage*, SCEuint, const SCE_SIntRect3*);
 
 #ifdef __cplusplus
 } /* extern "C" */
