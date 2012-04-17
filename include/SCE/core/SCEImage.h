@@ -88,6 +88,8 @@ typedef enum {
     SCE_PXF_DEPTH32_STENCIL8,
     SCE_PXF_R32UI,
     SCE_PXF_RGBA8UI,
+    SCE_PXF_R16UI,
+    SCE_PXF_R8UI,
     SCE_NUM_PIXEL_FORMATS
 } SCE_EPixelFormat;
 

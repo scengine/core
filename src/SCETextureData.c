@@ -290,6 +290,8 @@ int SCE_TexData_IsPixelFormatInteger (SCE_EPixelFormat pxf)
     switch (pxf) {
     case SCE_PXF_R32UI:
     case SCE_PXF_RGBA8UI:
+    case SCE_PXF_R16UI:
+    case SCE_PXF_R8UI:
         return SCE_TRUE;
     default:
         return SCE_FALSE;
