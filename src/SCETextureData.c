@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 23/01/2012
-   updated: 05/02/2012 */
+   updated: 18/04/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -278,7 +278,9 @@ int SCE_TexData_IsCompressed (SCE_STexData *d)
 }
 int SCE_TexData_IsDepthFormat (SCE_STexData *d)
 {
-    return d->pxf == SCE_PXF_DEPTH24 || d->pxf == SCE_PXF_DEPTH32;
+    /* TODO: add depth/stencil formats? */
+    return d->pxf == SCE_PXF_DEPTH24 || d->pxf == SCE_PXF_DEPTH32 ||
+           d->pxf == SCE_PXF_DEPTH32F;
 }
 SCE_SListIterator* SCE_TexData_GetIterator (SCE_STexData *d)
 {
