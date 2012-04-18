@@ -83,6 +83,15 @@ void SCE_TexData_Delete (SCE_STexData *d)
     }
 }
 
+static size_t SCE_TexData_ComputeDataSize (const SCE_STexData *td)
+{
+    int w, h, d;
+    size_t n_components = SCE_Image_GetNumFormatComponents (td->data_fmt);
+    w = td->w;
+    h = td->h == 0 ? 1 : td->h;
+    d = td->d == 0 ? 1 : td->d;
+    return n_components * w * h * d * SCE_Type_Sizeof (td->data_type);
+}
 
 void SCE_TexData_Copy (SCE_STexData *dst, const SCE_STexData *src)
 {
@@ -123,7 +132,7 @@ SCE_STexData* SCE_TexData_Dup (const SCE_STexData *d)
     data->data_user = SCE_FALSE;
     data->data = NULL;
 
-    if (data->data_size > 0) {
+    if (data->data_size > 0 && d->data) {
         if (!(data->data = SCE_malloc (data->data_size))) {
             SCE_TexData_Delete (data);
             SCEE_LogSrc ();
@@ -173,18 +182,22 @@ void SCE_TexData_SetMipmapLevel (SCE_STexData *d, int l)
 void SCE_TexData_SetDimensions (SCE_STexData *td, int w, int h, int d)
 {
     td->w = w; td->h = h; td->d = d;
+    td->data_size = SCE_TexData_ComputeDataSize (td);
 }
 void SCE_TexData_SetWidth (SCE_STexData *d, int w)
 {
     d->w = w;
+    d->data_size = SCE_TexData_ComputeDataSize (d);
 }
 void SCE_TexData_SetHeight (SCE_STexData *d, int h)
 {
     d->h = h;
+    d->data_size = SCE_TexData_ComputeDataSize (d);
 }
 void SCE_TexData_SetDepth (SCE_STexData *td, int d)
 {
     td->d = d;
+    td->data_size = SCE_TexData_ComputeDataSize (td);
 }
 static SCE_EImageFormat SCE_TexData_ToIntegerFormat (SCE_EImageFormat fmt)
 {
@@ -212,10 +225,12 @@ void SCE_TexData_SetDataFormat (SCE_STexData *d, SCE_EImageFormat f)
         d->data_fmt = SCE_TexData_ToIntegerFormat (f);
     else
         d->data_fmt = f;
+    d->data_size = SCE_TexData_ComputeDataSize (d);
 }
 void SCE_TexData_SetDataType (SCE_STexData *d, SCE_EType t)
 {
     d->data_type = t;
+    d->data_size = SCE_TexData_ComputeDataSize (d);
 }
 void SCE_TexData_SetData (SCE_STexData *d, void *data, int canfree)
 {
