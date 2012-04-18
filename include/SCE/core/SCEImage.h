@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 28/07/2007
-   updated: 05/02/2012 */
+   updated: 18/04/2012 */
 
 #ifndef SCERIMAGE_H
 #define SCERIMAGE_H
@@ -132,6 +132,8 @@ void SCE_Image_Delete (SCE_SImage*);
 
 void SCE_Image_ForceResize (int, int, int, int);
 void SCE_Image_ForceRescale (int, float, float, float);
+
+size_t SCE_Image_GetNumFormatComponents (SCE_EImageFormat);
 
 unsigned int SCE_Image_GetNumMipmaps (SCE_SImage*);
 

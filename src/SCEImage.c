@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 28/07/2007
-   updated: 24/01/2012 */
+   updated: 18/04/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 #include <IL/il.h>
@@ -218,6 +218,21 @@ void SCE_Image_ForceRescale (int persistent, float w, float h, float d)
     rescaleforced = (persistent ? SCE_IMG_FORCE_PERSISTENT :
                      SCE_IMG_FORCE_PONCTUAL);
     scale_w = w; scale_h = h; scale_d = d;
+}
+
+
+/**
+ * \brief Number of components of a given format
+ * \param fmt an image format
+ * \return 1 for SCE_IMAGE_RED, 2 for SCE_IMAGE_RG, 3 for SCE_IMAGE_RGB, etc.
+ */
+size_t SCE_Image_GetNumFormatComponents (SCE_EImageFormat fmt)
+{
+    const size_t table[SCE_NUM_IMAGE_FORMATS] = {
+        0, 1, 2, 3, 3, 4, 4, 1, 1, 1 /* depth stencil.. ? */,
+        1, 2, 3, 3, 4, 4
+    };
+    return table[fmt];
 }
 
 /**
