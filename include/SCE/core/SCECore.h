@@ -42,6 +42,7 @@
 #include "SCE/core/SCEGrid.h"
 #include "SCE/core/SCEVoxelStore.h"
 #include "SCE/core/SCEMarchingTetrahedra.h"
+#include "SCE/core/SCEForestTree.h"
 #include "SCE/core/SCEOBJLoader.h"
 #include "SCE/core/SCESphereGeometry.h"
 #include "SCE/core/SCEBoxGeometry.h"
