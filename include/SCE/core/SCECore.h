@@ -17,10 +17,10 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 11/04/2010
-   updated: 29/03/2012 */
+   updated: 20/04/2012 */
 
-#ifndef SCENGINE_H
-#define SCENGINE_H
+#ifndef SCECORE_H
+#define SCECORE_H
 
 /* external dependencies */
 #include <stdio.h>
