@@ -1151,7 +1151,8 @@ void SCE_Geometry_ComputeBoundingSphere (SCEvertices *v, size_t vcount,
  */
 void SCE_Geometry_GenerateBoundingBox (SCE_SGeometry *geom)
 {
-    if (!geom->box_uptodate && geom->n_vertices > 0) {
+    if (!geom->box_uptodate && geom->n_vertices > 0 &&
+        geom->pos_data && geom->pos_array) {
         SCE_Geometry_ComputeBoundingBox (geom->pos_data, geom->n_vertices,
                                          geom->pos_array->data.stride,
                                          &geom->box);
@@ -1164,7 +1165,8 @@ void SCE_Geometry_GenerateBoundingBox (SCE_SGeometry *geom)
  */
 void SCE_Geometry_GenerateBoundingSphere (SCE_SGeometry *geom)
 {
-    if (!geom->sphere_uptodate && geom->n_vertices > 0) {
+    if (!geom->sphere_uptodate && geom->n_vertices > 0 &&
+        geom->pos_data && geom->pos_array) {
         SCE_Geometry_GenerateBoundingBox (geom);
         SCE_Geometry_ComputeBoundingSphere (geom->pos_data, geom->n_vertices,
                                             geom->pos_array->data.stride,
