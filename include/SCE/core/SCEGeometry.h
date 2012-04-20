@@ -112,7 +112,7 @@ enum sce_evertexattribute {
 
     /* these are the real attributes used by the renderer, but the geometry
        manager won't be able to use them to perform geometric transformations */
-    SCE_ATTRIB0 = 128,
+    SCE_ATTRIB0,
     SCE_ATTRIB1,
     SCE_ATTRIB2,
     SCE_ATTRIB3,
@@ -145,7 +145,9 @@ enum sce_evertexattribute {
     SCE_IATTRIB12,
     SCE_IATTRIB13,
     SCE_IATTRIB14,
-    SCE_IATTRIB15
+    SCE_IATTRIB15,
+
+    SCE_NUM_VERTEX_ATTRIBUTES
 };
 /** \copydoc sce_evertexattribute */
 typedef enum sce_evertexattribute SCE_EVertexAttribute;
