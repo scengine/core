@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 19/04/2012
-   updated: 20/04/2012 */
+   updated: 21/04/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -26,16 +26,21 @@
 void SCE_FTree_InitNode (SCE_SForestTreeNode *node)
 {
     int i;
+
     node->parent = NULL;
     SCE_Matrix4x3_Identity (node->matrix);
     node->radius = 1.0;
     node->distance = 1.0;
+    node->n_polygons = 8;
+
+    node->index = 0;
     for (i = 0; i < SCE_MAX_FTREE_DEGREE; i++)
         node->children[i] = NULL;
     node->n_children = 0;
-    node->n_vertices = 0;
-    node->n_indices = 0;
     node->n_nodes = 0;
+
+    node->n_vertices1 = node->n_indices1 = 0;
+    node->n_vertices2 = node->n_indices2 = 0;
     SCE_List_InitIt (&node->it);
     SCE_List_SetData (&node->it, node);
 }
@@ -67,14 +72,12 @@ void SCE_FTree_DeleteNode (SCE_SForestTreeNode *node)
 void SCE_FTree_Init (SCE_SForestTree *ft)
 {
     SCE_FTree_InitNode (&ft->root);
-    SCE_Geometry_Init (&ft->geom);
 
+    SCE_Geometry_Init (&ft->tree_geom);
     ft->matrix_data = NULL;
     ft->drad_data = NULL;
+    ft->npoly_data = NULL;
     ft->indices_data = NULL;
-
-    ft->index_counter = ft->vertex_counter = 0;
-
     SCE_Geometry_InitArray (&ft->ar1);
     SCE_Geometry_InitArray (&ft->ar2);
     SCE_Geometry_InitArray (&ft->ar3);
@@ -82,20 +85,38 @@ void SCE_FTree_Init (SCE_SForestTree *ft)
     SCE_Geometry_InitArray (&ft->ar5);
     SCE_Geometry_InitArray (&ft->ar6);
     SCE_Geometry_InitArray (&ft->ind);
-
     SCE_Geometry_AttachArray (&ft->ar1, &ft->ar2);
     SCE_Geometry_AttachArray (&ft->ar2, &ft->ar3);
     SCE_Geometry_AttachArray (&ft->ar3, &ft->ar4);
     SCE_Geometry_AttachArray (&ft->ar4, &ft->ar5);
     /* TODO: 'attach' 6th array */
+
+    SCE_Geometry_Init (&ft->final_geom);
+    ft->vertices = NULL;
+    ft->indices = NULL;
+    SCE_Geometry_InitArray (&ft->pos);
+    SCE_Geometry_InitArray (&ft->nor);
+    SCE_Geometry_InitArray (&ft->tc);
+    SCE_Geometry_InitArray (&ft->idx);
+    SCE_Geometry_AttachArray (&ft->pos, &ft->nor);
+#if 0
+    SCE_Geometry_AttachArray (&ft->nor, &ft->tc);
+#endif
+
+    ft->index_counter = ft->vertex_counter = 0;
 }
 void SCE_FTree_Clear (SCE_SForestTree *ft)
 {
     SCE_FTree_ClearNode (&ft->root);
-    SCE_Geometry_Clear (&ft->geom);
+    SCE_Geometry_Clear (&ft->tree_geom);
+    SCE_Geometry_Clear (&ft->final_geom);
     SCE_free (ft->matrix_data);
     SCE_free (ft->drad_data);
+    SCE_free (ft->npoly_data);
     SCE_free (ft->indices_data);
+    SCE_free (ft->vindex);
+    SCE_free (ft->vertices);
+    SCE_free (ft->indices);
 }
 SCE_SForestTree* SCE_FTree_Create (void)
 {
@@ -125,13 +146,18 @@ void SCE_FTree_CopyNode (SCE_SForestTreeNode *dst,
     SCE_Vector3_Copy (dst->plane, src->plane);
     dst->distance = src->distance;
     dst->radius = src->radius;
+    dst->n_polygons = src->n_polygons;
+
     dst->index = src->index;
     for (i = 0; i < src->n_children; i++)
         dst->children[i] = src->children[i];
     dst->n_children = src->n_children;
-    dst->n_vertices = src->n_vertices;
-    dst->n_indices = src->n_indices;
     dst->n_nodes = src->n_nodes;
+
+    dst->n_vertices1 = src->n_vertices1;
+    dst->n_indices1 = src->n_indices1;
+    dst->n_vertices2 = src->n_vertices2;
+    dst->n_indices2 = src->n_indices2;
 }
 
 
@@ -165,7 +191,7 @@ void SCE_FTree_RemoveNode (SCE_SForestTreeNode *node)
         }
 
         node->parent = NULL;
-        node->distance = 0.0;   /* lol */
+        node->distance = 0.0;   /* TODO: lol */
     }
 }
 
@@ -181,6 +207,15 @@ float SCE_FTree_GetNodeDistance (const SCE_SForestTreeNode *node)
 {
     return node->distance;
 }
+SCEuint SCE_FTree_GetNodeNumVertices (const SCE_SForestTreeNode *node)
+{
+    return node->n_polygons;
+}
+void SCE_FTree_SetNodeNumVertices (SCE_SForestTreeNode *node, SCEuint n)
+{
+    node->n_polygons = n;
+}
+
 
 void SCE_FTree_SetNodeMatrix (SCE_SForestTreeNode *node,
                               const SCE_TMatrix4x3 matrix)
@@ -208,17 +243,26 @@ static void
 SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
 {
     size_t i;
-    size_t n_nodes = 0, n_vertices = 0, n = node->n_children;
+    size_t n_nodes = 0, n_vertices1 = 0, n_vertices2 = 0, n_indices2 = 0;
+    size_t n = node->n_children;
 
     for (i = 0; i < n; i++) {
         SCE_FTree_Count (node->children[i]);
         n_nodes += node->children[i]->n_nodes;
-        n_vertices += node->children[i]->n_vertices;
+        n_vertices1 += node->children[i]->n_vertices1;
+        n_vertices2 += node->children[i]->n_vertices2;
+        n_indices2 += node->children[i]->n_indices2;
+        n_indices2 += 3 * (node->n_polygons + node->children[i]->n_polygons);
     }
 
     node->n_nodes = n_nodes + 1;
-    node->n_vertices = n_vertices + 1 + (n > 1 ? n - 1 : 0);
-    node->n_indices = (node->n_nodes - 1) * 2;
+    node->n_vertices1 = n_vertices1 + 1 + (n > 1 ? n - 1 : 0);
+    node->n_vertices2 = n_vertices2 + node->n_polygons;
+    if (n > 1)
+        node->n_vertices2 += (n - 1) * node->n_polygons;
+
+    node->n_indices1 = n_nodes * 2;
+    node->n_indices2 = n_indices2;
 }
 
 
@@ -265,25 +309,19 @@ SCE_FTree_ComputePlanes (SCE_SForestTreeNode *node)
         SCE_FTree_ComputePlanesAux (node->children[i]);
 }
 
-int SCE_FTree_Build (SCE_SForestTree *ft)
+static int SCE_FTree_BuildTreeGeom (SCE_SForestTree *ft)
 {
-    SCE_FTree_Count (&ft->root);
-
-    if (ft->root.n_vertices >= 256 * 256) {
-        /* the tree is too fucking big */
-        return SCE_ERROR;
-    }
-
-    SCE_FTree_ComputePlanes (&ft->root);
-
     /* allocate data */
-    if (!(ft->matrix_data = SCE_malloc (15 * ft->root.n_vertices *
+    if (!(ft->matrix_data = SCE_malloc (15 * ft->root.n_vertices1 *
                                         sizeof *ft->matrix_data)))
         goto fail;
-    if (!(ft->drad_data = SCE_malloc (2 * ft->root.n_vertices *
+    if (!(ft->drad_data = SCE_malloc (2 * ft->root.n_vertices1 *
                                       sizeof *ft->drad_data)))
         goto fail;
-    if (!(ft->indices_data = SCE_malloc (ft->root.n_indices *
+    if (!(ft->npoly_data = SCE_malloc (ft->root.n_vertices1 *
+                                       sizeof *ft->npoly_data)))
+        goto fail;
+    if (!(ft->indices_data = SCE_malloc (ft->root.n_indices1 *
                                          sizeof *ft->indices_data)))
         goto fail;
 
@@ -308,12 +346,69 @@ int SCE_FTree_Build (SCE_SForestTree *ft)
     SCE_Geometry_SetArrayIndices (&ft->ind, SCE_INDICES_TYPE, ft->indices_data,
                                   SCE_FALSE);
 
-    SCE_Geometry_AddArrayRecDup (&ft->geom, &ft->ar1, SCE_FALSE);
-    SCE_Geometry_SetIndexArray (&ft->geom, &ft->ind, SCE_FALSE);
-    SCE_Geometry_SetPrimitiveType (&ft->geom, SCE_LINES);
+    SCE_Geometry_AddArrayRecDup (&ft->tree_geom, &ft->ar1, SCE_FALSE);
+    SCE_Geometry_SetIndexArray (&ft->tree_geom, &ft->ind, SCE_FALSE);
+    SCE_Geometry_SetPrimitiveType (&ft->tree_geom, SCE_LINES);
+
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+static int SCE_FTree_BuildFinalGeom (SCE_SForestTree *ft)
+{
+#define V_SIZE 6
+    /* allocate data */
+    if (!(ft->vertices = SCE_malloc (V_SIZE * ft->root.n_vertices2 *
+                                     sizeof *ft->vertices)))
+        goto fail;
+    if (!(ft->indices = SCE_malloc (ft->root.n_indices2 * sizeof *ft->indices)))
+        goto fail;
+
+    SCE_Geometry_SetArrayData (&ft->pos, SCE_POSITION, SCE_FLOAT, 0, 3,
+                               ft->vertices, SCE_FALSE);
+    SCE_Geometry_SetArrayData (&ft->nor, SCE_NORMAL, SCE_FLOAT, 0, 3,
+                               &ft->vertices[3], SCE_FALSE);
+#if 0
+    SCE_Geometry_SetArrayData (&ft->tc, SCE_TEXCOORD0, SCE_FLOAT, 0, 2,
+                               &ft->vertices[5], SCE_FALSE);
+#endif
+
+    SCE_Geometry_SetArrayIndices (&ft->idx, SCE_INDICES_TYPE, ft->indices,
+                                  SCE_FALSE);
+
+    SCE_Geometry_AddArrayRecDup (&ft->final_geom, &ft->pos, SCE_FALSE);
+    SCE_Geometry_SetIndexArray (&ft->final_geom, &ft->idx, SCE_FALSE);
+    SCE_Geometry_SetPrimitiveType (&ft->final_geom, SCE_TRIANGLES);
+
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+int SCE_FTree_Build (SCE_SForestTree *ft)
+{
+    SCE_FTree_Count (&ft->root);
+
+    if (ft->root.n_vertices1 >= 256 * 256 ||
+        ft->root.n_vertices2 >= 256 * 256) {
+        /* the tree is too fucking big */
+        return SCE_ERROR;
+    }
+
+    SCE_FTree_ComputePlanes (&ft->root);
+
+    if (SCE_FTree_BuildTreeGeom (ft) < 0) goto fail;
+    if (SCE_FTree_BuildFinalGeom (ft) < 0) goto fail;
+
+    if (!(ft->vindex = SCE_malloc (ft->root.n_vertices1 * sizeof *ft->vindex)))
+        goto fail;
 
     /* fillup vertex arrays */
-    SCE_FTree_Update (ft);
+    SCE_FTree_UpdateTreeGeometry (ft);
+    SCE_FTree_UpdateFinalGeometry (ft);
 
     return SCE_OK;
 fail:
@@ -342,6 +437,7 @@ static void SCE_FTree_OutputVertex (SCE_SForestTree *ft,
     /* copy distance, radius & stuff */
     ft->drad_data[index * 2 + 0] = node->radius;
     ft->drad_data[index * 2 + 1] = node->distance;
+    ft->npoly_data[index] = node->n_polygons;
 
     ft->vertex_counter++;
 }
@@ -356,9 +452,11 @@ SCE_FTree_UpdateNode (SCE_SForestTree *ft, SCE_SForestTreeNode *node)
     /* main branch */
     /* output vertex and index */
     SCE_FTree_OutputVertex (ft, node);
-    ft->indices_data[ft->index_counter + 0] = (SCEindices)node->parent->index;
-    ft->indices_data[ft->index_counter + 1] = (SCEindices)node->index;
-    ft->index_counter += 2;
+    if (node->parent) {
+        ft->indices_data[ft->index_counter + 0] = (SCEindices)node->parent->index;
+        ft->indices_data[ft->index_counter + 1] = (SCEindices)node->index;
+        ft->index_counter += 2;
+    }
     if (node->n_children > 0)
         SCE_FTree_UpdateNode (ft, node->children[0]);
 
@@ -370,7 +468,7 @@ SCE_FTree_UpdateNode (SCE_SForestTree *ft, SCE_SForestTreeNode *node)
         SCE_Matrix4x3_GetTranslation (node->children[i]->matrix, tmp.plane);
         SCE_Vector3_Operator2v (tmp.plane, =, tmp.plane, -, pos);
         SCE_Vector3_Normalize (tmp.plane);
-        tmp.radius = node->children[i]->radius;
+        tmp.radius = MIN (node->children[i]->radius, node->radius);
 
         /* output vertex */
         SCE_FTree_OutputVertex (ft, &tmp);
@@ -387,26 +485,140 @@ SCE_FTree_UpdateNode (SCE_SForestTree *ft, SCE_SForestTreeNode *node)
  * \param ft a tree
  * \return
  */
-void SCE_FTree_Update (SCE_SForestTree *ft)
+void SCE_FTree_UpdateTreeGeometry (SCE_SForestTree *ft)
 {
-    size_t i;
-
     /* DFS: keep vertex locality for optimal vertex caching */
     ft->root.index = 0;
     ft->index_counter = 0;
     ft->vertex_counter = 0;
-    SCE_FTree_OutputVertex (ft, &ft->root);
-
-    /* TODO: warning, no additional vertex is created as in UpdateNode() */
-    for (i = 0; i < ft->root.n_children; i++)
-        SCE_FTree_UpdateNode (ft, ft->root.children[i]);
+    SCE_FTree_UpdateNode (ft, &ft->root);
 
     SCE_FTree_Count (&ft->root);
-    SCE_Geometry_SetNumVertices (&ft->geom, ft->root.n_vertices);
-    SCE_Geometry_SetNumIndices (&ft->geom, ft->root.n_indices);
+    SCE_Geometry_SetNumVertices (&ft->tree_geom, ft->root.n_vertices1);
+    SCE_Geometry_SetNumIndices (&ft->tree_geom, ft->root.n_indices1);
 }
 
-SCE_SGeometry* SCE_FTree_GetGeometry (SCE_SForestTree *ft)
+
+
+void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
 {
-    return &ft->geom;
+    size_t i, j;
+    size_t previous_index = 0;
+
+    /* NOTE: pray for ft->tree_geom to be up-to-date */
+
+    /* step1: generate vertices */
+    for (i = 0; i < ft->root.n_vertices1; i++) {
+        SCE_SPlane p;
+        SCE_SLine3 l;
+        SCE_TVector3 x, y, z;
+
+        /* sum up the total number of output vertices to get indices */
+        ft->vindex[i] = previous_index;
+
+        SCE_Vector3_Copy (x, &ft->matrix_data[i * 15 + 3]);
+        SCE_Vector3_Copy (y, &ft->matrix_data[i * 15 + 6]);
+        SCE_Vector3_Normalize (x);
+        SCE_Vector3_Normalize (y);
+
+        SCE_Vector3_Copy (z, &ft->matrix_data[i * 15 + 12]);
+        SCE_Vector3_Normalize (z);
+        SCE_Plane_SetFromPointv (&p, z, &ft->matrix_data[i * 15]);
+        SCE_Vector3_Copy (z, &ft->matrix_data[i * 15 + 9]);
+        SCE_Vector3_Normalize (z);
+        SCE_Line3_SetNormal (&l, z);
+
+        for (j = 0; j < ft->npoly_data[i]; j++) {
+            SCE_TVector3 pos;
+            float c, s;
+            float angle = M_PI * 2.0 * j / (float)ft->npoly_data[i];
+
+            /* compute position */
+            c = cos (angle) * ft->drad_data[i * 2];
+            s = sin (angle) * ft->drad_data[i * 2];
+            SCE_Vector3_Operator2v (pos, = c *, x, + s *, y);
+            SCE_Vector3_Operator1v (pos, +=, &ft->matrix_data[i * 15]);
+
+            SCE_Line3_SetOrigin (&l, pos);
+            /* project the position on the node plane */
+            SCE_Plane_LineIntersection (&p, &l,
+                                        &ft->vertices[previous_index * V_SIZE]);
+
+            /* compute normal: vector from node's position to current vertex */
+            SCE_Vector3_Operator2v (&ft->vertices[previous_index * V_SIZE + 3], =,
+                                    &ft->vertices[previous_index * V_SIZE], -,
+                                    &ft->matrix_data[i * 15]);
+            SCE_Vector3_Normalize (&ft->vertices[previous_index * V_SIZE + 3]);
+
+            /* compute texture coordinates */
+            /* TODO: compute distance */
+            /* lol mingface todo. */
+
+            previous_index++;
+        }
+    }
+
+    previous_index = 0;         /* used to count position into index array */
+
+    /* step2: generate indices */
+    for (i = 0; i < ft->root.n_indices1; i += 2) {
+        /* indices of vertices from each side of the branch */
+        size_t index1 = ft->vindex[ft->indices_data[i + 0]];
+        size_t index2 = ft->vindex[ft->indices_data[i + 1]];
+        /* number of vertices on each side */
+        size_t n1 = ft->npoly_data[ft->indices_data[i + 0]];
+        size_t n2 = ft->npoly_data[ft->indices_data[i + 1]];
+
+        /* generate triangles from each side */
+        for (j = 0; j < n1; j++) {
+            /* I know what I'm doing. */
+            float offset = ((float)j + 0.0) / n1;
+            size_t index = offset * n2 + 0.5;
+
+            ft->indices[previous_index * 3 + 1] = index1 + j;
+            if (index >= n2)
+                ft->indices[previous_index * 3 + 0] = index2;
+            else
+                ft->indices[previous_index * 3 + 0] = index2 + index;
+            if (j >= n1 - 1)
+                ft->indices[previous_index * 3 + 2] = index1;
+            else
+                ft->indices[previous_index * 3 + 2] = index1 + j + 1;
+
+            previous_index++;
+        }
+
+        /* repeat for the other side */
+        for (j = 0; j < n2; j++) {
+            /* I STILL know what I'm doing. */
+            float offset = ((float)j + 0.5) / n2;
+            size_t index = offset * n1 + 0.5;
+
+            ft->indices[previous_index * 3 + 0] = index2 + j;
+            if (index >= n1)
+                ft->indices[previous_index * 3 + 1] = index1;
+            else
+                ft->indices[previous_index * 3 + 1] = index1 + index;
+            if (j >= n2 - 1)
+                ft->indices[previous_index * 3 + 2] = index2;
+            else
+                ft->indices[previous_index * 3 + 2] = index2 + j + 1;
+
+            previous_index++;
+        }
+    }
+
+    SCE_Geometry_SetNumVertices (&ft->final_geom, ft->root.n_vertices2);
+    SCE_Geometry_SetNumIndices (&ft->final_geom, ft->root.n_indices2);
+}
+
+
+SCE_SGeometry* SCE_FTree_GetTreeGeometry (SCE_SForestTree *ft)
+{
+    return &ft->tree_geom;
+}
+
+SCE_SGeometry* SCE_FTree_GetFinalGeometry (SCE_SForestTree *ft)
+{
+    return &ft->final_geom;
 }
