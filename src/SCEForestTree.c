@@ -99,9 +99,7 @@ void SCE_FTree_Init (SCE_SForestTree *ft)
     SCE_Geometry_InitArray (&ft->tc);
     SCE_Geometry_InitArray (&ft->idx);
     SCE_Geometry_AttachArray (&ft->pos, &ft->nor);
-#if 0
     SCE_Geometry_AttachArray (&ft->nor, &ft->tc);
-#endif
 
     ft->index_counter = ft->vertex_counter = 0;
 }
@@ -171,7 +169,6 @@ void SCE_FTree_AddNode (SCE_SForestTreeNode *parent, SCE_SForestTreeNode *node)
         parent->children[parent->n_children] = node;
         parent->n_children++;
         node->parent = parent;
-        /* TODO: compute distance */
     }
 }
 void SCE_FTree_RemoveNode (SCE_SForestTreeNode *node)
@@ -221,7 +218,6 @@ void SCE_FTree_SetNodeMatrix (SCE_SForestTreeNode *node,
                               const SCE_TMatrix4x3 matrix)
 {
     SCE_Matrix4x3_Copy (node->matrix, matrix);
-    /* TODO: compute new distance */
 }
 float* SCE_FTree_GetNodeMatrix (SCE_SForestTreeNode *node)
 {
@@ -257,9 +253,9 @@ SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
 
     node->n_nodes = n_nodes + 1;
     node->n_vertices1 = n_vertices1 + 1 + (n > 1 ? n - 1 : 0);
-    node->n_vertices2 = n_vertices2 + node->n_polygons;
+    node->n_vertices2 = n_vertices2 + node->n_polygons + 1;
     if (n > 1)
-        node->n_vertices2 += (n - 1) * node->n_polygons;
+        node->n_vertices2 += (n - 1) * (node->n_polygons + 1);
 
     node->n_indices1 = n_nodes * 2;
     node->n_indices2 = n_indices2;
@@ -267,7 +263,7 @@ SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
 
 
 static void
-SCE_FTree_ComputePlanesAux (SCE_SForestTreeNode *node)
+SCE_FTree_ComputeStuffAux (SCE_SForestTreeNode *node)
 {
     size_t i;
     SCE_TVector3 u, v, pos;
@@ -276,6 +272,8 @@ SCE_FTree_ComputePlanesAux (SCE_SForestTreeNode *node)
     SCE_Matrix4x3_GetTranslation (node->parent->matrix, v);
     SCE_Matrix4x3_GetTranslation (node->matrix, pos);
     SCE_Vector3_Operator2v (u, =, pos, -, v);
+    node->distance = SCE_Vector3_Length (u);
+    node->distance += node->parent->distance;
     SCE_Vector3_Normalize (u);
 
     if (node->n_children > 0) {
@@ -291,11 +289,11 @@ SCE_FTree_ComputePlanesAux (SCE_SForestTreeNode *node)
     SCE_Vector3_Copy (node->plane, u);
 
     for (i = 0; i < node->n_children; i++)
-        SCE_FTree_ComputePlanesAux (node->children[i]);
+        SCE_FTree_ComputeStuffAux (node->children[i]);
 }
 
 static void
-SCE_FTree_ComputePlanes (SCE_SForestTreeNode *node)
+SCE_FTree_ComputeStuff (SCE_SForestTreeNode *node)
 {
     size_t i;
     SCE_TVector3 x, y, z;
@@ -304,9 +302,10 @@ SCE_FTree_ComputePlanes (SCE_SForestTreeNode *node)
     SCE_Matrix4x3_GetBase (node->matrix, x, y, z);
     SCE_Vector3_Copy (node->plane, z);
     SCE_Vector3_Normalize (node->plane);
+    node->distance = 0.0;
 
     for (i = 0; i < node->n_children; i++)
-        SCE_FTree_ComputePlanesAux (node->children[i]);
+        SCE_FTree_ComputeStuffAux (node->children[i]);
 }
 
 static int SCE_FTree_BuildTreeGeom (SCE_SForestTree *ft)
@@ -358,7 +357,7 @@ fail:
 
 static int SCE_FTree_BuildFinalGeom (SCE_SForestTree *ft)
 {
-#define V_SIZE 6
+#define V_SIZE 8
     /* allocate data */
     if (!(ft->vertices = SCE_malloc (V_SIZE * ft->root.n_vertices2 *
                                      sizeof *ft->vertices)))
@@ -370,10 +369,8 @@ static int SCE_FTree_BuildFinalGeom (SCE_SForestTree *ft)
                                ft->vertices, SCE_FALSE);
     SCE_Geometry_SetArrayData (&ft->nor, SCE_NORMAL, SCE_FLOAT, 0, 3,
                                &ft->vertices[3], SCE_FALSE);
-#if 0
     SCE_Geometry_SetArrayData (&ft->tc, SCE_TEXCOORD0, SCE_FLOAT, 0, 2,
-                               &ft->vertices[5], SCE_FALSE);
-#endif
+                               &ft->vertices[6], SCE_FALSE);
 
     SCE_Geometry_SetArrayIndices (&ft->idx, SCE_INDICES_TYPE, ft->indices,
                                   SCE_FALSE);
@@ -398,7 +395,7 @@ int SCE_FTree_Build (SCE_SForestTree *ft)
         return SCE_ERROR;
     }
 
-    SCE_FTree_ComputePlanes (&ft->root);
+    SCE_FTree_ComputeStuff (&ft->root);
 
     if (SCE_FTree_BuildTreeGeom (ft) < 0) goto fail;
     if (SCE_FTree_BuildFinalGeom (ft) < 0) goto fail;
@@ -511,15 +508,17 @@ void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
     for (i = 0; i < ft->root.n_vertices1; i++) {
         SCE_SPlane p;
         SCE_SLine3 l;
-        SCE_TVector3 x, y, z;
+        SCE_TVector3 x, y, z, xnorm, ynorm;
 
         /* sum up the total number of output vertices to get indices */
         ft->vindex[i] = previous_index;
 
         SCE_Vector3_Copy (x, &ft->matrix_data[i * 15 + 3]);
         SCE_Vector3_Copy (y, &ft->matrix_data[i * 15 + 6]);
-        SCE_Vector3_Normalize (x);
-        SCE_Vector3_Normalize (y);
+        SCE_Vector3_Copy (xnorm, x);
+        SCE_Vector3_Copy (ynorm, y);
+        SCE_Vector3_Normalize (xnorm);
+        SCE_Vector3_Normalize (ynorm);
 
         SCE_Vector3_Copy (z, &ft->matrix_data[i * 15 + 12]);
         SCE_Vector3_Normalize (z);
@@ -528,31 +527,54 @@ void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
         SCE_Vector3_Normalize (z);
         SCE_Line3_SetNormal (&l, z);
 
-        for (j = 0; j < ft->npoly_data[i]; j++) {
-            SCE_TVector3 pos;
-            float c, s;
-            float angle = M_PI * 2.0 * j / (float)ft->npoly_data[i];
+        for (j = 0; j < ft->npoly_data[i] + 1; j++) {
+            SCE_TVector3 pos, posnorm;
+            float c, s, radius;
+            float *vertices = NULL;
+            float angle = 0.0;
+
+            if (j < ft->npoly_data[i])
+                angle = M_PI * 2.0 * j / (float)ft->npoly_data[i];
 
             /* compute position */
-            c = cos (angle) * ft->drad_data[i * 2];
-            s = sin (angle) * ft->drad_data[i * 2];
-            SCE_Vector3_Operator2v (pos, = c *, x, + s *, y);
+            c = cos (angle);
+            s = sin (angle);
+            radius = ft->drad_data[i * 2];
+            SCE_Vector3_Operator2v (pos, = c * radius *, x, + s * radius *, y);
+            SCE_Vector3_Copy (posnorm, pos);
+            SCE_Vector3_Normalize (posnorm);
             SCE_Vector3_Operator1v (pos, +=, &ft->matrix_data[i * 15]);
+
+            vertices = &ft->vertices[previous_index * V_SIZE];
 
             SCE_Line3_SetOrigin (&l, pos);
             /* project the position on the node plane */
-            SCE_Plane_LineIntersection (&p, &l,
-                                        &ft->vertices[previous_index * V_SIZE]);
+            SCE_Plane_LineIntersection (&p, &l, vertices);
 
             /* compute normal: vector from node's position to current vertex */
-            SCE_Vector3_Operator2v (&ft->vertices[previous_index * V_SIZE + 3], =,
-                                    &ft->vertices[previous_index * V_SIZE], -,
+            SCE_Vector3_Operator2v (&vertices[3], =, vertices, -,
                                     &ft->matrix_data[i * 15]);
-            SCE_Vector3_Normalize (&ft->vertices[previous_index * V_SIZE + 3]);
+            SCE_Vector3_Normalize (&vertices[3]);
 
             /* compute texture coordinates */
-            /* TODO: compute distance */
-            /* lol mingface todo. */
+            vertices[7] = ft->drad_data[i * 2 + 1];
+
+            if (j == ft->npoly_data[i])
+                vertices[6] = 1.;
+            else {
+                float dx, dy;
+
+                dx = SCE_Vector3_Dot (posnorm, xnorm);
+                dy = SCE_Vector3_Dot (posnorm, ynorm);
+                if (dy < 0)
+                    vertices[6] = 2.0 * M_PI - acos (dx);
+                else
+                    vertices[6] = acos (dx);
+
+                vertices[6] /= 2.0 * M_PI; /* scale between 0 and 1 */
+                vertices[6] = 0.6 * vertices[6] +
+                              0.4 * j / (float)ft->npoly_data[i];
+            }
 
             previous_index++;
         }
@@ -575,15 +597,11 @@ void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
             float offset = ((float)j + 0.0) / n1;
             size_t index = offset * n2 + 0.5;
 
+            if (index > n2) index = n2;
+
             ft->indices[previous_index * 3 + 1] = index1 + j;
-            if (index >= n2)
-                ft->indices[previous_index * 3 + 0] = index2;
-            else
-                ft->indices[previous_index * 3 + 0] = index2 + index;
-            if (j >= n1 - 1)
-                ft->indices[previous_index * 3 + 2] = index1;
-            else
-                ft->indices[previous_index * 3 + 2] = index1 + j + 1;
+            ft->indices[previous_index * 3 + 0] = index2 + index;
+            ft->indices[previous_index * 3 + 2] = index1 + j + 1;
 
             previous_index++;
         }
@@ -594,15 +612,11 @@ void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
             float offset = ((float)j + 0.5) / n2;
             size_t index = offset * n1 + 0.5;
 
+            if (index > n1) index = n1;
+
             ft->indices[previous_index * 3 + 0] = index2 + j;
-            if (index >= n1)
-                ft->indices[previous_index * 3 + 1] = index1;
-            else
-                ft->indices[previous_index * 3 + 1] = index1 + index;
-            if (j >= n2 - 1)
-                ft->indices[previous_index * 3 + 2] = index2;
-            else
-                ft->indices[previous_index * 3 + 2] = index2 + j + 1;
+            ft->indices[previous_index * 3 + 1] = index1 + index;
+            ft->indices[previous_index * 3 + 2] = index2 + j + 1;
 
             previous_index++;
         }
