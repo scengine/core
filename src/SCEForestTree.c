@@ -33,11 +33,16 @@ void SCE_FTree_InitNode (SCE_SForestTreeNode *node)
     node->distance = 1.0;
     node->n_polygons = 8;
 
+    node->leaf_index = -1;      /* no leaf */
+    SCE_Matrix4x3_Identity (node->leaf_matrix);
+
     node->index = 0;
     for (i = 0; i < SCE_MAX_FTREE_DEGREE; i++)
         node->children[i] = NULL;
     node->n_children = 0;
     node->n_nodes = 0;
+    for (i = 0; i < SCE_MAX_FTREE_BUSH_TYPES; i++)
+        node->n_leaves[i] = 0;
 
     node->n_vertices1 = node->n_indices1 = 0;
     node->n_vertices2 = node->n_indices2 = 0;
@@ -105,6 +110,8 @@ void SCE_FTree_Init (SCE_SForestTree *ft)
 }
 void SCE_FTree_Clear (SCE_SForestTree *ft)
 {
+    size_t i;
+
     SCE_FTree_ClearNode (&ft->root);
     SCE_Geometry_Clear (&ft->tree_geom);
     SCE_Geometry_Clear (&ft->final_geom);
@@ -115,6 +122,8 @@ void SCE_FTree_Clear (SCE_SForestTree *ft)
     SCE_free (ft->vindex);
     SCE_free (ft->vertices);
     SCE_free (ft->indices);
+    for (i = 0; i < SCE_MAX_FTREE_BUSH_TYPES; i++)
+        SCE_free (ft->bushes[i]);
 }
 SCE_SForestTree* SCE_FTree_Create (void)
 {
@@ -146,11 +155,16 @@ void SCE_FTree_CopyNode (SCE_SForestTreeNode *dst,
     dst->radius = src->radius;
     dst->n_polygons = src->n_polygons;
 
+    dst->leaf_index = src->leaf_index;
+    SCE_Matrix4x3_Copy (dst->leaf_matrix, src->leaf_matrix);
+
     dst->index = src->index;
     for (i = 0; i < src->n_children; i++)
         dst->children[i] = src->children[i];
     dst->n_children = src->n_children;
     dst->n_nodes = src->n_nodes;
+    for (i = 0; i < SCE_MAX_FTREE_BUSH_TYPES; i++)
+        dst->n_leaves[i] = src->n_leaves[i];
 
     dst->n_vertices1 = src->n_vertices1;
     dst->n_indices1 = src->n_indices1;
@@ -233,14 +247,35 @@ size_t SCE_FTree_GetNumNodeChildren (const SCE_SForestTreeNode *node)
     return node->n_children;
 }
 
+/**
+ * \brief Sets a type of bush to a node, -1 sets none
+ * \param node a node
+ * \param index whatever index you want, below SCE_MAX_FTREE_BUSH_TYPES
+ */
+void SCE_FTree_SetBush (SCE_SForestTreeNode *node, int index)
+{
+    node->leaf_index = index;
+}
+int SCE_FTree_GetBush (const SCE_SForestTreeNode *node)
+{
+    return node->leaf_index;
+}
+void SCE_FTree_SetBushMatrix (SCE_SForestTreeNode *node, const SCE_TMatrix4x3 m)
+{
+    SCE_Matrix4x3_Copy (node->leaf_matrix, m);
+}
+
 
 /* counts the number of nodes */
 static void
 SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
 {
-    size_t i;
+    size_t i, j;
     size_t n_nodes = 0, n_vertices1 = 0, n_vertices2 = 0, n_indices2 = 0;
     size_t n = node->n_children;
+
+    for (i = 0; i < SCE_MAX_FTREE_BUSH_TYPES; i++)
+        node->n_leaves[i] = 0;
 
     for (i = 0; i < n; i++) {
         SCE_FTree_Count (node->children[i]);
@@ -249,6 +284,8 @@ SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
         n_vertices2 += node->children[i]->n_vertices2;
         n_indices2 += node->children[i]->n_indices2;
         n_indices2 += 3 * (node->n_polygons + node->children[i]->n_polygons);
+        for (j = 0; j < SCE_MAX_FTREE_BUSH_TYPES; j++)
+            node->n_leaves[j] += node->children[i]->n_leaves[j];
     }
 
     node->n_nodes = n_nodes + 1;
@@ -259,6 +296,9 @@ SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
 
     node->n_indices1 = n_nodes * 2;
     node->n_indices2 = n_indices2;
+
+    if (node->leaf_index >= 0)
+        node->n_leaves[node->leaf_index]++;
 }
 
 
@@ -387,6 +427,8 @@ fail:
 
 int SCE_FTree_Build (SCE_SForestTree *ft)
 {
+    size_t i;
+
     SCE_FTree_Count (&ft->root);
 
     if (ft->root.n_vertices1 >= 256 * 256 ||
@@ -403,9 +445,18 @@ int SCE_FTree_Build (SCE_SForestTree *ft)
     if (!(ft->vindex = SCE_malloc (ft->root.n_vertices1 * sizeof *ft->vindex)))
         goto fail;
 
+    for (i = 0; i < SCE_MAX_FTREE_BUSH_TYPES; i++) {
+        if (ft->root.n_leaves[i] > 0) {
+            if (!(ft->bushes[i] = SCE_malloc (ft->root.n_leaves[i] *
+                                              sizeof (SCE_TMatrix4x3))))
+                goto fail;
+        }
+    }
+
     /* fillup vertex arrays */
     SCE_FTree_UpdateTreeGeometry (ft);
     SCE_FTree_UpdateFinalGeometry (ft);
+    SCE_FTree_UpdateBushesMatrices (ft);
 
     return SCE_OK;
 fail:
@@ -627,6 +678,29 @@ void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
 }
 
 
+static void
+SCE_FTree_UpdateBushesMatricesAux (SCE_SForestTree *ft,
+                                   SCE_SForestTreeNode *node)
+{
+    size_t i;
+
+    if (node->leaf_index >= 0) {
+        SCE_Matrix4x3_Copy (&ft->bushes[node->leaf_index][ft->index_counter],
+                            node->leaf_matrix);
+        ft->index_counter += 4 * 3;
+    }
+
+    for (i = 0; i < node->n_children; i++)
+        SCE_FTree_UpdateBushesMatricesAux (ft, node->children[i]);
+}
+
+void SCE_FTree_UpdateBushesMatrices (SCE_SForestTree *ft)
+{
+    ft->index_counter = 0;
+    SCE_FTree_UpdateBushesMatricesAux (ft, &ft->root);
+}
+
+
 SCE_SGeometry* SCE_FTree_GetTreeGeometry (SCE_SForestTree *ft)
 {
     return &ft->tree_geom;
@@ -635,4 +709,28 @@ SCE_SGeometry* SCE_FTree_GetTreeGeometry (SCE_SForestTree *ft)
 SCE_SGeometry* SCE_FTree_GetFinalGeometry (SCE_SForestTree *ft)
 {
     return &ft->final_geom;
+}
+
+/**
+ * \brief Gets the number of instances of a type of bush
+ * \param ft a tree
+ * \param index bush's index
+ * \return number of instances of bush of type \p index
+ * \sa SCE_FTree_GetBushMatrix()
+ */
+size_t SCE_FTree_GetBushNumInstances (SCE_SForestTree *ft, SCEuint index)
+{
+    return ft->root.n_leaves[index];
+}
+/**
+ * \brief Gets the matrix of a bush
+ * \param ft a tree
+ * \param bush bush index
+ * \param offset instance index
+ * \returns a pointer to the instance matrix
+ * \sa SCE_FTree_GetBushNumInstances()
+ */
+float* SCE_FTree_GetBushMatrix (SCE_SForestTree *ft, SCEuint bush, SCEuint offset)
+{
+    return &ft->bushes[bush][offset * 4 * 3];
 }

@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 19/04/2012
-   updated: 21/04/2012 */
+   updated: 22/04/2012 */
 
 #ifndef SCEFORESTTREE_H
 #define SCEFORESTTREE_H
@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 #define SCE_MAX_FTREE_DEGREE 4  /* completely arbitrary number */
+#define SCE_MAX_FTREE_BUSH_TYPES 8 /* ... also arbitrary */
 
 typedef struct sce_sforesttreenode SCE_SForestTreeNode;
 struct sce_sforesttreenode {
@@ -41,10 +42,14 @@ struct sce_sforesttreenode {
     float distance;
     SCEuint n_polygons;   /* tessellation of the node (number of vertices) */
 
+    int leaf_index;   /**< Whether this node should generate a bush */
+    SCE_TMatrix4x3 leaf_matrix; /**< Bush's matrix */
+
     SCEuint index;        /* index of this node (which is a vertex) */
     SCE_SForestTreeNode *children[SCE_MAX_FTREE_DEGREE];
     size_t n_children;
     size_t n_nodes;
+    size_t n_leaves[SCE_MAX_FTREE_BUSH_TYPES];
 
     /* tree geom */
     size_t n_vertices1;
@@ -73,6 +78,9 @@ struct sce_sforesttree {
     SCEvertices *vertices;
     SCEindices *indices;
     SCE_SGeometryArray pos, nor, tc, idx;
+
+    /* TODO: matrix type */
+    float *bushes[SCE_MAX_FTREE_BUSH_TYPES];
 
     SCEuint index_counter;      /* Internal use for vertex arrays generation */
     SCEuint vertex_counter;     /* Internal use for vertex arrays generation */
@@ -107,13 +115,20 @@ float* SCE_FTree_GetNodeMatrix (SCE_SForestTreeNode*);
 void SCE_FTree_GetNodeMatrixv (SCE_SForestTreeNode*, SCE_TMatrix4x3);
 size_t SCE_FTree_GetNumNodeChildren (const SCE_SForestTreeNode*);
 
+void SCE_FTree_SetBush (SCE_SForestTreeNode*, int);
+int SCE_FTree_GetBush (const SCE_SForestTreeNode*);
+void SCE_FTree_SetBushMatrix (SCE_SForestTreeNode*, const SCE_TMatrix4x3);
+
 int SCE_FTree_Build (SCE_SForestTree*);
 
 void SCE_FTree_UpdateTreeGeometry (SCE_SForestTree*);
 void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree*);
+void SCE_FTree_UpdateBushesMatrices (SCE_SForestTree*);
 
 SCE_SGeometry* SCE_FTree_GetTreeGeometry (SCE_SForestTree*);
 SCE_SGeometry* SCE_FTree_GetFinalGeometry (SCE_SForestTree*);
+size_t SCE_FTree_GetBushNumInstances (SCE_SForestTree*, SCEuint);
+float* SCE_FTree_GetBushMatrix (SCE_SForestTree*, SCEuint, SCEuint);
 
 #ifdef __cplusplus
 } /* extern "C" */
