@@ -31,7 +31,7 @@ void SCE_Grid_Init (SCE_SGrid *grid)
     grid->data = NULL;
     grid->width = grid->height = grid->depth = 0;
     grid->wrap_x = grid->wrap_y = grid->wrap_z = 0;
-    grid->type = SCE_BYTE;
+    grid->size = 1;
     grid->built = SCE_FALSE;
     grid->udata = NULL;
 }
@@ -69,9 +69,9 @@ void SCE_Grid_CopyData (SCE_SGrid *dst, const SCE_SGrid *src)
 }
 
 
-void SCE_Grid_SetType (SCE_SGrid *grid, SCE_EType type)
+void SCE_Grid_SetPointSize (SCE_SGrid *grid, size_t size)
 {
-    grid->type = type;
+    grid->size = size;
 }
 void SCE_Grid_SetDimensions (SCE_SGrid *grid, int width, int height, int depth)
 {
@@ -92,9 +92,9 @@ void SCE_Grid_SetDepth (SCE_SGrid *grid, int depth)
     grid->depth = depth;
 }
 
-SCE_EType SCE_Grid_GetType (const SCE_SGrid *grid)
+size_t SCE_Grid_GetPointSize (const SCE_SGrid *grid)
 {
-    return grid->type;
+    return grid->size;
 }
 void* SCE_Grid_GetRaw (SCE_SGrid *grid)
 {
@@ -118,7 +118,7 @@ int SCE_Grid_GetNumPoints (const SCE_SGrid *grid)
 }
 size_t SCE_Grid_GetSize (const SCE_SGrid *grid)
 {
-    return SCE_Type_Sizeof (grid->type) * SCE_Grid_GetNumPoints (grid);
+    return grid->size * SCE_Grid_GetNumPoints (grid);
 }
 
 void SCE_Grid_SetData (SCE_SGrid *grid, void *udata)
@@ -180,17 +180,17 @@ void SCE_Grid_GetPoint (const SCE_SGrid *grid, int x, int y, int z, void *p)
 {
     unsigned char *src = NULL;
     size_t offset = SCE_Grid_GetOffset (grid, x, y, z);
-    offset *= SCE_Type_Sizeof (grid->type);
+    offset *= grid->size;
     src = grid->data;
-    memcpy (p, &src[offset], SCE_Type_Sizeof (grid->type));
+    memcpy (p, &src[offset], grid->size);
 }
 void SCE_Grid_SetPoint (SCE_SGrid *grid, int x, int y, int z, void *p)
 {
     unsigned char *dst = NULL;
     size_t offset = SCE_Grid_GetOffset (grid, x, y, z);
-    offset *= SCE_Type_Sizeof (grid->type);
+    offset *= grid->size;
     dst = grid->data;
-    memcpy (&dst[offset], p, SCE_Type_Sizeof (grid->type));
+    memcpy (&dst[offset], p, grid->size);
 }
 
 
@@ -262,9 +262,9 @@ fail:
 
 
 void SCE_Grid_ToTexture (const SCE_SGrid *grid, SCE_STexData *tex,
-                         SCE_EPixelFormat pxf)
+                         SCE_EPixelFormat pxf, SCE_EType type)
 {
-    SCE_TexData_SetDataType (tex, grid->type);
+    SCE_TexData_SetDataType (tex, type);
     SCE_TexData_SetDimensions (tex, grid->width, grid->height, grid->depth);
     SCE_TexData_SetPixelFormat (tex, pxf);
     SCE_TexData_SetDataFormat (tex, SCE_IMAGE_RED);
@@ -283,7 +283,7 @@ void SCE_Grid_UpdateFace (SCE_SGrid *grid, SCE_EBoxFace f, const void *data)
 
     SCE_Grid_Init (&g);
     SCE_Grid_SetDimensions (&g, grid->width, grid->height, grid->depth);
-    g.type = grid->type;
+    g.size = grid->size;
     g.data = data;
 
     x = y = z = 0;
