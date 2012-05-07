@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 21/01/2012
-   updated: 02/02/2012 */
+   updated: 07/05/2012 */
 
 #ifndef SCEGRID_H
 #define SCEGRID_H
@@ -82,6 +82,9 @@ void SCE_Grid_ToTexture (const SCE_SGrid*, SCE_STexData*, SCE_EPixelFormat,
                          SCE_EType);
 
 void SCE_Grid_UpdateFace (SCE_SGrid*, SCE_EBoxFace, const void*);
+
+void SCE_Grid_GetRegion (const SCE_SGrid*, SCE_SIntRect3*, size_t, void*);
+void SCE_Grid_SetRegion (SCE_SGrid*, SCE_SIntRect3*, size_t, const void*);
 
 #ifdef __cplusplus
 } /* extern "C" */

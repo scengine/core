@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 21/01/2012
-   updated: 17/03/2012 */
+   updated: 07/05/2012 */
 
 #include <string.h>             /* memcpy() */
 #include <SCE/utils/SCEUtils.h>
@@ -334,5 +334,57 @@ void SCE_Grid_UpdateFace (SCE_SGrid *grid, SCE_EBoxFace f, const void *data)
     case SCE_BOX_POSY: grid->wrap_y++; break;
     case SCE_BOX_NEGZ: grid->wrap_z--; break;
     case SCE_BOX_POSZ: grid->wrap_z++; break;
+    }
+}
+
+void SCE_Grid_GetRegion (const SCE_SGrid *grid, SCE_SIntRect3 *region,
+                         size_t size, void *data_)
+{
+    int p1[3], p2[3];
+    int x1, y1, z1, x2, y2, z2;
+    int w, h, d;
+    size_t offset, o;
+    SCEubyte *data = data_, *src = grid->data;
+
+    SCE_Rectangle3_GetPointsv (region, p1, p2);
+    w = SCE_Rectangle3_GetWidth (region);
+    h = SCE_Rectangle3_GetHeight (region);
+    d = SCE_Rectangle3_GetDepth (region);
+
+    for (z1 = p1[2], z2 = 0; z1 < p2[2]; z1++, z2++) {
+        for (y1 = p1[1], y2 = 0; y1 < p2[1]; y1++, y2++) {
+            for (x1 = p1[0], x2 = 0; x1 < p2[0]; x1++, x2++) {
+                offset = SCE_Grid_GetOffset (grid, x1, y1, z1);
+                o = w * (h * z2 + y2) + x2;
+                o *= size;
+                memcpy (&data[o], &src[offset], grid->size);
+            }
+        }
+    }
+}
+
+void SCE_Grid_SetRegion (SCE_SGrid *grid, SCE_SIntRect3 *region,
+                         size_t size, const void *data_)
+{
+    int p1[3], p2[3];
+    int x1, y1, z1, x2, y2, z2;
+    int w, h, d;
+    size_t offset, o;
+    SCEubyte *data = data_, *dst = grid->data;
+
+    SCE_Rectangle3_GetPointsv (region, p1, p2);
+    w = SCE_Rectangle3_GetWidth (region);
+    h = SCE_Rectangle3_GetHeight (region);
+    d = SCE_Rectangle3_GetDepth (region);
+
+    for (z1 = p1[2], z2 = 0; z1 < p2[2]; z1++, z2++) {
+        for (y1 = p1[1], y2 = 0; y1 < p2[1]; y1++, y2++) {
+            for (x1 = p1[0], x2 = 0; x1 < p2[0]; x1++, x2++) {
+                offset = SCE_Grid_GetOffset (grid, x1, y1, z1);
+                o = w * (h * z2 + y2) + x2;
+                o *= size;
+                memcpy (&dst[offset], &data[o], grid->size);
+            }
+        }
     }
 }
