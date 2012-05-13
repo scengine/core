@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 11/04/2010
-   updated: 05/05/2012 */
+   updated: 11/05/2012 */
 
 #ifndef SCECORE_H
 #define SCECORE_H
@@ -44,6 +44,7 @@
 #include "SCE/core/SCEVoxelFile.h"
 #include "SCE/core/SCEVoxelStore.h"
 #include "SCE/core/SCEVoxelOctree.h"
+#include "SCE/core/SCEVoxelWorld.h"
 #include "SCE/core/SCEMarchingTetrahedra.h"
 #include "SCE/core/SCEForestTree.h"
 #include "SCE/core/SCEOBJLoader.h"
