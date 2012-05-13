@@ -260,7 +260,7 @@ int SCE_VOctree_Save (SCE_SVoxelOctree *vo, const char *fname)
 }
 
 static void
-SCE_VOctree_GetNodeFilename (SCE_SVoxelOctree *vo,
+SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctree *vo,
                              const SCE_SLongRect3 *node_rect, SCEuint level,
                              char *fname)
 {
@@ -271,9 +271,9 @@ SCE_VOctree_GetNodeFilename (SCE_SVoxelOctree *vo,
 }
 
 static int
-SCE_VOctree_CopyFromFile (SCE_SVoxelOctree *vo, const SCE_SLongRect3 *node_rect,
-                          SCEuint level, const SCE_SLongRect3 *area,
-                          SCE_SVoxelGrid *grid)
+SCE_VOctree_CopyFromFile (const SCE_SVoxelOctree *vo,
+                          const SCE_SLongRect3 *node_rect, SCEuint level,
+                          const SCE_SLongRect3 *area, SCE_SVoxelGrid *grid)
 {
     SCE_SLongRect3 src_region, dst_region;
     char fname[256] = {0};
@@ -319,11 +319,12 @@ static void SCE_VOctree_ConstructRect (const SCE_SLongRect3 *parent,
 }
 
 static int
-SCE_VOctree_Get (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
+SCE_VOctree_Get (const SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                  const SCE_SLongRect3 *node_rect, SCEuint level, SCEuint depth,
                  const SCE_SLongRect3 *area, SCE_SVoxelGrid *grid)
 {
     SCE_SLongRect3 inter;
+    SCEuint clevel;
     /* TODO: hardcoded patterns */
     SCEubyte empty_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
     SCEubyte full_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
@@ -332,6 +333,8 @@ SCE_VOctree_Get (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     if (!SCE_Rectangle3_Intersectionl (node_rect, area, &inter))
         return SCE_OK;
 
+    clevel = level + depth;
+
     switch (node->status) {
     case SCE_VOCTREE_NODE_EMPTY:
         SCE_Rectangle3_SubOriginl (&inter, area);
@@ -339,13 +342,21 @@ SCE_VOctree_Get (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         break;
     case SCE_VOCTREE_NODE_FULL:
         SCE_Rectangle3_SubOriginl (&inter, area);
-        full_pattern[1] = node->material;
+//        full_pattern[1] = node->material;
         SCE_VGrid_Fill (grid, &inter, full_pattern);
         break;
     case SCE_VOCTREE_NODE_LEAF:
-        /* copy data from current node */
-        if (SCE_VOctree_CopyFromFile (vo, node_rect, level, area, grid) < 0)
-            goto fail;
+        if (level == clevel) {
+            /* copy data from current node */
+            if (SCE_VOctree_CopyFromFile (vo, node_rect, level, area, grid) < 0)
+                goto fail;
+        } else {
+            SCE_Rectangle3_SubOriginl (&inter, area);
+            if (node->in_volume > (vo->w * vo->h * vo->d) / 2)
+                SCE_VGrid_Fill (grid, &inter, full_pattern);
+            else
+                SCE_VGrid_Fill (grid, &inter, empty_pattern);
+        }
         break;
     case SCE_VOCTREE_NODE_NODE:
         if (depth == 0) {
@@ -358,8 +369,9 @@ SCE_VOctree_Get (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             SCE_SLongRect3 r;
             for (i = 0; i < 8; i++) {
                 SCE_VOctree_ConstructRect (node_rect, i, &r);
-                SCE_VOctree_Get (vo, node->children[i], &r, level, depth - 1,
-                                 area, grid);
+                if (SCE_VOctree_Get (vo, node->children[i], &r, level,
+                                     depth - 1, area, grid) < 0)
+                    goto fail;
             }
         }
         break;
@@ -372,7 +384,7 @@ fail:
 }
 
 
-int SCE_VOctree_GetRegion (SCE_SVoxelOctree *vo, SCEuint level,
+int SCE_VOctree_GetRegion (const SCE_SVoxelOctree *vo, SCEuint level,
                            const SCE_SLongRect3 *area, SCEubyte *data)
 {
     SCEuint depth;
@@ -434,7 +446,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                  const SCE_SLongRect3 *area, const SCE_SVoxelGrid *grid)
 {
     size_t i;
-    SCE_SLongRect3 inter, region;
+    SCE_SLongRect3 inter, region, local_rect;
     SCE_SVoxelFileStats diff;
     char fname[256] = {0};
     SCE_SVoxelGrid g;
@@ -448,6 +460,8 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         return SCE_OK;
 
     clevel = level + depth;
+    local_rect = *node_rect;
+    SCE_Rectangle3_Pow2l (&local_rect, -depth);
 
     SCE_VGrid_Init (&g);
     g.w = vo->w;
@@ -466,13 +480,13 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             break;
 
         /* create this node */
-        SCE_VOctree_GetNodeFilename (vo, node_rect, clevel, fname);
+        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
         if (SCE_VFile_Create (fname, &g, empty_pattern) < 0)
             goto fail;
 
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_CopyToFile (vo, node_rect, clevel, area,
+            if (SCE_VOctree_CopyToFile (vo, &local_rect, clevel, area,
                                         grid, &diff) < 0)
                 goto fail;
             node->in_volume += diff.in_volume;
@@ -511,13 +525,13 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             break;
 
         /* create this node */
-        SCE_VOctree_GetNodeFilename (vo, node_rect, clevel, fname);
+        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
         if (SCE_VFile_Create (fname, &g, full_pattern) < 0)
             goto fail;
 
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_CopyToFile (vo, node_rect, clevel, area,
+            if (SCE_VOctree_CopyToFile (vo, &local_rect, clevel, area,
                                         grid, &diff) < 0)
                 goto fail;
             node->in_volume += diff.in_volume;
@@ -547,59 +561,57 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         }
         break;
     case SCE_VOCTREE_NODE_LEAF:
-        /* simple copy */
-#ifdef SCE_DEBUG
-        if (depth != 0) {
-            SCEE_Log (42);
-            SCEE_LogMsg ("case SCE_VOCTREE_NODE_LEAF: depth is not 0\n");
-            return SCE_ERROR;
-        }
-#endif
-        SCE_VOctree_GetNodeFilename (vo, node_rect, clevel, fname);
-        if (SCE_VOctree_CopyToFile (vo, node_rect, clevel, area,
-                                    grid, &diff) < 0)
-            goto fail;
-        /* note that the file already exists if the octree has been
-           exclusively created using this function, according to
-           NODE_FULL/NODE_EMPTY cases */
-        node->in_volume += diff.in_volume;
-        if (node->in_volume == 0) {
-            remove (fname);
-            node->status = SCE_VOCTREE_NODE_EMPTY;
-        } else if (node->in_volume == vo->w * vo->h * vo->d) {
-            remove (fname);
-            node->status = SCE_VOCTREE_NODE_FULL;
+        if (depth == 0) {
+            /* simple copy */
+            SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
+            if (SCE_VOctree_CopyToFile (vo, &local_rect, clevel, area,
+                                        grid, &diff) < 0)
+                goto fail;
+            /* note that the file already exists if the octree has been
+               exclusively created using this function, according to
+               NODE_FULL/NODE_EMPTY cases */
+            node->in_volume += diff.in_volume;
+            if (node->in_volume == 0) {
+                remove (fname);
+                node->status = SCE_VOCTREE_NODE_EMPTY;
+            } else if (node->in_volume == vo->w * vo->h * vo->d) {
+                remove (fname);
+                node->status = SCE_VOCTREE_NODE_FULL;
+            }
+        } else {
+            SCE_EVoxelOctreeStatus status = SCE_VOCTREE_NODE_EMPTY;
+            long in_volume = 0;
+            node->status = SCE_VOCTREE_NODE_NODE;
+
+            if (node->in_volume > (vo->w * vo->h * vo->d) / 2) { /* tkt. */
+                status = SCE_VOCTREE_NODE_FULL;
+                in_volume = vo->w * vo->h * vo->d;
+            }
+
+            /* create 8 children and recurse */
+            for (i = 0; i < 8; i++) {
+                if (!(node->children[i] = SCE_VOctree_CreateNode ()))
+                    goto fail;
+                node->children[i]->status = status;
+                node->children[i]->in_volume = in_volume;
+            }
+            for (i = 0; i < 8; i++) {
+                SCE_SLongRect3 r;
+                SCE_VOctree_ConstructRect (node_rect, i, &r);
+                if (SCE_VOctree_Set (vo, node->children[i], &r, level,
+                                     depth - 1, area, grid) < 0)
+                    goto fail;
+            }
         }
         break;
     case SCE_VOCTREE_NODE_NODE:
-        SCE_VOctree_GetNodeFilename (vo, node_rect, level, fname);
+        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_CopyToFile (vo, node_rect, level, area,
+            if (SCE_VOctree_CopyToFile (vo, &local_rect, clevel, area,
                                         grid, &diff) < 0)
                 goto fail;
             node->in_volume += diff.in_volume;
-            if (node->in_volume == 0) {
-                for (i = 0; i < 8; i++) {
-                    if (node->children[i]->status != SCE_VOCTREE_NODE_EMPTY)
-                        break;
-                }
-                if (i == 8) {
-                    remove (fname);
-                    SCE_VOctree_DeleteChildren (node);
-                    node->status = SCE_VOCTREE_NODE_EMPTY;
-                }
-            } else if (node->in_volume == vo->w * vo->h * vo->d) {
-                for (i = 0; i < 8; i++) {
-                    if (node->children[i]->status != SCE_VOCTREE_NODE_FULL)
-                        break;
-                }
-                if (i == 8) {
-                    remove (fname);
-                    SCE_VOctree_DeleteChildren (node);
-                    node->status = SCE_VOCTREE_NODE_FULL;
-                }
-            }
         } else {
             int j = 0;
             /* recurse */
@@ -616,7 +628,10 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             }
             if (j == 8 || j == -8) {
                 SCE_VOctree_DeleteChildren (node);
-                node->status = SCE_VOCTREE_NODE_LEAF;
+                remove (fname);
+                node->status = SCE_VOCTREE_NODE_FULL;
+                if (j == 8)
+                    node->status = SCE_VOCTREE_NODE_EMPTY;
             }
         }
         break;
