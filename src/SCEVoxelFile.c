@@ -87,7 +87,7 @@ void SCE_VFile_SetNumComponents (SCE_SVoxelFile *vf, size_t n)
 static int SCE_VFile_Open (SCE_SVoxelFile *vf, const char *fname, const char *mode)
 {
     if (!(vf->fp = fopen (fname, mode))) {
-        SCEE_Log (42);          /* TODO: use media/resource manager */
+        SCEE_LogErrno (fname);
         return SCE_ERROR;
     }
     return SCE_OK;
