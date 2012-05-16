@@ -70,7 +70,7 @@ void SCE_VWorld_SetNumLevels (SCE_SVoxelWorld*, SCEuint);
 SCEuint SCE_VWorld_GetNumLevels (SCE_SVoxelWorld*);
 void SCE_VWorld_SetPrefix (SCE_SVoxelWorld*, const char*);
 
-int SCE_VWorld_AddNewTree (SCE_SVoxelWorld*, long, long, long);
+SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld*, long, long, long);
 
 int SCE_VWorld_Build (SCE_SVoxelWorld*);
 

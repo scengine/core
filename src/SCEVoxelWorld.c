@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/05/2012
-   updated: 11/05/2012 */
+   updated: 15/05/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -147,17 +147,25 @@ void SCE_VWorld_SetPrefix (SCE_SVoxelWorld *vw, const char *prefix)
 }
 
 
-int SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw, long x, long y, long z)
+static void
+SCE_VWorld_SetTreePrefix (char *prefix, SCE_SVoxelWorld *vw,
+                          long x, long y, long z)
+{
+    sprintf (prefix, "%s/region_%ld_%ld_%ld", vw->prefix, x, y, z);
+}
+
+SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
+                                            long x, long y, long z)
 {
     char prefix[128] = {0};
     SCE_SVoxelWorldTree *wt = NULL;
 
     if (!(wt = SCE_VWorld_CreateTree ())) {
         SCEE_LogSrc ();
-        return SCE_ERROR;
+        return NULL;
     }
 
-    sprintf (prefix, "%s/region_%ld_%ld_%ld", vw->prefix, x, y, z);
+    SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
     /* TODO: create directory */
 
     SCE_VOctree_SetMaxDepth (&wt->vo, vw->n_lod - 1);
@@ -166,7 +174,7 @@ int SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw, long x, long y, long z)
     SCE_VOctree_SetPrefix (&wt->vo, prefix);
     SCE_List_Appendl (&vw->trees, &wt->it);
 
-    return SCE_OK;
+    return wt;
 }
 
 
