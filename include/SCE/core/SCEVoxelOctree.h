@@ -71,6 +71,7 @@ void SCE_VOctree_SetMaxDepth (SCE_SVoxelOctree*, size_t);
 
 void SCE_VOctree_SetPrefix (SCE_SVoxelOctree*, const char*);
 
+void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree*, long*, long*, long*);
 SCEulong SCE_VOctree_GetWidth (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetHeight (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetDepth (const SCE_SVoxelOctree*);

@@ -120,6 +120,14 @@ void SCE_VOctree_SetPrefix (SCE_SVoxelOctree *vo, const char *prefix)
     strncpy (vo->prefix, prefix, sizeof vo->prefix - 1);
 }
 
+
+void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree *vo, long *x, long *y,
+                             long *z)
+{
+    *x = vo->x;
+    *y = vo->y;
+    *z = vo->z;
+}
 SCEulong SCE_VOctree_GetWidth (const SCE_SVoxelOctree *vo)
 {
     return vo->w;
