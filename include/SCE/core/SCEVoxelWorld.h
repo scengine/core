@@ -89,6 +89,8 @@ int SCE_VWorld_GenerateLOD (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
 int SCE_VWorld_GenerateAllLOD (SCE_SVoxelWorld*, SCEuint,
                                const SCE_SLongRect3*);
 
+int SCE_VWorld_GetNode (SCE_SVoxelWorld*, SCEuint, long, long, long, char*);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

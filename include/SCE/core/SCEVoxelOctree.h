@@ -33,7 +33,7 @@ extern "C" {
 #define SCE_VOCTREE_VOXEL_ELEMENTS 1
 
 typedef enum {
-    SCE_VOCTREE_NODE_EMPTY,
+    SCE_VOCTREE_NODE_EMPTY = 0,
     SCE_VOCTREE_NODE_FULL,
     SCE_VOCTREE_NODE_LEAF,
     SCE_VOCTREE_NODE_NODE
@@ -86,6 +86,8 @@ int SCE_VOctree_GetRegion (const SCE_SVoxelOctree*, SCEuint,
                            const SCE_SLongRect3*, SCEubyte*);
 int SCE_VOctree_SetRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
                            const SCEubyte*);
+
+int SCE_VOctree_GetNode (SCE_SVoxelOctree*, SCEuint, long, long, long, char*);
 
 #ifdef __cplusplus
 } /* extern "C" */

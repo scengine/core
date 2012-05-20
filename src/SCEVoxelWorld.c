@@ -148,7 +148,7 @@ void SCE_VWorld_SetPrefix (SCE_SVoxelWorld *vw, const char *prefix)
 
 
 static void
-SCE_VWorld_SetTreePrefix (char *prefix, SCE_SVoxelWorld *vw,
+SCE_VWorld_SetTreePrefix (char *prefix, const SCE_SVoxelWorld *vw,
                           long x, long y, long z)
 {
     sprintf (prefix, "%s/region_%ld_%ld_%ld", vw->prefix, x, y, z);
@@ -501,7 +501,7 @@ fail:
 }
 
 int SCE_VWorld_GenerateAllLOD (SCE_SVoxelWorld *vw, SCEuint level,
-                                const SCE_SLongRect3 *zone)
+                               const SCE_SLongRect3 *zone)
 {
     SCEuint i;
     SCE_SLongRect3 area = *zone;
@@ -513,4 +513,23 @@ int SCE_VWorld_GenerateAllLOD (SCE_SVoxelWorld *vw, SCEuint level,
         }
     }
     return SCE_OK;
+}
+
+
+int SCE_VWorld_GetNode (SCE_SVoxelWorld *vw, SCEuint level, long x, long y,
+                        long z, char *fname)
+{
+    SCE_SListIterator *it = NULL;
+    int r;
+
+    SCE_List_ForEach (it, &vw->trees) {
+        SCE_SVoxelOctree *vo = NULL;
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+        vo = &wt->vo;
+        r = SCE_VOctree_GetNode (vo, level, x, y, z, fname);
+        if (r > -1)
+            return r;
+    }
+
+    return SCE_VOCTREE_NODE_EMPTY;
 }

@@ -673,3 +673,70 @@ int SCE_VOctree_SetRegion (SCE_SVoxelOctree *vo, SCEuint level,
     return SCE_VOctree_Set (vo, &vo->root, &node_rect, level, depth,
                             area, &grid);
 }
+
+
+static SCE_EVoxelOctreeStatus
+SCE_VOctree_Node (const SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
+                  const SCE_SLongRect3 *node_rect, SCEuint level,
+                  SCEuint depth, long x, long y, long z, char *fname)
+{
+    SCEuint clevel;
+
+    clevel = level + depth;
+
+    switch (node->status) {
+    case SCE_VOCTREE_NODE_EMPTY:
+    case SCE_VOCTREE_NODE_FULL:
+        return node->status;
+    case SCE_VOCTREE_NODE_LEAF:
+        if (level == clevel) {
+            SCE_VOctree_GetNodeFilename (vo, node_rect, level, fname);
+            return node->status;
+        } else {
+            if (node->in_volume > (vo->w * vo->h * vo->d) / 2)
+                return SCE_VOCTREE_NODE_FULL;
+            else
+                return SCE_VOCTREE_NODE_EMPTY;
+        }
+    case SCE_VOCTREE_NODE_NODE:
+        if (depth == 0) {
+            SCE_VOctree_GetNodeFilename (vo, node_rect, level, fname);
+            return node->status;
+        } else {
+            /* recurse */
+            size_t i;
+            SCE_SLongRect3 r;
+            for (i = 0; i < 8; i++) {
+                SCE_VOctree_ConstructRect (node_rect, i, &r);
+                if (SCE_Rectangle3_IsInl (&r, x, y, z)) {
+                    return SCE_VOctree_Node (vo, node->children[i], &r, level,
+                                             depth - 1, x, y, z, fname);
+                }
+            }
+        }
+    }
+
+#ifdef SCE_DEBUG
+    SCEE_SendMsg ("voctree: querying a node that is not in the tree\n");
+#endif
+    return SCE_VOCTREE_NODE_EMPTY; /* wtf? */
+}
+
+
+int SCE_VOctree_GetNode (SCE_SVoxelOctree *vo, SCEuint level, long x, long y,
+                         long z, char *fname)
+{
+    SCEuint depth;
+    SCE_SLongRect3 node_rect;
+
+    depth = vo->max_depth - level;
+    SCE_Rectangle3_SetFromOriginl (&node_rect, vo->x, vo->y, vo->z,
+                                   vo->w, vo->h, vo->d);
+    SCE_Rectangle3_Pow2l (&node_rect, depth);
+
+    if (SCE_Rectangle3_IsInl (&node_rect, x, y, z))
+        return SCE_VOctree_Node (vo, &vo->root, &node_rect, level, depth,
+                                 x, y, z, fname);
+    else
+        return -1;
+}
