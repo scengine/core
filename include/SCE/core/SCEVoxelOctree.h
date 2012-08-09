@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 24/04/2012
-   updated: 04/05/2012 */
+   updated: 09/08/2012 */
 
 #ifndef SCEVOXELOCTREE_H
 #define SCEVOXELOCTREE_H
@@ -43,6 +43,7 @@ typedef struct sce_svoxeloctreenode SCE_SVoxelOctreeNode;
 struct sce_svoxeloctreenode {
     SCE_EVoxelOctreeStatus status;
     SCE_SVoxelOctreeNode *children[8];
+    SCE_SVoxelFile vf;
     unsigned long in_volume;    /* number of voxels in the volume */
     int material;               /* material ID if full */
 };

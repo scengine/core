@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 27/04/2012
-   updated: 02/05/2012 */
+   updated: 09/08/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -38,12 +38,13 @@ void SCE_VFile_Init (SCE_SVoxelFile *vf)
 }
 void SCE_VFile_Clear (SCE_SVoxelFile *vf)
 {
-    fclose (vf->fp);
+    if (vf->fp)
+        fclose (vf->fp);
 }
 
 
-int SCE_VFile_Create (const char *fname, const SCE_SVoxelGrid *grid,
-                      const SCEubyte *pattern)
+int SCE_VFile_Create (SCE_SVoxelFile *vf, const char *fname,
+                      const SCE_SVoxelGrid *grid, const SCEubyte *pattern)
 {
     size_t x, y, z, w, h, d, n_cmp;
     FILE *fp = NULL;
@@ -84,23 +85,28 @@ void SCE_VFile_SetNumComponents (SCE_SVoxelFile *vf, size_t n)
     vf->n_cmp = n;
 }
 
-static int SCE_VFile_Open (SCE_SVoxelFile *vf, const char *fname, const char *mode)
+int SCE_VFile_Open (SCE_SVoxelFile *vf, const char *fname)
 {
-    if (!(vf->fp = fopen (fname, mode))) {
-        SCEE_LogErrno (fname);
+    if (!(vf->fp = fopen (fname, "r+b"))) {
+        SCEE_LogSrc ();
         return SCE_ERROR;
     }
     return SCE_OK;
 }
 
-int SCE_VFile_OpenRead (SCE_SVoxelFile *vf, const char *fname)
+void SCE_VFile_Close (SCE_SVoxelFile *vf)
 {
-    return SCE_VFile_Open (vf, fname, "rb");
+    if (vf->fp) {
+        fclose (vf->fp);
+        vf->fp = NULL;
+    }
 }
-int SCE_VFile_OpenWrite (SCE_SVoxelFile *vf, const char *fname)
+
+int SCE_VFile_IsOpen (SCE_SVoxelFile *vf)
 {
-    return SCE_VFile_Open (vf, fname, "r+b");
+    return vf->fp ? SCE_TRUE : SCE_FALSE;
 }
+
 
 void SCE_VFile_GetRegion (SCE_SVoxelFile *src, const SCE_SLongRect3 *src_region,
                           SCE_SVoxelGrid *dst, const SCE_SLongRect3 *dst_region)
