@@ -115,7 +115,8 @@ void SCE_VGrid_Fill (SCE_SVoxelGrid *vg, const SCE_SLongRect3 *region,
 }
 
 void SCE_VGrid_Copy (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
-                     const SCE_SLongRect3 *src_region, SCE_SVoxelGrid *src)
+                     const SCE_SLongRect3 *src_region,
+                     const SCE_SVoxelGrid *src)
 {
     long dst_p1[3], dst_p2[3];
     long src_p1[3], src_p2[3];
