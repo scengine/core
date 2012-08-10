@@ -32,44 +32,16 @@ static void SCE_VFile_InitStats (SCE_SVoxelFileStats *s)
 
 void SCE_VFile_Init (SCE_SVoxelFile *vf)
 {
-    vf->fp = NULL;
+    SCE_File_Init (&vf->fp);
+    vf->is_open = SCE_FALSE;
     vf->w = vf->h = vf->d = 0;
     vf->n_cmp = 0;
     SCE_VFile_InitStats (&vf->stats);
 }
 void SCE_VFile_Clear (SCE_SVoxelFile *vf)
 {
-    if (vf->fp)
-        fclose (vf->fp);
-}
-
-
-int SCE_VFile_Create (SCE_SVoxelFile *vf, const char *fname,
-                      const SCE_SVoxelGrid *grid, const SCEubyte *pattern)
-{
-    size_t x, y, z, w, h, d, n_cmp;
-    FILE *fp = NULL;
-
-    if (!(fp = fopen (fname, "wb"))) {
-        SCEE_LogErrno (fname);
-        return SCE_ERROR;
-    }
-
-    n_cmp = grid->n_cmp;
-    w = grid->w;
-    h = grid->h;
-    d = grid->d;
-
-    for (z = 0; z < d; z++) {
-        for (y = 0; y < h; y++) {
-            for (x = 0; x < w; x++)
-                fwrite (pattern, n_cmp, 1, fp);
-        }
-    }
-
-    fclose (fp);
-
-    return SCE_OK;
+    if (vf->is_open)
+        SCE_File_Close (&vf->fp);
 }
 
 
@@ -86,28 +58,52 @@ void SCE_VFile_SetNumComponents (SCE_SVoxelFile *vf, size_t n)
     vf->n_cmp = n;
 }
 
-int SCE_VFile_Open (SCE_SVoxelFile *vf, const char *fname)
+int SCE_VFile_Open (SCE_SVoxelFile *vf, SCE_SFileSystem *fs, const char *fname)
 {
-    if (!(vf->fp = fopen (fname, "r+b"))) {
-        SCEE_LogSrc ();
-        return SCE_ERROR;
+    if (SCE_File_Open (&vf->fp, fs, fname, "r+b") < 0) {
+        SCEE_Clear ();
+        /* FIXME: dirty hack, try to create the file */
+        FILE *fp = fopen (fname, "w");
+        if (!fp) {
+            SCEE_LogErrno (fname);
+            return SCE_ERROR;
+        }
+        fclose (fp);
+        if (SCE_File_Open (&vf->fp, fs, fname, "r+b") < 0) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
     }
+    vf->is_open = SCE_TRUE;
     return SCE_OK;
 }
 
 void SCE_VFile_Close (SCE_SVoxelFile *vf)
 {
-    if (vf->fp) {
-        fclose (vf->fp);
-        vf->fp = NULL;
+    if (vf->is_open) {
+        SCE_File_Close (&vf->fp);
+        vf->is_open = SCE_FALSE;
     }
 }
 
 int SCE_VFile_IsOpen (SCE_SVoxelFile *vf)
 {
-    return vf->fp ? SCE_TRUE : SCE_FALSE;
+    return vf->is_open;
 }
 
+
+void SCE_VFile_Fill (SCE_SVoxelFile *vf, const SCEubyte *pattern)
+{
+    size_t x, y, z;
+
+    for (z = 0; z < vf->d; z++) {
+        for (y = 0; y < vf->h; y++) {
+            for (x = 0; x < vf->w; x++)
+                SCE_File_Write (pattern, vf->n_cmp, 1, &vf->fp);
+        }
+    }
+    SCE_File_Rewind (&vf->fp);
+}
 
 void SCE_VFile_GetRegion (SCE_SVoxelFile *src, const SCE_SLongRect3 *src_region,
                           SCE_SVoxelGrid *dst, const SCE_SLongRect3 *dst_region)
@@ -133,9 +129,10 @@ void SCE_VFile_GetRegion (SCE_SVoxelFile *src, const SCE_SLongRect3 *src_region,
 
     for (z1 = dst_p1[2], z2 = src_p1[2]; z1 < dst_p2[2]; z1++, z2++) {
         for (y1 = dst_p1[1], y2 = src_p1[1]; y1 < dst_p2[1]; y1++, y2++) {
-            fseek (src->fp, src->w * (src->h * z2 + y2) + src_p1[0], SEEK_SET);
-            fread (SCE_VGrid_Offset (dst, dst_p1[0], y1, z1),
-                   w * n_cmp, 1, src->fp);
+            SCE_File_Seek (&src->fp, src->w * (src->h * z2 + y2) + src_p1[0],
+                           SEEK_SET);
+            SCE_File_Read (SCE_VGrid_Offset (dst, dst_p1[0], y1, z1),
+                           w * n_cmp, 1, &src->fp);
         }
     }
 }
@@ -162,27 +159,23 @@ void SCE_VFile_SetRegion (SCE_SVoxelFile *dst, const SCE_SLongRect3 *dst_region,
 
     for (z1 = src_p1[2], z2 = dst_p1[2]; z1 < src_p2[2]; z1++, z2++) {
         for (y1 = src_p1[1], y2 = dst_p1[1]; y1 < src_p2[1]; y1++, y2++) {
-            fseek (dst->fp, dst->n_cmp * (dst->w*(dst->h*z2 + y2) + dst_p1[0]),
-                   SEEK_SET);
-#if 1
+            long o = (dst->w * (dst->h * z2 + y2) + dst_p1[0]);
+            SCE_File_Seek (&dst->fp, dst->n_cmp * o, SEEK_SET);
+
             for (x1 = src_p1[0], x2 = dst_p1[0]; x1 < src_p2[0]; x1++, x2++) {
                 /* NOTE: we hope that 42 > n_cmp */
                 SCEubyte buffer[42] = {0};
                 SCEubyte *grid = SCE_VGrid_Offset (src, x1, y1, z1);
 
-                fread (buffer, dst->n_cmp, 1, dst->fp);
+                SCE_File_Read (buffer, dst->n_cmp, 1, &dst->fp);
                 if (buffer[0] <= 127 && grid[0] > 127)
                     dst->stats.in_volume++;
                 else if (buffer[0] > 127 && grid[0] <= 127)
                     dst->stats.in_volume--;
                 /* TODO: check material changes */
-                fseek (dst->fp, -dst->n_cmp, SEEK_CUR);
-                fwrite (grid, dst->n_cmp, 1, dst->fp);
+                SCE_File_Seek (&dst->fp, -dst->n_cmp, SEEK_CUR);
+                SCE_File_Write (grid, dst->n_cmp, 1, &dst->fp);
             }
-#else
-            fwrite (SCE_VGrid_Offset (src, src_p1[0], y1, z1),
-                    w * n_cmp, 1, dst->fp);
-#endif
         }
     }
 }

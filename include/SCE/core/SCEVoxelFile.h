@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 27/04/2012
-   updated: 09/08/2012 */
+   updated: 10/08/2012 */
 
 #ifndef SCEVOXELFILE_H
 #define SCEVOXELFILE_H
@@ -34,10 +34,10 @@ struct sce_svoxelfilestats {
     long in_volume;
 };
 
-
 typedef struct sce_svoxelfile SCE_SVoxelFile;
 struct sce_svoxelfile {
-    FILE *fp;
+    SCE_SFile fp;
+    int is_open;
     SCEulong w, h, d;
     size_t n_cmp;
     SCE_SVoxelFileStats stats;
@@ -46,15 +46,14 @@ struct sce_svoxelfile {
 void SCE_VFile_Init (SCE_SVoxelFile*);
 void SCE_VFile_Clear (SCE_SVoxelFile*);
 
-int SCE_VFile_Create (SCE_SVoxelFile*, const char*, const SCE_SVoxelGrid*,
-                      const SCEubyte*);
-
 void SCE_VFile_SetDimensions (SCE_SVoxelFile*, SCEulong, SCEulong, SCEulong);
 void SCE_VFile_SetNumComponents (SCE_SVoxelFile*, size_t);
 
-int SCE_VFile_Open (SCE_SVoxelFile*, const char*);
+int SCE_VFile_Open (SCE_SVoxelFile*, SCE_SFileSystem*, const char*);
 void SCE_VFile_Close (SCE_SVoxelFile*);
 int SCE_VFile_IsOpen (SCE_SVoxelFile*);
+
+void SCE_VFile_Fill (SCE_SVoxelFile*, const SCEubyte*);
 
 void SCE_VFile_GetRegion (SCE_SVoxelFile*, const SCE_SLongRect3*,
                           SCE_SVoxelGrid*, const SCE_SLongRect3*);

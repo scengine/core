@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 24/04/2012
-   updated: 09/08/2012 */
+   updated: 10/08/2012 */
 
 #include <time.h>
 #include <SCE/utils/SCEUtils.h>
@@ -297,7 +297,7 @@ SCE_VOctree_CopyFromFile (const SCE_SVoxelOctree *vo, SCE_SVoxelFile *vf,
                                  SCE_Rectangle3_GetHeightl (node_rect),
                                  SCE_Rectangle3_GetDepthl (node_rect));
         SCE_VFile_SetNumComponents (vf, grid->n_cmp);
-        if (SCE_VFile_Open (vf, fname) < 0) {
+        if (SCE_VFile_Open (vf, NULL, fname) < 0) {
             SCEE_LogSrc ();
             return SCE_ERROR;
         }
@@ -423,26 +423,11 @@ int SCE_VOctree_GetRegion (const SCE_SVoxelOctree *vo, SCEuint level,
 
 static int
 SCE_VOctree_CopyToFile (SCE_SVoxelOctree *vo, SCE_SVoxelFile *vf,
-                        const SCE_SLongRect3 *node_rect, SCEuint level,
+                        const SCE_SLongRect3 *node_rect,
                         const SCE_SLongRect3 *area, const SCE_SVoxelGrid *grid,
                         SCE_SVoxelFileStats *diff)
 {
     SCE_SLongRect3 src_region, dst_region;
-
-    if (!SCE_VFile_IsOpen (vf)) {
-        char fname[256] = {0};
-
-        SCE_VOctree_GetNodeFilename (vo, node_rect, level, fname);
-
-        SCE_VFile_SetDimensions (vf, SCE_Rectangle3_GetWidthl (node_rect),
-                                 SCE_Rectangle3_GetHeightl (node_rect),
-                                 SCE_Rectangle3_GetDepthl (node_rect));
-        SCE_VFile_SetNumComponents (vf, grid->n_cmp);
-        if (SCE_VFile_Open (vf, fname) < 0) {
-            SCEE_LogSrc ();
-            return SCE_ERROR;
-        }
-    }
 
     SCE_Rectangle3_Intersectionl (node_rect, area, &dst_region);
     src_region = dst_region;
@@ -463,7 +448,6 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     SCE_SLongRect3 inter, region, local_rect;
     SCE_SVoxelFileStats diff;
     char fname[256] = {0};
-    SCE_SVoxelGrid g;
     SCEuint clevel;             /* current level */
     /* TODO: hardcoded patterns */
     SCEubyte empty_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
@@ -477,12 +461,6 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     local_rect = *node_rect;
     SCE_Rectangle3_Pow2l (&local_rect, -depth);
 
-    SCE_VGrid_Init (&g);
-    g.w = vo->w;
-    g.h = vo->h;
-    g.d = vo->d;
-    g.n_cmp = grid->n_cmp;
-
     switch (node->status) {
     case SCE_VOCTREE_NODE_EMPTY:
         /* first check if the grid is empty, since the grid is more likely
@@ -495,14 +473,19 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
         /* create this node */
         SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
-        if (SCE_VFile_Create (&node->vf, fname, &g, empty_pattern) < 0)
+        if (SCE_VFile_Open (&node->vf, NULL, fname) < 0)
             goto fail;
+        SCE_VFile_SetDimensions (&node->vf,
+                                 SCE_Rectangle3_GetWidthl (&local_rect),
+                                 SCE_Rectangle3_GetHeightl (&local_rect),
+                                 SCE_Rectangle3_GetDepthl (&local_rect));
+        SCE_VFile_SetNumComponents (&node->vf, grid->n_cmp);
+        SCE_VFile_Fill (&node->vf, empty_pattern);
 
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, clevel,
-                                        area, grid, &diff) < 0)
-                goto fail;
+            SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
+                                    &diff);
             node->in_volume += diff.in_volume;
             if (node->in_volume == 0) {
                 SCE_VFile_Close (&node->vf);
@@ -542,14 +525,19 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
         /* create this node */
         SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
-        if (SCE_VFile_Create (&node->vf, fname, &g, full_pattern) < 0)
+        if (SCE_VFile_Open (&node->vf, NULL, fname) < 0)
             goto fail;
+        SCE_VFile_SetDimensions (&node->vf,
+                                 SCE_Rectangle3_GetWidthl (&local_rect),
+                                 SCE_Rectangle3_GetHeightl (&local_rect),
+                                 SCE_Rectangle3_GetDepthl (&local_rect));
+        SCE_VFile_SetNumComponents (&node->vf, grid->n_cmp);
+        SCE_VFile_Fill (&node->vf, full_pattern);
 
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, clevel,
-                                        area, grid, &diff) < 0)
-                goto fail;
+            SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
+                                    &diff);
             node->in_volume += diff.in_volume;
             if (node->in_volume == 0) {
                 SCE_VFile_Close (&node->vf);
@@ -582,9 +570,8 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         if (depth == 0) {
             SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
             /* simple copy */
-            if (SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, clevel,
-                                        area, grid, &diff) < 0)
-                goto fail;
+            SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
+                                    &diff);
             /* note that the file already exists if the octree has been
                exclusively created using this function, according to
                NODE_FULL/NODE_EMPTY cases */
@@ -627,9 +614,8 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     case SCE_VOCTREE_NODE_NODE:
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, clevel,
-                                        area, grid, &diff) < 0)
-                goto fail;
+            SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
+                                    &diff);
             node->in_volume += diff.in_volume;
         } else {
             int j = 0;
