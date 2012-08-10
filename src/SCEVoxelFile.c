@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 27/04/2012
-   updated: 09/08/2012 */
+   updated: 10/08/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -35,6 +35,7 @@ void SCE_VFile_Init (SCE_SVoxelFile *vf)
     vf->fp = NULL;
     vf->w = vf->h = vf->d = 0;
     vf->n_cmp = 0;
+    SCE_VFile_InitStats (&vf->stats);
 }
 void SCE_VFile_Clear (SCE_SVoxelFile *vf)
 {
