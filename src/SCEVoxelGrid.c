@@ -103,7 +103,10 @@ void SCE_VGrid_Fill (SCE_SVoxelGrid *vg, const SCE_SLongRect3 *region,
 {
     long p1[3], p2[3];
     long x, y, z;
+    SCE_SLongRect3 default_region;
 
+    SCE_Rectangle3_Setl (&default_region, 0, 0, 0, vg->w, vg->h, vg->d);
+    if (!region) region = &default_region;
     SCE_Rectangle3_GetPointslv (region, p1, p2);
 
     for (z = p1[2]; z < p2[2]; z++) {
