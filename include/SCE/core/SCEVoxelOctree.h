@@ -57,6 +57,8 @@ struct sce_svoxeloctree {
     SCEulong w, h, d;
 
     char prefix[128];
+
+    SCE_SFileSystem *fs;
 };
 
 

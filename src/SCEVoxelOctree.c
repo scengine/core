@@ -68,6 +68,7 @@ void SCE_VOctree_Init (SCE_SVoxelOctree *vo)
     vo->x = vo->y = vo->z = 0;
     vo->w = vo->h = vo->d = 0;
     memset (vo->prefix, 0, sizeof vo->prefix);
+    vo->fs = &sce_gzfs;
 }
 void SCE_VOctree_Clear (SCE_SVoxelOctree *vo)
 {
@@ -297,7 +298,7 @@ SCE_VOctree_CopyFromFile (const SCE_SVoxelOctree *vo, SCE_SVoxelFile *vf,
                                  SCE_Rectangle3_GetHeightl (node_rect),
                                  SCE_Rectangle3_GetDepthl (node_rect));
         SCE_VFile_SetNumComponents (vf, grid->n_cmp);
-        if (SCE_VFile_Open (vf, NULL, fname) < 0) {
+        if (SCE_VFile_Open (vf, vo->fs, fname) < 0) {
             SCEE_LogSrc ();
             return SCE_ERROR;
         }
@@ -473,7 +474,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
         /* create this node */
         SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
-        if (SCE_VFile_Open (&node->vf, NULL, fname) < 0)
+        if (SCE_VFile_Open (&node->vf, vo->fs, fname) < 0)
             goto fail;
         SCE_VFile_SetDimensions (&node->vf,
                                  SCE_Rectangle3_GetWidthl (&local_rect),
@@ -525,7 +526,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
         /* create this node */
         SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
-        if (SCE_VFile_Open (&node->vf, NULL, fname) < 0)
+        if (SCE_VFile_Open (&node->vf, vo->fs, fname) < 0)
             goto fail;
         SCE_VFile_SetDimensions (&node->vf,
                                  SCE_Rectangle3_GetWidthl (&local_rect),
