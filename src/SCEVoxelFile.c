@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 27/04/2012
-   updated: 10/08/2012 */
+   updated: 11/08/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -60,19 +60,10 @@ void SCE_VFile_SetNumComponents (SCE_SVoxelFile *vf, size_t n)
 
 int SCE_VFile_Open (SCE_SVoxelFile *vf, SCE_SFileSystem *fs, const char *fname)
 {
-    if (SCE_File_Open (&vf->fp, fs, fname, "r+b") < 0) {
-        SCEE_Clear ();
-        /* FIXME: dirty hack, try to create the file */
-        FILE *fp = fopen (fname, "w");
-        if (!fp) {
-            SCEE_LogErrno (fname);
-            return SCE_ERROR;
-        }
-        fclose (fp);
-        if (SCE_File_Open (&vf->fp, fs, fname, "r+b") < 0) {
-            SCEE_LogSrc ();
-            return SCE_ERROR;
-        }
+    if (SCE_File_Open (&vf->fp, fs, fname, SCE_FILE_READ |
+                       SCE_FILE_WRITE | SCE_FILE_CREATE) < 0) {
+        SCEE_LogSrc ();
+        return SCE_ERROR;
     }
     vf->is_open = SCE_TRUE;
     return SCE_OK;
