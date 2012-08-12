@@ -58,13 +58,16 @@ void SCE_VFile_SetNumComponents (SCE_SVoxelFile *vf, size_t n)
     vf->n_cmp = n;
 }
 
-int SCE_VFile_Open (SCE_SVoxelFile *vf, SCE_SFileSystem *fs, const char *fname)
+int SCE_VFile_Open (SCE_SVoxelFile *vf, SCE_SFileSystem *fs,
+                    SCE_SGZFileCache *cache, const char *fname)
 {
     if (SCE_File_Open (&vf->fp, fs, fname, SCE_FILE_READ |
                        SCE_FILE_WRITE | SCE_FILE_CREATE) < 0) {
         SCEE_LogSrc ();
         return SCE_ERROR;
     }
+    if (cache)
+        SCE_GZFile_CacheFile (cache, &vf->fp);
     vf->is_open = SCE_TRUE;
     return SCE_OK;
 }

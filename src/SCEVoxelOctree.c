@@ -68,7 +68,8 @@ void SCE_VOctree_Init (SCE_SVoxelOctree *vo)
     vo->x = vo->y = vo->z = 0;
     vo->w = vo->h = vo->d = 0;
     memset (vo->prefix, 0, sizeof vo->prefix);
-    vo->fs = &sce_gzfs;
+    vo->fs = NULL;
+    vo->fcache = NULL;
 }
 void SCE_VOctree_Clear (SCE_SVoxelOctree *vo)
 {
@@ -122,6 +123,15 @@ void SCE_VOctree_SetMaxDepth (SCE_SVoxelOctree *vo, size_t depth)
 void SCE_VOctree_SetPrefix (SCE_SVoxelOctree *vo, const char *prefix)
 {
     strncpy (vo->prefix, prefix, sizeof vo->prefix - 1);
+}
+
+void SCE_VOctree_SetFileSystem (SCE_SVoxelOctree *vo, SCE_SFileSystem *fs)
+{
+    vo->fs = fs;
+}
+void SCE_VOctree_SetFileCache (SCE_SVoxelOctree *vo, SCE_SGZFileCache *cache)
+{
+    vo->fcache = cache;
 }
 
 
@@ -298,7 +308,7 @@ SCE_VOctree_CopyFromFile (const SCE_SVoxelOctree *vo, SCE_SVoxelFile *vf,
                                  SCE_Rectangle3_GetHeightl (node_rect),
                                  SCE_Rectangle3_GetDepthl (node_rect));
         SCE_VFile_SetNumComponents (vf, grid->n_cmp);
-        if (SCE_VFile_Open (vf, vo->fs, fname) < 0) {
+        if (SCE_VFile_Open (vf, vo->fs, vo->fcache, fname) < 0) {
             SCEE_LogSrc ();
             return SCE_ERROR;
         }
@@ -474,7 +484,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
         /* create this node */
         SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
-        if (SCE_VFile_Open (&node->vf, vo->fs, fname) < 0)
+        if (SCE_VFile_Open (&node->vf, vo->fs, vo->fcache, fname) < 0)
             goto fail;
         SCE_VFile_SetDimensions (&node->vf,
                                  SCE_Rectangle3_GetWidthl (&local_rect),
@@ -526,7 +536,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
         /* create this node */
         SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
-        if (SCE_VFile_Open (&node->vf, vo->fs, fname) < 0)
+        if (SCE_VFile_Open (&node->vf, vo->fs, vo->fcache, fname) < 0)
             goto fail;
         SCE_VFile_SetDimensions (&node->vf,
                                  SCE_Rectangle3_GetWidthl (&local_rect),

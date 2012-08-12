@@ -49,7 +49,8 @@ void SCE_VFile_Clear (SCE_SVoxelFile*);
 void SCE_VFile_SetDimensions (SCE_SVoxelFile*, SCEulong, SCEulong, SCEulong);
 void SCE_VFile_SetNumComponents (SCE_SVoxelFile*, size_t);
 
-int SCE_VFile_Open (SCE_SVoxelFile*, SCE_SFileSystem*, const char*);
+int SCE_VFile_Open (SCE_SVoxelFile*, SCE_SFileSystem*, SCE_SGZFileCache*,
+                    const char*);
 void SCE_VFile_Close (SCE_SVoxelFile*);
 int SCE_VFile_IsOpen (SCE_SVoxelFile*);
 

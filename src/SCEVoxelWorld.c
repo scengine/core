@@ -67,6 +67,9 @@ void SCE_VWorld_Init (SCE_SVoxelWorld *vw)
     vw->w = vw->h = vw->d = 0;
     vw->n_lod = 1;
     memset (vw->prefix, 0, sizeof vw->prefix);
+    vw->fs = NULL;
+    vw->fcache = NULL;
+
     for (i = 0; i < SCE_MAX_VWORLD_UPDATE_ZONES; i++) {
         SCE_Rectangle3_Initl (&vw->zones[i]);
         vw->zones_level[i] = 0;
@@ -147,6 +150,26 @@ void SCE_VWorld_SetPrefix (SCE_SVoxelWorld *vw, const char *prefix)
 }
 
 
+/**
+ * \brief Must be called before any octree is added to the world
+ * \param vw voxel world
+ * \param fs file system
+ */
+void SCE_VWorld_SetFileSystem (SCE_SVoxelWorld *vw, SCE_SFileSystem *fs)
+{
+    vw->fs = fs;
+}
+/**
+ * \brief Must be called before any octree is added to the world
+ * \param vw voxel world
+ * \param fs file system
+ */
+void SCE_VWorld_SetFileCache (SCE_SVoxelWorld *vw, SCE_SGZFileCache *cache)
+{
+    vw->fcache = cache;
+}
+
+
 static void
 SCE_VWorld_SetTreePrefix (char *prefix, const SCE_SVoxelWorld *vw,
                           long x, long y, long z)
@@ -172,6 +195,8 @@ SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
     SCE_VOctree_SetOrigin (&wt->vo, x * vw->w, y * vw->h, z * vw->d);
     SCE_VOctree_SetDimensions (&wt->vo, vw->w, vw->h, vw->d);
     SCE_VOctree_SetPrefix (&wt->vo, prefix);
+    SCE_VOctree_SetFileSystem (&wt->vo, vw->fs);
+    SCE_VOctree_SetFileCache (&wt->vo, vw->fcache);
     SCE_List_Appendl (&vw->trees, &wt->it);
 
     return wt;

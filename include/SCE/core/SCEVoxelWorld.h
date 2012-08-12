@@ -17,11 +17,12 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/05/2012
-   updated: 07/05/2012 */
+   updated: 12/08/2012 */
 
 #ifndef SCEVOXELWORLD_H
 #define SCEVOXELWORLD_H
 
+#include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEVoxelOctree.h"
 
 #ifdef __cplusplus
@@ -43,6 +44,8 @@ struct sce_svoxelworld {
     SCEulong w, h, d;
     SCEuint n_lod;
     char prefix[128];           /* root directory */
+    SCE_SFileSystem *fs;
+    SCE_SGZFileCache *fcache;
 
     SCE_SLongRect3 zones[SCE_MAX_VWORLD_UPDATE_ZONES];
     int zones_level[SCE_MAX_VWORLD_UPDATE_ZONES];
@@ -69,6 +72,9 @@ SCEulong SCE_VWorld_GetTotalDepth (const SCE_SVoxelWorld*);
 void SCE_VWorld_SetNumLevels (SCE_SVoxelWorld*, SCEuint);
 SCEuint SCE_VWorld_GetNumLevels (SCE_SVoxelWorld*);
 void SCE_VWorld_SetPrefix (SCE_SVoxelWorld*, const char*);
+
+void SCE_VWorld_SetFileSystem (SCE_SVoxelWorld*, SCE_SFileSystem*);
+void SCE_VWorld_SetFileCache (SCE_SVoxelWorld*, SCE_SGZFileCache*);
 
 SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld*, long, long, long);
 

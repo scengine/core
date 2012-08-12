@@ -59,6 +59,7 @@ struct sce_svoxeloctree {
     char prefix[128];
 
     SCE_SFileSystem *fs;
+    SCE_SGZFileCache *fcache;
 };
 
 
@@ -73,6 +74,9 @@ void SCE_VOctree_SetDimensions (SCE_SVoxelOctree*, SCEulong, SCEulong,SCEulong);
 void SCE_VOctree_SetMaxDepth (SCE_SVoxelOctree*, size_t);
 
 void SCE_VOctree_SetPrefix (SCE_SVoxelOctree*, const char*);
+
+void SCE_VOctree_SetFileSystem (SCE_SVoxelOctree*, SCE_SFileSystem*);
+void SCE_VOctree_SetFileCache (SCE_SVoxelOctree*, SCE_SGZFileCache*);
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree*, long*, long*, long*);
 SCEulong SCE_VOctree_GetWidth (const SCE_SVoxelOctree*);
