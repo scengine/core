@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 24/04/2012
-   updated: 10/08/2012 */
+   updated: 15/08/2012 */
 
 #include <time.h>
 #include <SCE/utils/SCEUtils.h>
@@ -625,6 +625,19 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     case SCE_VOCTREE_NODE_NODE:
         if (depth == 0) {
             /* simple copy */
+            if (!SCE_VFile_IsOpen (&node->vf)) {
+                SCE_VOctree_GetNodeFilename (vo, &local_rect, level, fname);
+                SCE_VFile_SetDimensions (&node->vf,
+                                         SCE_Rectangle3_GetWidthl (&local_rect),
+                                         SCE_Rectangle3_GetHeightl(&local_rect),
+                                         SCE_Rectangle3_GetDepthl(&local_rect));
+                SCE_VFile_SetNumComponents (&node->vf, grid->n_cmp);
+
+                if (SCE_VFile_Open (&node->vf, vo->fs, vo->fcache, fname) < 0) {
+                    SCEE_LogSrc ();
+                    return SCE_ERROR;
+                }
+            }
             SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
                                     &diff);
             node->in_volume += diff.in_volume;
