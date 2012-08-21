@@ -80,6 +80,15 @@ size_t SCE_VGrid_GetSize (const SCE_SVoxelGrid *vg)
 {
     return SCE_VGrid_GetNumVoxels (vg) * vg->n_cmp;
 }
+void* SCE_VGrid_GetRaw (SCE_SVoxelGrid *vg)
+{
+    return vg->data;
+}
+void SCE_VGrid_SetRaw (SCE_SVoxelGrid *vg, void *data)
+{
+    SCE_free (vg->data);
+    vg->data = data;
+}
 
 void SCE_VGrid_SetNumComponents (SCE_SVoxelGrid *vg, size_t n)
 {

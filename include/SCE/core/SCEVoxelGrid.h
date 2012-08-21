@@ -47,6 +47,8 @@ SCEulong SCE_VGrid_GetHeight (SCE_SVoxelGrid*);
 SCEulong SCE_VGrid_GetDepth (SCE_SVoxelGrid*);
 SCEulong SCE_VGrid_GetNumVoxels (const SCE_SVoxelGrid*);
 size_t SCE_VGrid_GetSize (const SCE_SVoxelGrid*);
+void* SCE_VGrid_GetRaw (SCE_SVoxelGrid*);
+void SCE_VGrid_SetRaw (SCE_SVoxelGrid*, void*);
 
 void SCE_VGrid_SetNumComponents (SCE_SVoxelGrid*, size_t);
 
