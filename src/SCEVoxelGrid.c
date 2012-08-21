@@ -160,6 +160,43 @@ void SCE_VGrid_Copy (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
     }
 }
 
+/* this function assumes n_cmp = 1 */
+long SCE_VGrid_CopyStats (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
+                          const SCE_SLongRect3 *src_region,
+                          const SCE_SVoxelGrid *src)
+{
+    long dst_p1[3], dst_p2[3];
+    long src_p1[3], src_p2[3];
+    long x1, y1, z1, x2, y2, z2;
+    SCE_SLongRect3 default_dst_region, default_src_region;
+    SCEubyte *ptr1 = NULL, *ptr2 = NULL;
+    long diff = 0;
+
+    SCE_Rectangle3_Setl (&default_dst_region, 0, 0, 0, dst->w, dst->h, dst->d);
+    SCE_Rectangle3_Setl (&default_src_region, 0, 0, 0, src->w, src->h, src->d);
+    if (!dst_region) dst_region = &default_dst_region;
+    if (!src_region) src_region = &default_src_region;
+
+    SCE_Rectangle3_GetPointslv (dst_region, dst_p1, dst_p2);
+    SCE_Rectangle3_GetPointslv (src_region, src_p1, src_p2);
+
+    for (z1 = dst_p1[2], z2 = src_p1[2]; z1 < dst_p2[2]; z1++, z2++) {
+        for (y1 = dst_p1[1], y2 = src_p1[1]; y1 < dst_p2[1]; y1++, y2++) {
+            for (x1 = dst_p1[0], x2 = src_p1[0]; x1 < dst_p2[0]; x1++, x2++) {
+                ptr1 = &dst->data[VOFFSET (dst, x1, y1, z1)];
+                ptr2 = &src->data[VOFFSET (src, x2, y2, z2)];
+                if (ptr1[0] <= 127 && ptr2[0] > 127)
+                    diff++;
+                else if (ptr1[0] > 127 && ptr2[0] <= 127)
+                    diff--;
+                ptr1[0] = ptr2[0];
+            }
+        }
+    }
+
+    return diff;
+}
+
 SCEubyte* SCE_VGrid_Offset (SCE_SVoxelGrid *vg, SCEulong x, SCEulong y,
                             SCEulong z)
 {
