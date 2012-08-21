@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 27/04/2012
-   updated: 27/04/2012 */
+   updated: 17/08/2012 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -75,6 +75,10 @@ SCEulong SCE_VGrid_GetDepth (SCE_SVoxelGrid *vg)
 SCEulong SCE_VGrid_GetNumVoxels (const SCE_SVoxelGrid *vg)
 {
     return vg->w * vg->h * vg->d;
+}
+size_t SCE_VGrid_GetSize (const SCE_SVoxelGrid *vg)
+{
+    return SCE_VGrid_GetNumVoxels (vg) * vg->n_cmp;
 }
 
 void SCE_VGrid_SetNumComponents (SCE_SVoxelGrid *vg, size_t n)

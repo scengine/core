@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 27/04/2012
-   updated: 27/04/2012 */
+   updated: 17/08/2012 */
 
 #ifndef SCEVOXELGRID_H
 #define SCEVOXELGRID_H
@@ -46,6 +46,7 @@ SCEulong SCE_VGrid_GetWidth (SCE_SVoxelGrid*);
 SCEulong SCE_VGrid_GetHeight (SCE_SVoxelGrid*);
 SCEulong SCE_VGrid_GetDepth (SCE_SVoxelGrid*);
 SCEulong SCE_VGrid_GetNumVoxels (const SCE_SVoxelGrid*);
+size_t SCE_VGrid_GetSize (const SCE_SVoxelGrid*);
 
 void SCE_VGrid_SetNumComponents (SCE_SVoxelGrid*, size_t);
 
