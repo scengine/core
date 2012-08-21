@@ -30,7 +30,6 @@ libscecore_la_SOURCES   = libwar.c \
                           SCEGeometry.c \
                           SCEGrid.c \
                           SCEVoxelGrid.c \
-                          SCEVoxelFile.c \
                           SCEVoxelStore.c \
                           SCEVoxelOctree.c \
                           SCEVoxelWorld.c \

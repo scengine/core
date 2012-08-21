@@ -41,7 +41,6 @@
 #include "SCE/core/SCETextureData.h"
 #include "SCE/core/SCEGrid.h"
 #include "SCE/core/SCEVoxelGrid.h"
-#include "SCE/core/SCEVoxelFile.h"
 #include "SCE/core/SCEVoxelStore.h"
 #include "SCE/core/SCEVoxelOctree.h"
 #include "SCE/core/SCEVoxelWorld.h"
