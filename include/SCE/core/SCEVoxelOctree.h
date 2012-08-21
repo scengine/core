@@ -17,20 +17,21 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 24/04/2012
-   updated: 10/08/2012 */
+   updated: 21/08/2012 */
 
 #ifndef SCEVOXELOCTREE_H
 #define SCEVOXELOCTREE_H
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEVoxelGrid.h"
-#include "SCE/core/SCEVoxelFile.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define SCE_VOCTREE_VOXEL_ELEMENTS 1
+
+#define SCE_VOCTREE_NODE_FNAME_LENGTH 64
 
 typedef enum {
     SCE_VOCTREE_NODE_EMPTY = 0,
@@ -43,10 +44,19 @@ typedef struct sce_svoxeloctreenode SCE_SVoxelOctreeNode;
 struct sce_svoxeloctreenode {
     SCE_EVoxelOctreeStatus status;
     SCE_SVoxelOctreeNode *children[8];
-    SCE_SVoxelFile vf;
-    long in_volume;             /* number of voxels in the volume */
-    int material;               /* material ID if full */
+    SCEuint level;
+    char fname[SCE_VOCTREE_NODE_FNAME_LENGTH];
+    SCE_SVoxelGrid grid;
+    SCE_SFile file;
+    int is_open;           /* is \c file open? */
+    int is_sync;           /* are \c grid and \c file synchronized? */
+    int cached;            /* is \c grid on memory or does it need reloading
+                              from \c file? */
+    long in_volume;        /* number of voxels in the volume */
+    int material;          /* material ID if full */
+    SCE_SListIterator it;
 };
+
 
 typedef struct sce_svoxeloctree SCE_SVoxelOctree;
 struct sce_svoxeloctree {
@@ -59,7 +69,11 @@ struct sce_svoxeloctree {
     char prefix[128];
 
     SCE_SFileSystem *fs;
-    SCE_SGZFileCache *fcache;
+    SCE_SFileCache *fcache;
+
+    SCEulong n_cached;
+    SCEulong max_cached;
+    SCE_SList cached;
 };
 
 
@@ -76,7 +90,8 @@ void SCE_VOctree_SetMaxDepth (SCE_SVoxelOctree*, size_t);
 void SCE_VOctree_SetPrefix (SCE_SVoxelOctree*, const char*);
 
 void SCE_VOctree_SetFileSystem (SCE_SVoxelOctree*, SCE_SFileSystem*);
-void SCE_VOctree_SetFileCache (SCE_SVoxelOctree*, SCE_SGZFileCache*);
+void SCE_VOctree_SetFileCache (SCE_SVoxelOctree*, SCE_SFileCache*);
+void SCE_VOctree_SetMaxCachedNodes (SCE_SVoxelOctree*, SCEulong);
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree*, long*, long*, long*);
 SCEulong SCE_VOctree_GetWidth (const SCE_SVoxelOctree*);
@@ -89,12 +104,15 @@ SCEulong SCE_VOctree_GetTotalDepth (const SCE_SVoxelOctree*);
 int SCE_VOctree_Load (SCE_SVoxelOctree*, const char*);
 int SCE_VOctree_Save (SCE_SVoxelOctree*, const char*);
 
-int SCE_VOctree_GetRegion (const SCE_SVoxelOctree*, SCEuint,
-                           const SCE_SLongRect3*, SCEubyte*);
+int SCE_VOctree_GetRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
+                           SCEubyte*);
 int SCE_VOctree_SetRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
                            const SCEubyte*);
 
 int SCE_VOctree_GetNode (SCE_SVoxelOctree*, SCEuint, long, long, long, char*);
+
+void SCE_VOctree_UpdateCache (SCE_SVoxelOctree*);
+int SCE_VOctree_SyncCache (SCE_SVoxelOctree*);
 
 #ifdef __cplusplus
 } /* extern "C" */

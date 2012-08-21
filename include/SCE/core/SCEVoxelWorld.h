@@ -45,7 +45,8 @@ struct sce_svoxelworld {
     SCEuint n_lod;
     char prefix[128];           /* root directory */
     SCE_SFileSystem *fs;
-    SCE_SGZFileCache *fcache;
+    SCE_SFileCache *fcache;
+    SCEulong max_cached_nodes;
 
     SCE_SLongRect3 zones[SCE_MAX_VWORLD_UPDATE_ZONES];
     int zones_level[SCE_MAX_VWORLD_UPDATE_ZONES];
@@ -74,7 +75,8 @@ SCEuint SCE_VWorld_GetNumLevels (SCE_SVoxelWorld*);
 void SCE_VWorld_SetPrefix (SCE_SVoxelWorld*, const char*);
 
 void SCE_VWorld_SetFileSystem (SCE_SVoxelWorld*, SCE_SFileSystem*);
-void SCE_VWorld_SetFileCache (SCE_SVoxelWorld*, SCE_SGZFileCache*);
+void SCE_VWorld_SetFileCache (SCE_SVoxelWorld*, SCE_SFileCache*);
+void SCE_VWorld_SetMaxCachedNodes (SCE_SVoxelWorld*, SCEulong);
 
 SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld*, long, long, long);
 
@@ -96,6 +98,9 @@ int SCE_VWorld_GenerateAllLOD (SCE_SVoxelWorld*, SCEuint,
                                const SCE_SLongRect3*);
 
 int SCE_VWorld_GetNode (SCE_SVoxelWorld*, SCEuint, long, long, long, char*);
+
+void SCE_VWorld_UpdateCache (SCE_SVoxelWorld*);
+int SCE_VWorld_SyncCache (SCE_SVoxelWorld*);
 
 #ifdef __cplusplus
 } /* extern "C" */

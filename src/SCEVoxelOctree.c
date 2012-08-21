@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 24/04/2012
-   updated: 15/08/2012 */
+   updated: 21/08/2012 */
 
 #include <time.h>
 #include <SCE/utils/SCEUtils.h>
@@ -30,18 +30,28 @@ static void SCE_VOctree_InitNode (SCE_SVoxelOctreeNode *node)
     node->status = SCE_VOCTREE_NODE_EMPTY;
     for (i = 0; i < 8; i++)
         node->children[i] = NULL;
-    SCE_VFile_Init (&node->vf);
+    memset (node->fname, 0, SCE_VOCTREE_NODE_FNAME_LENGTH);
+    SCE_VGrid_Init (&node->grid);
+    SCE_File_Init (&node->file);
+    node->is_open = SCE_FALSE;
+    node->is_sync = SCE_FALSE;
+    node->cached = SCE_FALSE;
     node->in_volume = 0;
     node->material = 0;
+    SCE_List_InitIt (&node->it);
+    SCE_List_SetData (&node->it, node);
 }
 static void SCE_VOctree_DeleteNode (SCE_SVoxelOctreeNode*);
+static int SCE_VOctree_SyncNode (SCE_SVoxelOctree*, SCE_SVoxelOctreeNode*);
 static void SCE_VOctree_ClearNode (SCE_SVoxelOctreeNode *node)
 {
     size_t i;
     for (i = 0; i < 8; i++)
         SCE_VOctree_DeleteNode (node->children[i]);
-    SCE_VFile_Close (&node->vf);
-    SCE_VFile_Clear (&node->vf);
+    if (node->is_open)
+        SCE_File_Close (&node->file);
+    SCE_VGrid_Clear (&node->grid);
+    SCE_List_Remove (&node->it);
 }
 static SCE_SVoxelOctreeNode* SCE_VOctree_CreateNode (void)
 {
@@ -60,6 +70,13 @@ static void SCE_VOctree_DeleteNode (SCE_SVoxelOctreeNode *node)
     }
 }
 
+#if 0
+static void
+SCE_VOctree_SetFilename (SCE_SVoxelOctreeNode *node, const char *fname)
+{
+    strncpy (node->fname, fname, SCE_VOCTREE_NODE_FNAME_LENGTH - 1);
+}
+#endif
 
 void SCE_VOctree_Init (SCE_SVoxelOctree *vo)
 {
@@ -70,10 +87,15 @@ void SCE_VOctree_Init (SCE_SVoxelOctree *vo)
     memset (vo->prefix, 0, sizeof vo->prefix);
     vo->fs = NULL;
     vo->fcache = NULL;
+
+    vo->n_cached = 0;
+    vo->max_cached = 16;        /* seems legit. */
+    SCE_List_Init (&vo->cached);
 }
 void SCE_VOctree_Clear (SCE_SVoxelOctree *vo)
 {
     SCE_VOctree_ClearNode (&vo->root);
+    SCE_List_Clear (&vo->cached);
 }
 SCE_SVoxelOctree* SCE_VOctree_Create (void)
 {
@@ -129,9 +151,13 @@ void SCE_VOctree_SetFileSystem (SCE_SVoxelOctree *vo, SCE_SFileSystem *fs)
 {
     vo->fs = fs;
 }
-void SCE_VOctree_SetFileCache (SCE_SVoxelOctree *vo, SCE_SGZFileCache *cache)
+void SCE_VOctree_SetFileCache (SCE_SVoxelOctree *vo, SCE_SFileCache *cache)
 {
     vo->fcache = cache;
+}
+void SCE_VOctree_SetMaxCachedNodes (SCE_SVoxelOctree *vo, SCEulong max_cached)
+{
+    vo->max_cached = max_cached;
 }
 
 
@@ -168,11 +194,58 @@ SCEulong SCE_VOctree_GetTotalDepth (const SCE_SVoxelOctree *vo)
 }
 
 
+static void SCE_VOctree_SetNodeGrid (SCE_SVoxelOctreeNode *node, SCEulong w,
+                                     SCEulong h, SCEulong d, size_t n_cmp)
+{
+    SCE_VGrid_SetDimensions (&node->grid, w, h, d);
+    SCE_VGrid_SetNumComponents (&node->grid, n_cmp);
+}
+
+static void
+SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctree *vo,
+                             const SCE_SLongRect3 *node_rect, SCEuint level,
+                             char *fname)
+{
+    long p1[3], p2[3];
+    SCE_Rectangle3_GetPointslv (node_rect, p1, p2);
+    sprintf (fname, "%s/lod%u/%ld_%ld_%ld", vo->prefix, level,
+             p1[0], p1[1], p1[2]);
+}
+
+static void SCE_VOctree_ConstructRect (const SCE_SLongRect3 *parent,
+                                       SCEuint id, SCE_SLongRect3 *child)
+{
+    long w, h, d;
+
+    w = SCE_Rectangle3_GetWidthl (parent) / 2;
+    h = SCE_Rectangle3_GetHeightl (parent) / 2;
+    d = SCE_Rectangle3_GetDepthl (parent) / 2;
+
+    *child = *parent;
+    SCE_Rectangle3_Resizel (child, w, h, d);
+    SCE_Rectangle3_Movel (child, (1 & id) * w,
+                          (1 & (id >> 1)) * h,
+                          (1 & (id >> 2)) * d);
+}
+
+
 static int
 SCE_VOctree_LoadNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
-                      FILE *fp)
+                      FILE *fp, const SCE_SLongRect3 *node_rect, int level)
 {
     size_t i;
+    SCE_SLongRect3 rect;
+
+    if (level < 0) {
+        SCEE_Log (29);
+        SCEE_LogMsg ("invalid voctree format: corrupted max_depth");
+        return SCE_ERROR;
+    }
+
+    rect = *node_rect;
+    SCE_Rectangle3_Pow2l (&rect, -level);
+    SCE_VOctree_GetNodeFilename (vo, &rect, level, node->fname);
+    SCE_VOctree_SetNodeGrid (node, vo->w, vo->h, vo->d, 1);
 
     fread (&node->status, sizeof node->status, 1, fp);
 
@@ -193,9 +266,14 @@ SCE_VOctree_LoadNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         for (i = 0; i < 8; i++) {
             if (!(node->children[i] = SCE_VOctree_CreateNode ()))
                 goto fail;
-            SCE_VOctree_LoadNode (vo, node->children[i], fp);
+            SCE_VOctree_ConstructRect (node_rect, i, &rect);
+            SCE_VOctree_LoadNode (vo, node->children[i], fp, &rect, level - 1);
         }
         break;
+    default:
+        SCEE_Log (29);
+        SCEE_LogMsg ("invalid voctree format: corrupted node status");
+        return SCE_ERROR;
     }
 
     return SCE_OK;
@@ -207,6 +285,7 @@ fail:
 int SCE_VOctree_Load (SCE_SVoxelOctree *vo, const char *fname)
 {
     FILE *fp = NULL;
+    SCE_SLongRect3 rect;
 
     if (!(fp = fopen (fname, "rb"))) {
         SCEE_LogErrno (fname);
@@ -221,7 +300,11 @@ int SCE_VOctree_Load (SCE_SVoxelOctree *vo, const char *fname)
     fread (&vo->h, sizeof vo->h, 1, fp);
     fread (&vo->d, sizeof vo->d, 1, fp);
 
-    if (SCE_VOctree_LoadNode (vo, &vo->root, fp) < 0) {
+    SCE_Rectangle3_SetFromOriginl (&rect, vo->x, vo->y, vo->z,
+                                   vo->w, vo->h, vo->d);
+    SCE_Rectangle3_Pow2l (&rect, vo->max_depth);
+
+    if (SCE_VOctree_LoadNode (vo, &vo->root, fp, &rect, vo->max_depth) < 0) {
         SCEE_LogSrc ();
         fclose (fp);
         return SCE_ERROR;
@@ -281,67 +364,164 @@ int SCE_VOctree_Save (SCE_SVoxelOctree *vo, const char *fname)
     return SCE_OK;
 }
 
-static void
-SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctree *vo,
-                             const SCE_SLongRect3 *node_rect, SCEuint level,
-                             char *fname)
+
+static int SCE_VOctree_DecompressNode (SCE_SVoxelOctreeNode *node)
 {
-    long p1[3], p2[3];
-    SCE_Rectangle3_GetPointslv (node_rect, p1, p2);
-    sprintf (fname, "%s/lod%u/%ld_%ld_%ld", vo->prefix, level,
-             p1[0], p1[1], p1[2]);
+    void *grid = NULL;
+    size_t size;
+
+    if (!(grid = SCE_malloc (SCE_VGrid_GetSize (&node->grid))))
+        goto fail;
+    SCE_VGrid_SetRaw (&node->grid, grid);
+
+    size = SCE_File_Length (&node->file);
+    /* TODO: dont do dat, go see CacheGrid() */
+    if (size > 0) {
+        SCE_SArray data;
+        void *filedata = NULL;
+        SCE_Array_Init (&data);
+        /* TODO: use 'grid' pointer for 'data' and dont forget the
+                 memcpy() below */
+        if (!(filedata = SCE_FileCache_GetRaw (&node->file)))
+            goto fail;
+        /* we must be sure that the file is a FileCache file */
+        if (SCE_Zlib_Decompress (filedata, size, &data) < 0)
+            goto fail;
+        if (SCE_Array_GetSize (&data) != SCE_VGrid_GetSize (&node->grid)) {
+            SCEE_Log (76);
+            SCEE_LogMsg ("corrupted voxel archive %s: size does not match",
+                         node->fname);
+            return SCE_ERROR;
+        }
+        memcpy (grid, SCE_Array_Get (&data), SCE_Array_GetSize (&data));
+        SCE_Array_Clear (&data);
+        node->is_sync = SCE_TRUE;
+    }
+
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
 }
 
+static int SCE_VOctree_CompressNode (SCE_SVoxelOctreeNode *node)
+{
+    SCE_SArray data;
+
+    SCE_Array_Init (&data);
+    /* 9: maximum compression level hehe */
+    if (SCE_Zlib_Compress (SCE_VGrid_GetRaw (&node->grid),
+                           SCE_VGrid_GetSize (&node->grid), 9, &data) < 0)
+        goto fail;
+
+    SCE_File_Rewind (&node->file);
+    SCE_File_Truncate (&node->file, SCE_Array_GetSize (&data));
+    if (SCE_File_Write (SCE_Array_Get (&data), 1, SCE_Array_GetSize (&data),
+                        &node->file) != SCE_Array_GetSize (&data))
+        goto fail;
+    SCE_Array_Clear (&data);
+
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+/* makes sure the node file data are in memory */
 static int
-SCE_VOctree_CopyFromFile (const SCE_SVoxelOctree *vo, SCE_SVoxelFile *vf,
-                          const SCE_SLongRect3 *node_rect, SCEuint level,
+SCE_VOctree_CacheFile (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
+{
+    if (!node->is_open) {
+        if (SCE_File_Open (&node->file, vo->fs, node->fname, SCE_FILE_READ |
+                           SCE_FILE_WRITE | SCE_FILE_CREATE) < 0)
+            goto fail;
+        node->is_open = SCE_TRUE;
+    }
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+/* update compressed data */
+static int
+SCE_VOctree_SyncNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
+{
+    if (SCE_VOctree_CacheFile (vo, node) < 0)
+        goto fail;
+    if (!node->is_sync) {
+        if (SCE_VOctree_CompressNode (node) < 0)
+            goto fail;
+        node->is_sync = SCE_TRUE;
+        SCEE_SendMsg ("synced %d bytes %s\n", SCE_VGrid_GetSize (&node->grid),
+                      node->fname);
+    } else {
+    SCEE_SendMsg ("NOT synced %d bytes %s\n", SCE_VGrid_GetSize (&node->grid),
+                  node->fname);
+    }
+
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+
+/* makes sure the node grid data are in memory */
+static int
+SCE_VOctree_CacheGrid (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
+{
+    if (!node->cached) {
+        /* TODO: dont cache the file if it dont exist, see DecompressNode() */
+        if (SCE_VOctree_CacheFile (vo, node) < 0)
+            goto fail;
+        if (SCE_VOctree_DecompressNode (node) < 0)
+            goto fail;
+        node->cached = SCE_TRUE;
+        SCE_List_Appendl (&vo->cached, &node->it);
+        vo->n_cached++;
+    }
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+/* removes a node's grid from memory */
+static void
+SCE_VOctree_UncacheGrid (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
+{
+    if (node->cached) {
+        SCE_VGrid_SetRaw (&node->grid, NULL);
+        node->cached = SCE_FALSE;
+        SCE_List_Removel (&node->it);
+        vo->n_cached--;
+    }
+}
+
+
+static int
+SCE_VOctree_CopyFromNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
+                          const SCE_SLongRect3 *node_rect,
                           const SCE_SLongRect3 *area, SCE_SVoxelGrid *grid)
 {
     SCE_SLongRect3 src_region, dst_region;
 
-    if (!SCE_VFile_IsOpen (vf)) {
-        char fname[256] = {0};
-
-        SCE_VOctree_GetNodeFilename (vo, node_rect, level, fname);
-
-        SCE_VFile_SetDimensions (vf, SCE_Rectangle3_GetWidthl (node_rect),
-                                 SCE_Rectangle3_GetHeightl (node_rect),
-                                 SCE_Rectangle3_GetDepthl (node_rect));
-        SCE_VFile_SetNumComponents (vf, grid->n_cmp);
-        if (SCE_VFile_Open (vf, vo->fs, vo->fcache, fname) < 0) {
-            SCEE_LogSrc ();
-            return SCE_ERROR;
-        }
+    if (SCE_VOctree_CacheGrid (vo, node) < 0) {
+        SCEE_LogSrc ();
+        return SCE_ERROR;
     }
 
     SCE_Rectangle3_Intersectionl (node_rect, area, &dst_region);
     src_region = dst_region;
     SCE_Rectangle3_SubOriginl (&dst_region, area);
     SCE_Rectangle3_SubOriginl (&src_region, node_rect);
-    SCE_VFile_GetRegion (vf, &src_region, grid, &dst_region);
+    SCE_VGrid_Copy (&dst_region, grid, &src_region, &node->grid);
 
     return SCE_OK;
 }
 
-static void SCE_VOctree_ConstructRect (const SCE_SLongRect3 *parent,
-                                       SCEuint id, SCE_SLongRect3 *child)
-{
-    long p1[3], p2[3];
-    long w, h, d;
-
-    w = SCE_Rectangle3_GetWidthl (parent) / 2;
-    h = SCE_Rectangle3_GetHeightl (parent) / 2;
-    d = SCE_Rectangle3_GetDepthl (parent) / 2;
-
-    *child = *parent;
-    SCE_Rectangle3_Resizel (child, w, h, d);
-    SCE_Rectangle3_Movel (child, (1 & id) * w,
-                          (1 & (id >> 1)) * h,
-                          (1 & (id >> 2)) * d);
-}
-
 static int
-SCE_VOctree_Get (const SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
+SCE_VOctree_Get (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                  const SCE_SLongRect3 *node_rect, SCEuint level, SCEuint depth,
                  const SCE_SLongRect3 *area, SCE_SVoxelGrid *grid)
 {
@@ -364,14 +544,13 @@ SCE_VOctree_Get (const SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         break;
     case SCE_VOCTREE_NODE_FULL:
         SCE_Rectangle3_SubOriginl (&inter, area);
-//        full_pattern[1] = node->material;
+        /* full_pattern[1] = node->material; */
         SCE_VGrid_Fill (grid, &inter, full_pattern);
         break;
     case SCE_VOCTREE_NODE_LEAF:
         if (level == clevel) {
             /* copy data from current node */
-            if (SCE_VOctree_CopyFromFile (vo, &node->vf, node_rect, level,
-                                          area, grid) < 0)
+            if (SCE_VOctree_CopyFromNode (vo, node, node_rect, area, grid) < 0)
                 goto fail;
         } else {
             SCE_Rectangle3_SubOriginl (&inter, area);
@@ -384,8 +563,7 @@ SCE_VOctree_Get (const SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     case SCE_VOCTREE_NODE_NODE:
         if (depth == 0) {
             /* copy data from current node */
-            if (SCE_VOctree_CopyFromFile (vo, &node->vf, node_rect, level,
-                                          area, grid) < 0)
+            if (SCE_VOctree_CopyFromNode (vo, node, node_rect, area, grid) < 0)
                 goto fail;
         } else {
             /* recurse */
@@ -408,7 +586,7 @@ fail:
 }
 
 
-int SCE_VOctree_GetRegion (const SCE_SVoxelOctree *vo, SCEuint level,
+int SCE_VOctree_GetRegion (SCE_SVoxelOctree *vo, SCEuint level,
                            const SCE_SLongRect3 *area, SCEubyte *data)
 {
     SCEuint depth;
@@ -433,32 +611,49 @@ int SCE_VOctree_GetRegion (const SCE_SVoxelOctree *vo, SCEuint level,
 
 
 static int
-SCE_VOctree_CopyToFile (SCE_SVoxelOctree *vo, SCE_SVoxelFile *vf,
+SCE_VOctree_CopyToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                         const SCE_SLongRect3 *node_rect,
                         const SCE_SLongRect3 *area, const SCE_SVoxelGrid *grid,
-                        SCE_SVoxelFileStats *diff)
+                        long *diff)
 {
     SCE_SLongRect3 src_region, dst_region;
+
+    if (SCE_VOctree_CacheGrid (vo, node) < 0) {
+        SCEE_LogSrc ();
+        return SCE_ERROR;
+    }
 
     SCE_Rectangle3_Intersectionl (node_rect, area, &dst_region);
     src_region = dst_region;
     SCE_Rectangle3_SubOriginl (&src_region, area);
     SCE_Rectangle3_SubOriginl (&dst_region, node_rect);
-    SCE_VFile_SetRegion (vf, &dst_region, grid, &src_region);
-    SCE_VFile_GetStatsv (vf, diff);
+    *diff = SCE_VGrid_CopyStats (&dst_region, &node->grid, &src_region, grid);
+    node->is_sync = SCE_FALSE;
 
     return SCE_OK;
+}
+
+static void
+SCE_VOctree_EraseNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
+{
+    SCE_VOctree_UncacheGrid (vo, node);
+    SCE_VGrid_Clear (&node->grid);
+    SCE_VGrid_Init (&node->grid);
+    SCE_File_Close (&node->file);
+    remove (node->fname);
+    node->is_open = SCE_FALSE;
+    node->is_sync = SCE_FALSE;
+    node->cached = SCE_FALSE;   /* redundant */
 }
 
 static int
 SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                  const SCE_SLongRect3 *node_rect, SCEuint level, SCEuint depth,
-                 const SCE_SLongRect3 *area, const SCE_SVoxelGrid *grid)
+                 const SCE_SLongRect3 *area, SCE_SVoxelGrid *grid)
 {
     size_t i;
     SCE_SLongRect3 inter, region, local_rect;
-    SCE_SVoxelFileStats diff;
-    char fname[256] = {0};
+    long diff;
     SCEuint clevel;             /* current level */
     /* TODO: hardcoded patterns */
     SCEubyte empty_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
@@ -483,27 +678,28 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             break;
 
         /* create this node */
-        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
-        if (SCE_VFile_Open (&node->vf, vo->fs, vo->fcache, fname) < 0)
-            goto fail;
-        SCE_VFile_SetDimensions (&node->vf,
+        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, node->fname);
+        node->level = clevel;
+        SCE_VOctree_SetNodeGrid (node,
                                  SCE_Rectangle3_GetWidthl (&local_rect),
                                  SCE_Rectangle3_GetHeightl (&local_rect),
-                                 SCE_Rectangle3_GetDepthl (&local_rect));
-        SCE_VFile_SetNumComponents (&node->vf, grid->n_cmp);
-        SCE_VFile_Fill (&node->vf, empty_pattern);
+                                 SCE_Rectangle3_GetDepthl (&local_rect), 1);
+        if (SCE_VOctree_CacheGrid (vo, node) < 0)
+            goto fail;
+        SCE_VGrid_Fill (&node->grid, NULL, empty_pattern);
 
         if (depth == 0) {
             /* simple copy */
-            SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
-                                    &diff);
-            node->in_volume += diff.in_volume;
+            if (SCE_VOctree_CopyToNode (vo, node, &local_rect, area, grid,
+                                        &diff) < 0)
+                goto fail;
+            node->in_volume += diff;
             if (node->in_volume == 0) {
-                SCE_VFile_Close (&node->vf);
-                remove (fname);
+                /* this case should never happend because we tested
+                   'grid' */
+                SCE_VOctree_EraseNode (vo, node);
             } else if (node->in_volume == vo->w * vo->h * vo->d) {
-                SCE_VFile_Close (&node->vf);
-                remove (fname);
+                SCE_VOctree_EraseNode (vo, node);
                 node->status = SCE_VOCTREE_NODE_FULL;
             } else
                 node->status = SCE_VOCTREE_NODE_LEAF;
@@ -535,28 +731,29 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             break;
 
         /* create this node */
-        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
-        if (SCE_VFile_Open (&node->vf, vo->fs, vo->fcache, fname) < 0)
-            goto fail;
-        SCE_VFile_SetDimensions (&node->vf,
+        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, node->fname);
+        node->level = clevel;
+        SCE_VOctree_SetNodeGrid (node,
                                  SCE_Rectangle3_GetWidthl (&local_rect),
                                  SCE_Rectangle3_GetHeightl (&local_rect),
-                                 SCE_Rectangle3_GetDepthl (&local_rect));
-        SCE_VFile_SetNumComponents (&node->vf, grid->n_cmp);
-        SCE_VFile_Fill (&node->vf, full_pattern);
+                                 SCE_Rectangle3_GetDepthl (&local_rect), 1);
+        if (SCE_VOctree_CacheGrid (vo, node) < 0)
+            goto fail;
+        SCE_VGrid_Fill (&node->grid, NULL, full_pattern);
 
         if (depth == 0) {
             /* simple copy */
-            SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
-                                    &diff);
-            node->in_volume += diff.in_volume;
+            if (SCE_VOctree_CopyToNode (vo, node, &local_rect, area, grid,
+                                        &diff) < 0)
+                goto fail;
+            node->in_volume += diff;
             if (node->in_volume == 0) {
-                SCE_VFile_Close (&node->vf);
-                remove (fname);
+                SCE_VOctree_EraseNode (vo, node);
                 node->status = SCE_VOCTREE_NODE_EMPTY;
             } else if (node->in_volume == vo->w * vo->h * vo->d) {
-                SCE_VFile_Close (&node->vf);
-                remove (fname);
+                /* this case should never happend because we tested
+                   'grid' */
+                SCE_VOctree_EraseNode (vo, node);
             } else
                 node->status = SCE_VOCTREE_NODE_LEAF;
         } else {
@@ -579,21 +776,19 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         break;
     case SCE_VOCTREE_NODE_LEAF:
         if (depth == 0) {
-            SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
             /* simple copy */
-            SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
-                                    &diff);
+            if (SCE_VOctree_CopyToNode (vo, node, &local_rect, area, grid,
+                                        &diff) < 0)
+                goto fail;
             /* note that the file already exists if the octree has been
                exclusively created using this function, according to
                NODE_FULL/NODE_EMPTY cases */
-            node->in_volume += diff.in_volume;
+            node->in_volume += diff;
             if (node->in_volume == 0) {
-                SCE_VFile_Close (&node->vf);
-                remove (fname);
+                SCE_VOctree_EraseNode (vo, node);
                 node->status = SCE_VOCTREE_NODE_EMPTY;
             } else if (node->in_volume == vo->w * vo->h * vo->d) {
-                SCE_VFile_Close (&node->vf);
-                remove (fname);
+                SCE_VOctree_EraseNode (vo, node);
                 node->status = SCE_VOCTREE_NODE_FULL;
             }
         } else {
@@ -625,25 +820,12 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     case SCE_VOCTREE_NODE_NODE:
         if (depth == 0) {
             /* simple copy */
-            if (!SCE_VFile_IsOpen (&node->vf)) {
-                SCE_VOctree_GetNodeFilename (vo, &local_rect, level, fname);
-                SCE_VFile_SetDimensions (&node->vf,
-                                         SCE_Rectangle3_GetWidthl (&local_rect),
-                                         SCE_Rectangle3_GetHeightl(&local_rect),
-                                         SCE_Rectangle3_GetDepthl(&local_rect));
-                SCE_VFile_SetNumComponents (&node->vf, grid->n_cmp);
-
-                if (SCE_VFile_Open (&node->vf, vo->fs, vo->fcache, fname) < 0) {
-                    SCEE_LogSrc ();
-                    return SCE_ERROR;
-                }
-            }
-            SCE_VOctree_CopyToFile (vo, &node->vf, &local_rect, area, grid,
-                                    &diff);
-            node->in_volume += diff.in_volume;
+            if (SCE_VOctree_CopyToNode (vo, node, &local_rect, area, grid,
+                                        &diff) < 0)
+                goto fail;
+            node->in_volume += diff;
         } else {
             int j = 0;
-            SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, fname);
             /* recurse */
             for (i = 0; i < 8; i++) {
                 SCE_SLongRect3 r;
@@ -658,8 +840,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             }
             if (j == 8 || j == -8) {
                 SCE_VOctree_DeleteChildren (node);
-                SCE_VFile_Close (&node->vf);
-                remove (fname);
+                SCE_VOctree_EraseNode (vo, node);
                 node->status = SCE_VOCTREE_NODE_FULL;
                 if (j == 8)
                     node->status = SCE_VOCTREE_NODE_EMPTY;
@@ -713,7 +894,7 @@ SCE_VOctree_Node (const SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         return node->status;
     case SCE_VOCTREE_NODE_LEAF:
         if (level == clevel) {
-            SCE_VOctree_GetNodeFilename (vo, node_rect, level, fname);
+            strcpy (fname, node->fname);
             return node->status;
         } else {
             if (node->in_volume > (vo->w * vo->h * vo->d) / 2)
@@ -723,7 +904,7 @@ SCE_VOctree_Node (const SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         }
     case SCE_VOCTREE_NODE_NODE:
         if (depth == 0) {
-            SCE_VOctree_GetNodeFilename (vo, node_rect, level, fname);
+            strcpy (fname, node->fname);
             return node->status;
         } else {
             /* recurse */
@@ -762,4 +943,38 @@ int SCE_VOctree_GetNode (SCE_SVoxelOctree *vo, SCEuint level, long x, long y,
                                  x, y, z, fname);
     else
         return -1;
+}
+
+
+void SCE_VOctree_UpdateCache (SCE_SVoxelOctree *vo)
+{
+    while (vo->n_cached > vo->max_cached) {
+        SCE_SVoxelOctreeNode *node = NULL;
+        node = SCE_List_GetData (SCE_List_GetFirst (&vo->cached));
+        SCE_VOctree_SyncNode (vo, node);
+        SCE_VOctree_UncacheGrid (vo, node);
+    }
+}
+
+int SCE_VOctree_SyncCache (SCE_SVoxelOctree *vo)
+{
+    SCE_SListIterator *it = NULL;
+
+    SCE_List_ForEach (it, &vo->cached) {
+        SCE_SVoxelOctreeNode *node = NULL;
+        node = SCE_List_GetData (it);
+        if (SCE_VOctree_SyncNode (vo, node) < 0)
+            goto fail;
+    }
+
+    /* files have potentially been open */
+    /* NOTE: maybe this operation should be performed in the loop above */
+    SCE_FileCache_Update (vo->fcache);
+    if (SCE_FileCache_Sync (vo->fcache) < 0)
+        goto fail;
+
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
 }

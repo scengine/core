@@ -69,6 +69,7 @@ void SCE_VWorld_Init (SCE_SVoxelWorld *vw)
     memset (vw->prefix, 0, sizeof vw->prefix);
     vw->fs = NULL;
     vw->fcache = NULL;
+    vw->max_cached_nodes = 16;
 
     for (i = 0; i < SCE_MAX_VWORLD_UPDATE_ZONES; i++) {
         SCE_Rectangle3_Initl (&vw->zones[i]);
@@ -164,9 +165,13 @@ void SCE_VWorld_SetFileSystem (SCE_SVoxelWorld *vw, SCE_SFileSystem *fs)
  * \param vw voxel world
  * \param fs file system
  */
-void SCE_VWorld_SetFileCache (SCE_SVoxelWorld *vw, SCE_SGZFileCache *cache)
+void SCE_VWorld_SetFileCache (SCE_SVoxelWorld *vw, SCE_SFileCache *cache)
 {
     vw->fcache = cache;
+}
+void SCE_VWorld_SetMaxCachedNodes (SCE_SVoxelWorld *vw, SCEulong max_cached)
+{
+    vw->max_cached_nodes = max_cached;
 }
 
 
@@ -197,6 +202,7 @@ SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
     SCE_VOctree_SetPrefix (&wt->vo, prefix);
     SCE_VOctree_SetFileSystem (&wt->vo, vw->fs);
     SCE_VOctree_SetFileCache (&wt->vo, vw->fcache);
+    SCE_VOctree_SetMaxCachedNodes (&wt->vo, vw->max_cached_nodes);
     SCE_List_Appendl (&vw->trees, &wt->it);
 
     return wt;
@@ -557,4 +563,25 @@ int SCE_VWorld_GetNode (SCE_SVoxelWorld *vw, SCEuint level, long x, long y,
     }
 
     return SCE_VOCTREE_NODE_EMPTY;
+}
+
+void SCE_VWorld_UpdateCache (SCE_SVoxelWorld *vw)
+{
+    SCE_SListIterator *it = NULL;
+    SCE_List_ForEach (it, &vw->trees) {
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+        SCE_VOctree_UpdateCache (&wt->vo);
+    }
+}
+int SCE_VWorld_SyncCache (SCE_SVoxelWorld *vw)
+{
+    SCE_SListIterator *it = NULL;
+    SCE_List_ForEach (it, &vw->trees) {
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+        if (SCE_VOctree_SyncCache (&wt->vo) < 0) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
+    }
+    return SCE_OK;
 }
