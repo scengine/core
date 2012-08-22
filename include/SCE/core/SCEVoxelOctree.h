@@ -106,7 +106,9 @@ SCEulong SCE_VOctree_GetTotalWidth (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetTotalHeight (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetTotalDepth (const SCE_SVoxelOctree*);
 
+int SCE_VOctree_LoadFile (SCE_SVoxelOctree*, SCE_SFile*);
 int SCE_VOctree_Load (SCE_SVoxelOctree*, const char*);
+void SCE_VOctree_SaveFile (SCE_SVoxelOctree*, SCE_SFile*);
 int SCE_VOctree_Save (SCE_SVoxelOctree*, const char*);
 
 int SCE_VOctree_GetRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,

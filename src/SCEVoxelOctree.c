@@ -293,10 +293,33 @@ fail:
     return SCE_ERROR;
 }
 
+int SCE_VOctree_LoadFile (SCE_SVoxelOctree *vo, SCE_SFile *fp)
+{
+    SCE_SLongRect3 rect;
+
+    vo->max_depth = SCE_Decode_StreamLong (fp);
+    vo->x = SCE_Decode_StreamLong (fp);
+    vo->y = SCE_Decode_StreamLong (fp);
+    vo->z = SCE_Decode_StreamLong (fp);
+    vo->w = SCE_Decode_StreamLong (fp);
+    vo->h = SCE_Decode_StreamLong (fp);
+    vo->d = SCE_Decode_StreamLong (fp);
+
+    SCE_Rectangle3_SetFromOriginl (&rect, vo->x, vo->y, vo->z,
+                                   vo->w, vo->h, vo->d);
+    SCE_Rectangle3_Pow2l (&rect, vo->max_depth);
+
+    if (SCE_VOctree_LoadNode (vo, &vo->root, fp, &rect, vo->max_depth) < 0) {
+        SCEE_LogSrc ();
+        return SCE_ERROR;
+    }
+
+    return SCE_OK;
+}
+
 int SCE_VOctree_Load (SCE_SVoxelOctree *vo, const char *fname)
 {
     SCE_SFile fp;
-    SCE_SLongRect3 rect;
 
     SCE_File_Init (&fp);
     if (SCE_File_Open (&fp, NULL, fname, SCE_FILE_READ) < 0) {
@@ -304,26 +327,13 @@ int SCE_VOctree_Load (SCE_SVoxelOctree *vo, const char *fname)
         return SCE_ERROR;
     }
 
-    vo->max_depth = SCE_Decode_StreamLong (&fp);
-    vo->x = SCE_Decode_StreamLong (&fp);
-    vo->y = SCE_Decode_StreamLong (&fp);
-    vo->z = SCE_Decode_StreamLong (&fp);
-    vo->w = SCE_Decode_StreamLong (&fp);
-    vo->h = SCE_Decode_StreamLong (&fp);
-    vo->d = SCE_Decode_StreamLong (&fp);
-
-    SCE_Rectangle3_SetFromOriginl (&rect, vo->x, vo->y, vo->z,
-                                   vo->w, vo->h, vo->d);
-    SCE_Rectangle3_Pow2l (&rect, vo->max_depth);
-
-    if (SCE_VOctree_LoadNode (vo, &vo->root, &fp, &rect, vo->max_depth) < 0) {
+    if (SCE_VOctree_LoadFile (vo, &fp) < 0) {
         SCEE_LogSrc ();
         SCE_File_Close (&fp);
         return SCE_ERROR;
     }
 
     SCE_File_Close (&fp);
-
     return SCE_OK;
 }
 
@@ -352,6 +362,19 @@ static void SCE_VOctree_SaveNode (SCE_SVoxelOctreeNode *node, SCE_SFile *fp)
     }
 }
 
+void SCE_VOctree_SaveFile (SCE_SVoxelOctree *vo, SCE_SFile *fp)
+{
+    SCE_Encode_StreamLong (vo->max_depth, fp);
+    SCE_Encode_StreamLong (vo->x, fp);
+    SCE_Encode_StreamLong (vo->y, fp);
+    SCE_Encode_StreamLong (vo->z, fp);
+    SCE_Encode_StreamLong (vo->w, fp);
+    SCE_Encode_StreamLong (vo->h, fp);
+    SCE_Encode_StreamLong (vo->d, fp);
+
+    SCE_VOctree_SaveNode (&vo->root, fp);
+}
+
 int SCE_VOctree_Save (SCE_SVoxelOctree *vo, const char *fname)
 {
     SCE_SFile fp;
@@ -362,18 +385,9 @@ int SCE_VOctree_Save (SCE_SVoxelOctree *vo, const char *fname)
         return SCE_ERROR;
     }
 
-    SCE_Encode_StreamLong (vo->max_depth, &fp);
-    SCE_Encode_StreamLong (vo->x, &fp);
-    SCE_Encode_StreamLong (vo->y, &fp);
-    SCE_Encode_StreamLong (vo->z, &fp);
-    SCE_Encode_StreamLong (vo->w, &fp);
-    SCE_Encode_StreamLong (vo->h, &fp);
-    SCE_Encode_StreamLong (vo->d, &fp);
-
-    SCE_VOctree_SaveNode (&vo->root, &fp);
+    SCE_VOctree_SaveFile (vo, &fp);
 
     SCE_File_Close (&fp);
-
     return SCE_OK;
 }
 
