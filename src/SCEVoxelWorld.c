@@ -229,23 +229,33 @@ fail:
 
 int SCE_VWorld_Load (SCE_SVoxelWorld *vw, const char *fname)
 {
-    FILE *fp = NULL;
+    SCE_SFile fp;
     unsigned int n = 0, i;
     SCE_SListIterator *it = NULL;
     char prefix[128] = {0};
 
-    if (!(fp = fopen (fname, "rb"))) {
-        SCEE_LogErrno (fname);
+    SCE_File_Init (&fp);
+    if (SCE_File_Open (&fp, NULL, fname, SCE_FILE_READ) < 0) {
+        SCEE_LogSrc ();
         return SCE_ERROR;
     }
 
-    fread (&n, sizeof n, 1, fp);
+    /* need those data for AddNewTree() */
+    vw->w = SCE_Decode_StreamLong (&fp);
+    vw->h = SCE_Decode_StreamLong (&fp);
+    vw->d = SCE_Decode_StreamLong (&fp);
+    vw->n_lod = SCE_Decode_StreamLong (&fp);
+
+    n = SCE_Decode_StreamLong (&fp);
+
     for (i = 0; i < n; i++) {
         long coord[3];
         SCE_SVoxelOctree *vo = NULL;
         SCE_SVoxelWorldTree *wt = NULL;
 
-        fread (coord, sizeof (long), 3, fp);
+        coord[0] = SCE_Decode_StreamLong (&fp);
+        coord[1] = SCE_Decode_StreamLong (&fp);
+        coord[2] = SCE_Decode_StreamLong (&fp);
         wt = SCE_VWorld_AddNewTree (vw, coord[0], coord[1], coord[2]);
         vo = &wt->vo;
 
@@ -254,35 +264,36 @@ int SCE_VWorld_Load (SCE_SVoxelWorld *vw, const char *fname)
         strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
         if (SCE_VOctree_Load (vo, prefix) < 0) {
             SCEE_LogSrc ();
-            fclose (fp);
+            SCE_File_Close (&fp);
             return SCE_ERROR;
         }
     }
 
-    fread (&vw->w, sizeof vw->w, 1, fp);
-    fread (&vw->h, sizeof vw->h, 1, fp);
-    fread (&vw->d, sizeof vw->d, 1, fp);
-    fread (&vw->n_lod, sizeof vw->n_lod, 1, fp);
-
-    fclose (fp);
+    SCE_File_Close (&fp);
 
     return SCE_OK;
 }
 
 int SCE_VWorld_Save (const SCE_SVoxelWorld *vw, const char *fname)
 {
-    FILE *fp = NULL;
+    SCE_SFile fp;
     unsigned int n = 0;
     SCE_SListIterator *it = NULL;
     char prefix[128] = {0};
 
-    if (!(fp = fopen (fname, "wb"))) {
-        SCEE_LogErrno (fname);
+    SCE_File_Init (&fp);
+    if (SCE_File_Open (&fp, NULL, fname, SCE_FILE_WRITE |SCE_FILE_CREATE) < 0) {
+        SCEE_LogSrc ();
         return SCE_ERROR;
     }
 
+    SCE_Encode_StreamLong (vw->w, &fp);
+    SCE_Encode_StreamLong (vw->h, &fp);
+    SCE_Encode_StreamLong (vw->d, &fp);
+    SCE_Encode_StreamLong (vw->n_lod, &fp);
+
     n = SCE_List_GetLength (&vw->trees);
-    fwrite (&n, sizeof n, 1, fp);
+    SCE_Encode_StreamLong (n, &fp);
 
     SCE_List_ForEach (it, &vw->trees) {
         long coord[3];
@@ -294,24 +305,21 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld *vw, const char *fname)
         coord[0] /= vw->w;
         coord[1] /= vw->h;
         coord[2] /= vw->d;
-        fwrite (coord, sizeof (long), 3, fp);
+        SCE_Encode_StreamLong (coord[0], &fp);
+        SCE_Encode_StreamLong (coord[1], &fp);
+        SCE_Encode_StreamLong (coord[2], &fp);
 
         memset (prefix, 0, sizeof prefix);
         SCE_VWorld_SetTreePrefix (prefix, vw, coord[0], coord[1], coord[2]);
         strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
         if (SCE_VOctree_Save (vo, prefix) < 0) {
             SCEE_LogSrc ();
-            fclose (fp);
+            SCE_File_Close (&fp);
             return SCE_ERROR;
         }
     }
 
-    fwrite (&vw->w, sizeof vw->w, 1, fp);
-    fwrite (&vw->h, sizeof vw->h, 1, fp);
-    fwrite (&vw->d, sizeof vw->d, 1, fp);
-    fwrite (&vw->n_lod, sizeof vw->n_lod, 1, fp);
-
-    fclose (fp);
+    SCE_File_Close (&fp);
 
     return SCE_OK;
 }
