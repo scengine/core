@@ -74,6 +74,8 @@ struct sce_svoxeloctree {
     SCEulong n_cached;
     SCEulong max_cached;
     SCE_SList cached;
+
+    void *udata;
 };
 
 
@@ -92,6 +94,9 @@ void SCE_VOctree_SetPrefix (SCE_SVoxelOctree*, const char*);
 void SCE_VOctree_SetFileSystem (SCE_SVoxelOctree*, SCE_SFileSystem*);
 void SCE_VOctree_SetFileCache (SCE_SVoxelOctree*, SCE_SFileCache*);
 void SCE_VOctree_SetMaxCachedNodes (SCE_SVoxelOctree*, SCEulong);
+
+void SCE_VOctree_SetData (SCE_SVoxelOctree*, void*);
+void* SCE_VOctree_GetData (SCE_SVoxelOctree*);
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree*, long*, long*, long*);
 SCEulong SCE_VOctree_GetWidth (const SCE_SVoxelOctree*);

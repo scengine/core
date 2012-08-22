@@ -91,6 +91,8 @@ void SCE_VOctree_Init (SCE_SVoxelOctree *vo)
     vo->n_cached = 0;
     vo->max_cached = 16;        /* seems legit. */
     SCE_List_Init (&vo->cached);
+
+    vo->udata = NULL;
 }
 void SCE_VOctree_Clear (SCE_SVoxelOctree *vo)
 {
@@ -160,6 +162,15 @@ void SCE_VOctree_SetMaxCachedNodes (SCE_SVoxelOctree *vo, SCEulong max_cached)
     vo->max_cached = max_cached;
 }
 
+
+void SCE_VOctree_SetData (SCE_SVoxelOctree *vo, void *data)
+{
+    vo->udata = data;
+}
+void* SCE_VOctree_GetData (SCE_SVoxelOctree *vo)
+{
+    return vo->udata;
+}
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree *vo, long *x, long *y,
                              long *z)
