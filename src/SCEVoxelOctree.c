@@ -231,7 +231,7 @@ static void SCE_VOctree_ConstructRect (const SCE_SLongRect3 *parent,
 
 static int
 SCE_VOctree_LoadNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
-                      FILE *fp, const SCE_SLongRect3 *node_rect, int level)
+                      SCE_SFile *fp, const SCE_SLongRect3 *node_rect, int level)
 {
     size_t i;
     SCE_SLongRect3 rect;
@@ -247,22 +247,22 @@ SCE_VOctree_LoadNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     SCE_VOctree_GetNodeFilename (vo, &rect, level, node->fname);
     SCE_VOctree_SetNodeGrid (node, vo->w, vo->h, vo->d, 1);
 
-    fread (&node->status, sizeof node->status, 1, fp);
+    node->status = SCE_Decode_StreamLong (fp);
 
     switch (node->status) {
     case SCE_VOCTREE_NODE_EMPTY:
         break;
     case SCE_VOCTREE_NODE_FULL:
         node->in_volume = vo->w * vo->h * vo->d;
-        fread (&node->material, sizeof node->material, 1, fp);
+        node->material = SCE_Decode_StreamLong (fp);
         break;
     case SCE_VOCTREE_NODE_LEAF:
-        fread (&node->in_volume, sizeof node->in_volume, 1, fp);
-        fread (&node->material, sizeof node->material, 1, fp);
+        node->in_volume = SCE_Decode_StreamLong (fp);
+        node->material = SCE_Decode_StreamLong (fp);
         break;
     case SCE_VOCTREE_NODE_NODE:
-        fread (&node->in_volume, sizeof node->in_volume, 1, fp);
-        fread (&node->material, sizeof node->material, 1, fp);
+        node->in_volume = SCE_Decode_StreamLong (fp);
+        node->material = SCE_Decode_StreamLong (fp);
         for (i = 0; i < 8; i++) {
             if (!(node->children[i] = SCE_VOctree_CreateNode ()))
                 goto fail;
@@ -284,56 +284,57 @@ fail:
 
 int SCE_VOctree_Load (SCE_SVoxelOctree *vo, const char *fname)
 {
-    FILE *fp = NULL;
+    SCE_SFile fp;
     SCE_SLongRect3 rect;
 
-    if (!(fp = fopen (fname, "rb"))) {
-        SCEE_LogErrno (fname);
+    SCE_File_Init (&fp);
+    if (SCE_File_Open (&fp, NULL, fname, SCE_FILE_READ) < 0) {
+        SCEE_LogSrc ();
         return SCE_ERROR;
     }
 
-    fread (&vo->max_depth, sizeof vo->max_depth, 1, fp);
-    fread (&vo->x, sizeof vo->x, 1, fp);
-    fread (&vo->y, sizeof vo->y, 1, fp);
-    fread (&vo->z, sizeof vo->z, 1, fp);
-    fread (&vo->w, sizeof vo->w, 1, fp);
-    fread (&vo->h, sizeof vo->h, 1, fp);
-    fread (&vo->d, sizeof vo->d, 1, fp);
+    vo->max_depth = SCE_Decode_StreamLong (&fp);
+    vo->x = SCE_Decode_StreamLong (&fp);
+    vo->y = SCE_Decode_StreamLong (&fp);
+    vo->z = SCE_Decode_StreamLong (&fp);
+    vo->w = SCE_Decode_StreamLong (&fp);
+    vo->h = SCE_Decode_StreamLong (&fp);
+    vo->d = SCE_Decode_StreamLong (&fp);
 
     SCE_Rectangle3_SetFromOriginl (&rect, vo->x, vo->y, vo->z,
                                    vo->w, vo->h, vo->d);
     SCE_Rectangle3_Pow2l (&rect, vo->max_depth);
 
-    if (SCE_VOctree_LoadNode (vo, &vo->root, fp, &rect, vo->max_depth) < 0) {
+    if (SCE_VOctree_LoadNode (vo, &vo->root, &fp, &rect, vo->max_depth) < 0) {
         SCEE_LogSrc ();
-        fclose (fp);
+        SCE_File_Close (&fp);
         return SCE_ERROR;
     }
 
-    fclose (fp);
+    SCE_File_Close (&fp);
 
     return SCE_OK;
 }
 
-static void SCE_VOctree_SaveNode (SCE_SVoxelOctreeNode *node, FILE *fp)
+static void SCE_VOctree_SaveNode (SCE_SVoxelOctreeNode *node, SCE_SFile *fp)
 {
     size_t i;
 
-    fwrite (&node->status, sizeof node->status, 1, fp);
+    SCE_Encode_StreamLong (node->status, fp);
 
     switch (node->status) {
     case SCE_VOCTREE_NODE_EMPTY:
         break;
     case SCE_VOCTREE_NODE_FULL:
-        fwrite (&node->material, sizeof node->material, 1, fp);
+        SCE_Encode_StreamLong (node->material, fp);
         break;
     case SCE_VOCTREE_NODE_LEAF:
-        fwrite (&node->in_volume, sizeof node->in_volume, 1, fp);
-        fwrite (&node->material, sizeof node->material, 1, fp);
+        SCE_Encode_StreamLong (node->in_volume, fp);
+        SCE_Encode_StreamLong (node->material, fp);
         break;
     case SCE_VOCTREE_NODE_NODE:
-        fwrite (&node->in_volume, sizeof node->in_volume, 1, fp);
-        fwrite (&node->material, sizeof node->material, 1, fp);
+        SCE_Encode_StreamLong (node->in_volume, fp);
+        SCE_Encode_StreamLong (node->material, fp);
         for (i = 0; i < 8; i++)
             SCE_VOctree_SaveNode (node->children[i], fp);
         break;
@@ -342,24 +343,25 @@ static void SCE_VOctree_SaveNode (SCE_SVoxelOctreeNode *node, FILE *fp)
 
 int SCE_VOctree_Save (SCE_SVoxelOctree *vo, const char *fname)
 {
-    FILE *fp = NULL;
+    SCE_SFile fp;
 
-    if (!(fp = fopen (fname, "wb"))) {
-        SCEE_LogErrno (fname);
+    SCE_File_Init (&fp);
+    if (SCE_File_Open (&fp, NULL, fname, SCE_FILE_WRITE |SCE_FILE_CREATE) < 0) {
+        SCEE_LogSrc ();
         return SCE_ERROR;
     }
 
-    fwrite (&vo->max_depth, sizeof vo->max_depth, 1, fp);
-    fwrite (&vo->x, sizeof vo->x, 1, fp);
-    fwrite (&vo->y, sizeof vo->y, 1, fp);
-    fwrite (&vo->z, sizeof vo->z, 1, fp);
-    fwrite (&vo->w, sizeof vo->w, 1, fp);
-    fwrite (&vo->h, sizeof vo->h, 1, fp);
-    fwrite (&vo->d, sizeof vo->d, 1, fp);
+    SCE_Encode_StreamLong (vo->max_depth, &fp);
+    SCE_Encode_StreamLong (vo->x, &fp);
+    SCE_Encode_StreamLong (vo->y, &fp);
+    SCE_Encode_StreamLong (vo->z, &fp);
+    SCE_Encode_StreamLong (vo->w, &fp);
+    SCE_Encode_StreamLong (vo->h, &fp);
+    SCE_Encode_StreamLong (vo->d, &fp);
 
-    SCE_VOctree_SaveNode (&vo->root, fp);
+    SCE_VOctree_SaveNode (&vo->root, &fp);
 
-    fclose (fp);
+    SCE_File_Close (&fp);
 
     return SCE_OK;
 }
