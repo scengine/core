@@ -1,6 +1,5 @@
 SUBDIRS = src include doc
-pkgconfig_DATA = scecore.pc
-EXTRA_DIST = $(pkgconfig_DATA)
+dist_pkgconfig_DATA = scecore.pc
 
 .PHONY: doc
 
