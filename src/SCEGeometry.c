@@ -246,7 +246,10 @@ SCE_SGeometryArray* SCE_Geometry_GetUserArray (SCE_SGeometryArrayUser *auser)
 void SCE_Geometry_AttachArray (SCE_SGeometryArray *a1, SCE_SGeometryArray *a2)
 {
     a2->child = a1->child;
-    a2->root = a1;
+    if (a1->root)
+        a2->root = a1->root;
+    else
+        a2->root = a1;
     a1->child = a2;
 }
 /**
@@ -1047,6 +1050,24 @@ size_t SCE_Geometry_GetNumPrimitives (SCE_SGeometry *geom)
 }
 
 /**
+ * \brief Gets the total stride (in case of interleaved arrays)
+ * \param array an array
+ * \return the total stride associated with \p array
+ * \sa SCE_Geometry_AttachArray()
+ */
+size_t SCE_Geometry_GetTotalStride (SCE_SGeometryArray *array)
+{
+    size_t stride = 0;
+
+    if (SCE_Geometry_GetRoot (array))
+        array = SCE_Geometry_GetRoot (array);
+    while (array) {
+        stride += array->data.stride;
+        array = array->child;
+    }
+}
+
+/**
  * \brief Gets the arrays of a geometry (not including those who are modified)
  *
  * To get all the arrays of a geometry, use also those returned by
@@ -1153,9 +1174,9 @@ void SCE_Geometry_GenerateBoundingBox (SCE_SGeometry *geom)
 {
     if (!geom->box_uptodate && geom->n_vertices > 0 &&
         geom->pos_data && geom->pos_array) {
+        size_t stride = SCE_Geometry_GetTotalStride (geom->pos_array);
         SCE_Geometry_ComputeBoundingBox (geom->pos_data, geom->n_vertices,
-                                         geom->pos_array->data.stride,
-                                         &geom->box);
+                                         stride, &geom->box);
         geom->box_uptodate = SCE_TRUE;
     }
 }
@@ -1167,10 +1188,10 @@ void SCE_Geometry_GenerateBoundingSphere (SCE_SGeometry *geom)
 {
     if (!geom->sphere_uptodate && geom->n_vertices > 0 &&
         geom->pos_data && geom->pos_array) {
+        size_t stride = SCE_Geometry_GetTotalStride (geom->pos_array);
         SCE_Geometry_GenerateBoundingBox (geom);
         SCE_Geometry_ComputeBoundingSphere (geom->pos_data, geom->n_vertices,
-                                            geom->pos_array->data.stride,
-                                            &geom->box, &geom->sphere);
+                                            stride, &geom->box, &geom->sphere);
         geom->sphere_uptodate = SCE_TRUE;
     }
 }
@@ -1235,7 +1256,7 @@ void SCE_Geometry_ForEachTriangle (SCE_SGeometry *geom, SCE_FGeometryForEach f,
 
     n_prim = SCE_Geometry_GetNumPrimitives (geom);
     v = (char*)geom->pos_data;
-    stride = geom->pos_array->data.stride;
+    stride = SCE_Geometry_GetTotalStride (geom->pos_array);
 
     if (geom->index_data) {
         SCEindices *ind = geom->index_data;
