@@ -263,19 +263,19 @@ void SCE_Particle_RemoveDead (SCE_SParticleBuffer *pb, float sec)
 int SCE_Particle_BuildArrays (SCE_SParticleBuffer *pb, SCE_EPrimitiveType prim,
                               const int *attribs, size_t n_attrib)
 {
-    size_t i, offsets[8], vpp;
+    size_t i, vpp, stride;
     const int *a;
+
     vpp = attribs[0];
-    a = attribs = &attribs[1];
-    offsets[0] = 0;             /* call it before iterate into 'offsets' */
-    /* TODO: possible overflow in 'offsets'! */
-    for (i = 1; i <= n_attrib; i++) {
-        offsets[i] = a[2] * SCE_Type_Sizeof (a[1]) * vpp + offsets[i - 1];
+    a = &attribs[1];
+
+    for (i = 0; i < n_attrib; i++) {
+        pb->v_stride += a[2] * SCE_Type_Sizeof (a[1]);
         a = &a[3];
     }
-    pb->v_stride = offsets[n_attrib];
+    pb->v_stride *= vpp;
+
     pb->array = NULL; /* the previous one will be removed by its geometry */
-    a = attribs;
     /* create and initialize vertices array */
     if (!(pb->vertices = SCE_malloc (pb->max_particles * pb->v_stride)))
         goto fail;
@@ -287,20 +287,26 @@ int SCE_Particle_BuildArrays (SCE_SParticleBuffer *pb, SCE_EPrimitiveType prim,
                             pb->init_array_p);
         }
     }
+
+    stride = 0;
+    a = &attribs[1];
     for (i = 0; i < n_attrib; i++) {
         SCE_SGeometryArray *array = NULL;
         if (!(array = SCE_Geometry_CreateArray ()))
             goto fail;
-        SCE_Geometry_SetArrayData (array, a[0], a[1], pb->v_stride, a[2],
-                                   &pb->vertices[offsets[i]], SCE_FALSE);
+        SCE_Geometry_SetArrayData (array, a[0], a[1], 0, a[2],
+                                   &pb->vertices[stride], SCE_FALSE);
+        stride += a[2] * SCE_Type_Sizeof (a[1]);
         if (!pb->array)
             pb->array = array;
         else
             SCE_Geometry_AttachArray (pb->array, array);
         a = &a[3];
     }
+
     pb->vpp = vpp;
     pb->prim = prim;
+
     return SCE_OK;
 fail:
     SCEE_LogSrc ();
