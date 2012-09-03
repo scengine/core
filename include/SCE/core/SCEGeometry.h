@@ -343,6 +343,7 @@ size_t SCE_Geometry_GetNumIndices (SCE_SGeometry*);
 size_t SCE_Geometry_GetPrimitiveVertices (SCE_EPrimitiveType);
 size_t SCE_Geometry_GetNumVerticesPerPrimitive (SCE_SGeometry*);
 size_t SCE_Geometry_GetNumPrimitives (SCE_SGeometry*);
+size_t SCE_Geometry_GetTotalStride (SCE_SGeometryArray*);
 
 SCE_SList* SCE_Geometry_GetArrays (SCE_SGeometry*);
 SCE_SList* SCE_Geometry_GetModifiedArrays (SCE_SGeometry*);

@@ -1065,6 +1065,7 @@ size_t SCE_Geometry_GetTotalStride (SCE_SGeometryArray *array)
         stride += array->data.stride;
         array = array->child;
     }
+    return stride;
 }
 
 /**
