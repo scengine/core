@@ -38,6 +38,7 @@ static void SCE_VOctree_InitNode (SCE_SVoxelOctreeNode *node)
     node->cached = SCE_FALSE;
     node->in_volume = 0;
     node->material = 0;
+    node->udata = NULL;
     SCE_List_InitIt (&node->it);
     SCE_List_SetData (&node->it, node);
 }
@@ -171,6 +172,15 @@ void* SCE_VOctree_GetData (SCE_SVoxelOctree *vo)
 {
     return vo->udata;
 }
+void SCE_VOctree_SetNodeData (SCE_SVoxelOctreeNode *node, void *data)
+{
+    node->udata = data;
+}
+void* SCE_VOctree_GetNodeData (SCE_SVoxelOctreeNode *node)
+{
+    return node->udata;
+}
+
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree *vo, long *x, long *y,
                              long *z)
