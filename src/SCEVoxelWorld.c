@@ -249,8 +249,6 @@ int SCE_VWorld_Load (SCE_SVoxelWorld *vw, const char *fname)
 {
     SCE_SFile fp;
     unsigned int n = 0, i;
-    SCE_SListIterator *it = NULL;
-    char prefix[128] = {0};
 
     SCE_File_Init (&fp);
     if (SCE_File_Open (&fp, NULL, fname, SCE_FILE_READ) < 0) {
@@ -274,13 +272,7 @@ int SCE_VWorld_Load (SCE_SVoxelWorld *vw, const char *fname)
         coord[0] = SCE_Decode_StreamLong (&fp);
         coord[1] = SCE_Decode_StreamLong (&fp);
         coord[2] = SCE_Decode_StreamLong (&fp);
-        wt = SCE_VWorld_AddNewTree (vw, coord[0], coord[1], coord[2]);
-        vo = &wt->vo;
-
-        memset (prefix, 0, sizeof prefix);
-        SCE_VWorld_SetTreePrefix (prefix, vw, coord[0], coord[1], coord[2]);
-        strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
-        if (SCE_VOctree_Load (vo, prefix) < 0) {
+        if (SCE_VWorld_AddNewTree (vw, coord[0], coord[1], coord[2]) < 0) {
             SCEE_LogSrc ();
             SCE_File_Close (&fp);
             return SCE_ERROR;
@@ -341,6 +333,55 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld *vw, const char *fname)
 
     return SCE_OK;
 }
+
+
+int SCE_VWorld_LoadTree (SCE_SVoxelWorld *vw, long x, long y, long z)
+{
+    SCE_SVoxelWorldTree *wt = NULL;
+    char prefix[128] = {0};
+
+    wt = SCE_VWorld_GetTree (vw, x, y, z);
+    if (!wt) {
+        SCEE_Log (43333);
+        SCEE_LogMsg ("no tree at coordinates %ld %ld %ld", x, y, z);
+        return SCE_ERROR;
+    }
+
+    SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
+    /* TODO: use a macro for "octree.bin" */
+    strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
+    if (SCE_VOctree_Load (&wt->vo, prefix) < 0) {
+        SCEE_LogSrc ();
+        return SCE_ERROR;
+    }
+
+    return SCE_OK;
+}
+int SCE_VWorld_LoadAllTrees (SCE_SVoxelWorld *vw)
+{
+    SCE_SListIterator *it = NULL;
+    long x, y, z;
+    char prefix[128] = {0};
+
+    SCE_List_ForEach (it, &vw->trees) {
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+
+        SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
+        x /= vw->w;
+        y /= vw->h;
+        z /= vw->d;
+        SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
+        /* TODO: use a macro for "octree.bin" */
+        strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
+        if (SCE_VOctree_Load (&wt->vo, prefix) < 0) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
+    }
+
+    return SCE_OK;
+}
+
 
 
 static void SCE_VWorld_PushZone (SCE_SVoxelWorld *vw,

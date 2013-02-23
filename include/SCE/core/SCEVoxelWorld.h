@@ -86,6 +86,11 @@ int SCE_VWorld_Build (SCE_SVoxelWorld*);
 int SCE_VWorld_Load (SCE_SVoxelWorld*, const char*);
 int SCE_VWorld_Save (const SCE_SVoxelWorld*, const char*);
 
+int SCE_VWorld_LoadTree (SCE_SVoxelWorld*, long, long, long);
+int SCE_VWorld_LoadAllTrees (SCE_SVoxelWorld*);
+
+/* int SCE_VWorld_UnloadTree (SCE_SVoxelWorld*, long, long, long); */
+
 int SCE_VWorld_GetRegion (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
                           SCEubyte*);
 int SCE_VWorld_SetRegion (SCE_SVoxelWorld*, const SCE_SLongRect3*,
