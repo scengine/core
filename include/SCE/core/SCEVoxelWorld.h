@@ -79,6 +79,7 @@ void SCE_VWorld_SetFileCache (SCE_SVoxelWorld*, SCE_SFileCache*);
 void SCE_VWorld_SetMaxCachedNodes (SCE_SVoxelWorld*, SCEulong);
 
 SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld*, long, long, long);
+SCE_SVoxelWorldTree* SCE_VWorld_GetTree (SCE_SVoxelWorld*, long, long, long);
 
 int SCE_VWorld_Build (SCE_SVoxelWorld*);
 

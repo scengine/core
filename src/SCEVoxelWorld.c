@@ -207,6 +207,24 @@ SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
 
     return wt;
 }
+SCE_SVoxelWorldTree* SCE_VWorld_GetTree (SCE_SVoxelWorld *vw,
+                                         long x, long y, long z)
+{
+    SCE_SListIterator *it = NULL;
+    long a, b, c;
+
+    x *= vw->w;
+    y *= vw->h;
+    z *= vw->d;
+
+    SCE_List_ForEach (it, &vw->trees) {
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+        SCE_VOctree_GetOriginv (&wt->vo, &a, &b, &c);
+        if (a == x && b == y && c == z)
+            return wt;
+    }
+    return NULL;
+}
 
 
 int SCE_VWorld_Build (SCE_SVoxelWorld *vw)
