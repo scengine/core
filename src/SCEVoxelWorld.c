@@ -289,7 +289,6 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld *vw, const char *fname)
     SCE_SFile fp;
     unsigned int n = 0;
     SCE_SListIterator *it = NULL;
-    char prefix[128] = {0};
 
     SCE_File_Init (&fp);
     if (SCE_File_Open (&fp, NULL, fname, SCE_FILE_WRITE |SCE_FILE_CREATE) < 0) {
@@ -306,27 +305,16 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld *vw, const char *fname)
     SCE_Encode_StreamLong (n, &fp);
 
     SCE_List_ForEach (it, &vw->trees) {
-        long coord[3];
-        SCE_SVoxelOctree *vo = NULL;
+        long x, y, z;
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
 
-        vo = &wt->vo;
-        SCE_VOctree_GetOriginv (vo, &coord[0], &coord[1], &coord[2]);
-        coord[0] /= vw->w;
-        coord[1] /= vw->h;
-        coord[2] /= vw->d;
-        SCE_Encode_StreamLong (coord[0], &fp);
-        SCE_Encode_StreamLong (coord[1], &fp);
-        SCE_Encode_StreamLong (coord[2], &fp);
-
-        memset (prefix, 0, sizeof prefix);
-        SCE_VWorld_SetTreePrefix (prefix, vw, coord[0], coord[1], coord[2]);
-        strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
-        if (SCE_VOctree_Save (vo, prefix) < 0) {
-            SCEE_LogSrc ();
-            SCE_File_Close (&fp);
-            return SCE_ERROR;
-        }
+        SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
+        x /= vw->w;
+        y /= vw->h;
+        z /= vw->d;
+        SCE_Encode_StreamLong (x, &fp);
+        SCE_Encode_StreamLong (y, &fp);
+        SCE_Encode_StreamLong (z, &fp);
     }
 
     SCE_File_Close (&fp);
@@ -382,6 +370,52 @@ int SCE_VWorld_LoadAllTrees (SCE_SVoxelWorld *vw)
     return SCE_OK;
 }
 
+int SCE_VWorld_SaveTree (SCE_SVoxelWorld *vw, long x, long y, long z)
+{
+    SCE_SVoxelWorldTree *wt = NULL;
+    char prefix[128] = {0};
+
+    wt = SCE_VWorld_GetTree (vw, x, y, z);
+    if (!wt) {
+        SCEE_Log (43333);
+        SCEE_LogMsg ("no tree at coordinates %ld %ld %ld", x, y, z);
+        return SCE_ERROR;
+    }
+
+    SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
+    /* TODO: use a macro for "octree.bin" */
+    strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
+    if (SCE_VOctree_Save (&wt->vo, prefix) < 0) {
+        SCEE_LogSrc ();
+        return SCE_ERROR;
+    }
+
+    return SCE_OK;
+}
+int SCE_VWorld_SaveAllTrees (SCE_SVoxelWorld *vw)
+{
+    SCE_SListIterator *it = NULL;
+    long x, y, z;
+    char prefix[128] = {0};
+
+    SCE_List_ForEach (it, &vw->trees) {
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+
+        SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
+        x /= vw->w;
+        y /= vw->h;
+        z /= vw->d;
+        SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
+        /* TODO: use a macro for "octree.bin" */
+        strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
+        if (SCE_VOctree_Save (&wt->vo, prefix) < 0) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
+    }
+
+    return SCE_OK;
+}
 
 
 static void SCE_VWorld_PushZone (SCE_SVoxelWorld *vw,

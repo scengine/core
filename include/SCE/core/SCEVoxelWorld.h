@@ -88,6 +88,8 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld*, const char*);
 
 int SCE_VWorld_LoadTree (SCE_SVoxelWorld*, long, long, long);
 int SCE_VWorld_LoadAllTrees (SCE_SVoxelWorld*);
+int SCE_VWorld_SaveTree (SCE_SVoxelWorld*, long, long, long);
+int SCE_VWorld_SaveAllTrees (SCE_SVoxelWorld*);
 
 /* int SCE_VWorld_UnloadTree (SCE_SVoxelWorld*, long, long, long); */
 
