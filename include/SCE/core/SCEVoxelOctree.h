@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 24/04/2012
-   updated: 21/08/2012 */
+   updated: 05/03/2013 */
 
 #ifndef SCEVOXELOCTREE_H
 #define SCEVOXELOCTREE_H
@@ -134,6 +134,9 @@ int SCE_VOctree_FetchAllNodes (SCE_SVoxelOctree*, SCEuint, SCE_SList*);
 
 int SCE_VOctree_SyncNode (SCE_SVoxelOctree*, SCE_SVoxelOctreeNode*);
 int SCE_VOctree_CacheNode (SCE_SVoxelOctree*, SCE_SVoxelOctreeNode*);
+
+size_t SCE_VOctree_GetNodeCompressedSize (SCE_SVoxelOctreeNode*);
+void* SCE_VOctree_GetNodeCompressedData (SCE_SVoxelOctreeNode*);
 
 int SCE_VOctree_UpdateCache (SCE_SVoxelOctree*);
 int SCE_VOctree_SyncCache (SCE_SVoxelOctree*);
