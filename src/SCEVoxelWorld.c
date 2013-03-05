@@ -289,14 +289,12 @@ int SCE_VWorld_Load (SCE_SVoxelWorld *vw, const char *fname)
     n = SCE_Decode_StreamLong (&fp);
 
     for (i = 0; i < n; i++) {
-        long coord[3];
-        SCE_SVoxelOctree *vo = NULL;
-        SCE_SVoxelWorldTree *wt = NULL;
+        long x, y, z;
 
-        coord[0] = SCE_Decode_StreamLong (&fp);
-        coord[1] = SCE_Decode_StreamLong (&fp);
-        coord[2] = SCE_Decode_StreamLong (&fp);
-        if (SCE_VWorld_AddNewTree (vw, coord[0], coord[1], coord[2]) < 0) {
+        x = SCE_Decode_StreamLong (&fp);
+        y = SCE_Decode_StreamLong (&fp);
+        z = SCE_Decode_StreamLong (&fp);
+        if (SCE_VWorld_AddNewTree (vw, x, y, z) < 0) {
             SCEE_LogSrc ();
             SCE_File_Close (&fp);
             return SCE_ERROR;
