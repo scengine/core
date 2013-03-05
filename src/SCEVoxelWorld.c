@@ -28,6 +28,7 @@
 static void SCE_VWorld_InitTree (SCE_SVoxelWorldTree *wt)
 {
     SCE_VOctree_Init (&wt->vo);
+    wt->udata = NULL;
     SCE_List_InitIt (&wt->it);
     SCE_List_SetData (&wt->it, wt);
 }
@@ -224,6 +225,29 @@ SCE_SVoxelWorldTree* SCE_VWorld_GetTree (SCE_SVoxelWorld *vw,
             return wt;
     }
     return NULL;
+}
+void SCE_VWorld_GetTreeOriginv (const SCE_SVoxelWorldTree *wt,
+                                long *x, long *y, long *z)
+{
+    long a, b, c, w, h, d;
+    SCE_VOctree_GetOriginv (&wt->vo, &a, &b, &c);
+    SCE_VOctree_GetDimensionsv (&wt->vo, &w, &h, &d);
+    *x = a / w;
+    *y = b / h;
+    *z = c / d;
+}
+
+SCE_SVoxelOctree* SCE_VWorld_GetOctree (SCE_SVoxelWorldTree *wt)
+{
+    return &wt->vo;
+}
+void SCE_VWorld_SetData (SCE_SVoxelWorldTree *wt, void *data)
+{
+    wt->udata = data;
+}
+void* SCE_VWorld_GetData (SCE_SVoxelWorldTree *wt)
+{
+    return wt->udata;
 }
 
 

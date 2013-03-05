@@ -33,6 +33,7 @@ typedef struct sce_svoxelworldtree SCE_SVoxelWorldTree;
 struct sce_svoxelworldtree {
     SCE_SVoxelOctree vo;
     SCE_SListIterator it;
+    void *udata;
 };
 
 #define SCE_MAX_VWORLD_UPDATE_ZONES 128
@@ -80,6 +81,11 @@ void SCE_VWorld_SetMaxCachedNodes (SCE_SVoxelWorld*, SCEulong);
 
 SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld*, long, long, long);
 SCE_SVoxelWorldTree* SCE_VWorld_GetTree (SCE_SVoxelWorld*, long, long, long);
+void SCE_VWorld_GetTreeOriginv (const SCE_SVoxelWorldTree*, long*, long*,long*);
+
+SCE_SVoxelOctree* SCE_VWorld_GetOctree (SCE_SVoxelWorldTree*);
+void SCE_VWorld_SetData (SCE_SVoxelWorldTree*, void*);
+void* SCE_VWorld_GetData (SCE_SVoxelWorldTree*);
 
 int SCE_VWorld_Build (SCE_SVoxelWorld*);
 
