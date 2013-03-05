@@ -1043,14 +1043,18 @@ int SCE_VOctree_GetNode (SCE_SVoxelOctree *vo, SCEuint level, long x, long y,
 }
 
 
-void SCE_VOctree_UpdateCache (SCE_SVoxelOctree *vo)
+int SCE_VOctree_UpdateCache (SCE_SVoxelOctree *vo)
 {
     while (vo->n_cached > vo->max_cached) {
         SCE_SVoxelOctreeNode *node = NULL;
         node = SCE_List_GetData (SCE_List_GetFirst (&vo->cached));
-        SCE_VOctree_SyncNode (vo, node);
+        if (SCE_VOctree_SyncNode (vo, node) < 0) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
         SCE_VOctree_UncacheNode (vo, node);
     }
+    return SCE_OK;
 }
 
 int SCE_VOctree_SyncCache (SCE_SVoxelOctree *vo)

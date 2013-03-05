@@ -131,7 +131,7 @@ int SCE_VOctree_GetNode (SCE_SVoxelOctree*, SCEuint, long, long, long, char*);
 int SCE_VOctree_SyncNode (SCE_SVoxelOctree*, SCE_SVoxelOctreeNode*);
 int SCE_VOctree_CacheNode (SCE_SVoxelOctree*, SCE_SVoxelOctreeNode*);
 
-void SCE_VOctree_UpdateCache (SCE_SVoxelOctree*);
+int SCE_VOctree_UpdateCache (SCE_SVoxelOctree*);
 int SCE_VOctree_SyncCache (SCE_SVoxelOctree*);
 
 #ifdef __cplusplus
