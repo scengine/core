@@ -45,7 +45,6 @@ static void SCE_VOctree_InitNode (SCE_SVoxelOctreeNode *node)
     SCE_List_SetData (&node->it, node);
 }
 static void SCE_VOctree_DeleteNode (SCE_SVoxelOctreeNode*);
-static int SCE_VOctree_SyncNode (SCE_SVoxelOctree*, SCE_SVoxelOctreeNode*);
 static void SCE_VOctree_ClearNode (SCE_SVoxelOctreeNode *node)
 {
     size_t i;
@@ -541,8 +540,7 @@ fail:
 }
 
 /* update compressed data */
-static int
-SCE_VOctree_SyncNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
+int SCE_VOctree_SyncNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
 {
     if (SCE_VOctree_CacheFile (vo, node) < 0)
         goto fail;
@@ -553,8 +551,8 @@ SCE_VOctree_SyncNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
         SCEE_SendMsg ("synced %d bytes %s\n", SCE_VGrid_GetSize (&node->grid),
                       node->fname);
     } else {
-    SCEE_SendMsg ("NOT synced %d bytes %s\n", SCE_VGrid_GetSize (&node->grid),
-                  node->fname);
+        SCEE_SendMsg ("NOT synced %d bytes %s\n",
+                      SCE_VGrid_GetSize (&node->grid), node->fname);
     }
 
     return SCE_OK;
