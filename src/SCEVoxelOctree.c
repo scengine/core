@@ -471,7 +471,7 @@ static int SCE_VOctree_DecompressNode (SCE_SVoxelOctreeNode *node)
     SCE_VGrid_SetRaw (&node->grid, grid);
 
     size = SCE_File_Length (&node->file);
-    /* TODO: dont do dat, go see CacheGrid() */
+    /* TODO: dont do dat, go see CacheNode() */
     if (size > 0) {
         SCE_SArray data;
         void *filedata = NULL;
@@ -563,8 +563,7 @@ fail:
 
 
 /* makes sure the node grid data are in memory */
-static int
-SCE_VOctree_CacheGrid (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
+int SCE_VOctree_CacheNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
 {
     if (!node->cached) {
         /* TODO: dont cache the file if it dont exist, see DecompressNode() */
@@ -581,9 +580,10 @@ fail:
     SCEE_LogSrc ();
     return SCE_ERROR;
 }
+
 /* removes a node's grid from memory */
 static void
-SCE_VOctree_UncacheGrid (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
+SCE_VOctree_UncacheNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
 {
     if (node->cached) {
         SCE_VGrid_SetRaw (&node->grid, NULL);
@@ -601,7 +601,7 @@ SCE_VOctree_CopyFromNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 {
     SCE_SLongRect3 src_region, dst_region;
 
-    if (SCE_VOctree_CacheGrid (vo, node) < 0) {
+    if (SCE_VOctree_CacheNode (vo, node) < 0) {
         SCEE_LogSrc ();
         return SCE_ERROR;
     }
@@ -713,7 +713,7 @@ SCE_VOctree_CopyToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 {
     SCE_SLongRect3 src_region, dst_region;
 
-    if (SCE_VOctree_CacheGrid (vo, node) < 0) {
+    if (SCE_VOctree_CacheNode (vo, node) < 0) {
         SCEE_LogSrc ();
         return SCE_ERROR;
     }
@@ -731,7 +731,7 @@ SCE_VOctree_CopyToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 static void
 SCE_VOctree_EraseNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
 {
-    SCE_VOctree_UncacheGrid (vo, node);
+    SCE_VOctree_UncacheNode (vo, node);
     SCE_VGrid_Clear (&node->grid);
     SCE_VGrid_Init (&node->grid);
     SCE_File_Close (&node->file);
@@ -781,7 +781,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                                  SCE_Rectangle3_GetWidthl (&local_rect),
                                  SCE_Rectangle3_GetHeightl (&local_rect),
                                  SCE_Rectangle3_GetDepthl (&local_rect), 1);
-        if (SCE_VOctree_CacheGrid (vo, node) < 0)
+        if (SCE_VOctree_CacheNode (vo, node) < 0)
             goto fail;
         SCE_VGrid_Fill (&node->grid, NULL, empty_pattern);
 
@@ -834,7 +834,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                                  SCE_Rectangle3_GetWidthl (&local_rect),
                                  SCE_Rectangle3_GetHeightl (&local_rect),
                                  SCE_Rectangle3_GetDepthl (&local_rect), 1);
-        if (SCE_VOctree_CacheGrid (vo, node) < 0)
+        if (SCE_VOctree_CacheNode (vo, node) < 0)
             goto fail;
         SCE_VGrid_Fill (&node->grid, NULL, full_pattern);
 
@@ -1049,7 +1049,7 @@ void SCE_VOctree_UpdateCache (SCE_SVoxelOctree *vo)
         SCE_SVoxelOctreeNode *node = NULL;
         node = SCE_List_GetData (SCE_List_GetFirst (&vo->cached));
         SCE_VOctree_SyncNode (vo, node);
-        SCE_VOctree_UncacheGrid (vo, node);
+        SCE_VOctree_UncacheNode (vo, node);
     }
 }
 
