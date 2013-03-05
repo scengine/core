@@ -113,7 +113,7 @@ int SCE_VWorld_GenerateAllLOD (SCE_SVoxelWorld*, SCEuint,
 
 int SCE_VWorld_GetNode (SCE_SVoxelWorld*, SCEuint, long, long, long, char*);
 
-void SCE_VWorld_UpdateCache (SCE_SVoxelWorld*);
+int SCE_VWorld_UpdateCache (SCE_SVoxelWorld*);
 int SCE_VWorld_SyncCache (SCE_SVoxelWorld*);
 
 #ifdef __cplusplus

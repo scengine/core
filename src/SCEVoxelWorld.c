@@ -688,13 +688,18 @@ int SCE_VWorld_GetNode (SCE_SVoxelWorld *vw, SCEuint level, long x, long y,
     return SCE_VOCTREE_NODE_EMPTY;
 }
 
-void SCE_VWorld_UpdateCache (SCE_SVoxelWorld *vw)
+
+int SCE_VWorld_UpdateCache (SCE_SVoxelWorld *vw)
 {
     SCE_SListIterator *it = NULL;
     SCE_List_ForEach (it, &vw->trees) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
-        SCE_VOctree_UpdateCache (&wt->vo);
+        if (SCE_VOctree_UpdateCache (&wt->vo) < 0) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
     }
+    return SCE_OK;
 }
 int SCE_VWorld_SyncCache (SCE_SVoxelWorld *vw)
 {
