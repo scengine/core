@@ -30,6 +30,8 @@ static void SCE_VOctree_InitNode (SCE_SVoxelOctreeNode *node)
     node->status = SCE_VOCTREE_NODE_EMPTY;
     for (i = 0; i < 8; i++)
         node->children[i] = NULL;
+    node->level = 0;
+    node->x = node->y = node->z = 0;
     memset (node->fname, 0, SCE_VOCTREE_NODE_FNAME_LENGTH);
     SCE_VGrid_Init (&node->grid);
     SCE_File_Init (&node->file);
@@ -180,14 +182,46 @@ void* SCE_VOctree_GetNodeData (SCE_SVoxelOctreeNode *node)
 {
     return node->udata;
 }
+const char* SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctreeNode *node)
+{
+    return node->fname;
+}
+static void SCE_VOctree_SetNodeOrigin (SCE_SVoxelOctreeNode *node,
+                                       long x, long y, long z)
+{
+    node->x = x; node->y = y; node->z = z;
+}
+SCE_EVoxelOctreeStatus
+SCE_VOctree_GetNodeStatus (const SCE_SVoxelOctreeNode *node)
+{
+    return node->status;
+}
+SCEuint SCE_VOctree_GetNodeLevel (const SCE_SVoxelOctreeNode *node)
+{
+    return node->level;
+}
+/**
+ * \brief Get a node origin position in absolute coordinates
+ * (in node's level space)
+ * \param node a node
+ * \param x,y,z coordinates of the origin of \p node
+ */
+void SCE_VOctree_GetNodeOriginv (const SCE_SVoxelOctreeNode *node,
+                                long *x, long *y, long *z)
+{
+    *x = node->x; *y = node->y; *z = node->z;
+}
 
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree *vo, long *x, long *y,
                              long *z)
 {
-    *x = vo->x;
-    *y = vo->y;
-    *z = vo->z;
+    *x = vo->x; *y = vo->y; *z = vo->z;
+}
+void SCE_VOctree_GetDimensionsv (const SCE_SVoxelOctree *vo,
+                                 long *w, long *h, long *d)
+{
+    *w = vo->w; *h = vo->h; *d = vo->d;
 }
 SCEulong SCE_VOctree_GetWidth (const SCE_SVoxelOctree *vo)
 {
@@ -213,7 +247,27 @@ SCEulong SCE_VOctree_GetTotalDepth (const SCE_SVoxelOctree *vo)
 {
     return vo->d * (1 << vo->max_depth);
 }
+static SCEulong SCE_VOctree_Getnnodes (const SCE_SVoxelOctreeNode *node)
+{
+    int i;
+    SCEulong n = 0;
 
+    switch (node->status) {
+    case SCE_VOCTREE_NODE_EMPTY:
+    case SCE_VOCTREE_NODE_FULL:
+    case SCE_VOCTREE_NODE_LEAF:
+        return 1;
+    case SCE_VOCTREE_NODE_NODE:
+        for (i = 0; i < 8; i++)
+            n += SCE_VOctree_Getnnodes (node->children[i]);
+        return 1 + n;
+    }
+    return 0;                   /* : d */
+}
+SCEulong SCE_VOctree_GetNumNodes (const SCE_SVoxelOctree *vo)
+{
+    return SCE_VOctree_Getnnodes (&vo->root);
+}
 
 static void SCE_VOctree_SetNodeGrid (SCE_SVoxelOctreeNode *node, SCEulong w,
                                      SCEulong h, SCEulong d, size_t n_cmp)
@@ -223,11 +277,12 @@ static void SCE_VOctree_SetNodeGrid (SCE_SVoxelOctreeNode *node, SCEulong w,
 }
 
 static void
-SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctree *vo,
-                             const SCE_SLongRect3 *node_rect, SCEuint level,
-                             char *fname)
+SCE_VOctree_MakeNodeFilename (const SCE_SVoxelOctree *vo,
+                              const SCE_SLongRect3 *node_rect, SCEuint level,
+                              char *fname)
 {
     long p1[3], p2[3];
+    /* TODO: file names use absolute coordinates, which sucks */
     SCE_Rectangle3_GetPointslv (node_rect, p1, p2);
     sprintf (fname, "%s/lod%u/%ld_%ld_%ld", vo->prefix, level,
              p1[0], p1[1], p1[2]);
@@ -256,6 +311,7 @@ SCE_VOctree_LoadNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 {
     size_t i;
     SCE_SLongRect3 rect;
+    long x, y, z;
 
     if (level < 0) {
         SCEE_Log (29);
@@ -265,9 +321,13 @@ SCE_VOctree_LoadNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
     rect = *node_rect;
     SCE_Rectangle3_Pow2l (&rect, -level);
-    SCE_VOctree_GetNodeFilename (vo, &rect, level, node->fname);
+    SCE_Rectangle3_GetOriginlv (&rect, &x, &y, &z);
+    SCE_VOctree_MakeNodeFilename (vo, &rect, level, node->fname);
     SCE_VOctree_SetNodeGrid (node, vo->w, vo->h, vo->d, 1);
+    SCE_VOctree_SetNodeOrigin (node, x, y, z);
 
+    /* TODO: node->level = ??? */
+    node->level = level;
     node->status = SCE_Decode_StreamLong (fp);
 
     switch (node->status) {
@@ -690,7 +750,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 {
     size_t i;
     SCE_SLongRect3 inter, region, local_rect;
-    long diff;
+    long diff, x, y, z;
     SCEuint clevel;             /* current level */
     /* TODO: hardcoded patterns */
     SCEubyte empty_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
@@ -702,11 +762,13 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
     clevel = level + depth;
     local_rect = *node_rect;
+    SCE_Rectangle3_GetOriginlv (&local_rect, &x, &y, &z);
+    SCE_VOctree_SetNodeOrigin (node, x, y, z);
     SCE_Rectangle3_Pow2l (&local_rect, -depth);
 
     switch (node->status) {
     case SCE_VOCTREE_NODE_EMPTY:
-        /* first check if the grid is empty, since the grid is more likely
+        /* check if the grid is empty first, since the grid is more likely
            to be small, this test is quite fast and can save us useless
            file creation/deletion, which is very expensive */
         region = inter;
@@ -715,7 +777,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             break;
 
         /* create this node */
-        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, node->fname);
+        SCE_VOctree_MakeNodeFilename (vo, &local_rect, clevel, node->fname);
         node->level = clevel;
         SCE_VOctree_SetNodeGrid (node,
                                  SCE_Rectangle3_GetWidthl (&local_rect),
@@ -732,7 +794,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 goto fail;
             node->in_volume += diff;
             if (node->in_volume == 0) {
-                /* this case should never happend because we tested
+                /* this case should never happen because we tested
                    'grid' */
                 SCE_VOctree_EraseNode (vo, node);
             } else if (node->in_volume == vo->w * vo->h * vo->d) {
@@ -768,7 +830,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             break;
 
         /* create this node */
-        SCE_VOctree_GetNodeFilename (vo, &local_rect, clevel, node->fname);
+        SCE_VOctree_MakeNodeFilename (vo, &local_rect, clevel, node->fname);
         node->level = clevel;
         SCE_VOctree_SetNodeGrid (node,
                                  SCE_Rectangle3_GetWidthl (&local_rect),

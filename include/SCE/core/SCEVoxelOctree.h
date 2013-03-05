@@ -45,6 +45,7 @@ struct sce_svoxeloctreenode {
     SCE_EVoxelOctreeStatus status;
     SCE_SVoxelOctreeNode *children[8];
     SCEuint level;
+    long x, y, z;          /* coordinates of the origin, in level's space */
     char fname[SCE_VOCTREE_NODE_FNAME_LENGTH];
     SCE_SVoxelGrid grid;
     SCE_SFile file;
@@ -101,14 +102,20 @@ void SCE_VOctree_SetData (SCE_SVoxelOctree*, void*);
 void* SCE_VOctree_GetData (SCE_SVoxelOctree*);
 void SCE_VOctree_SetNodeData (SCE_SVoxelOctreeNode*, void*);
 void* SCE_VOctree_GetNodeData (SCE_SVoxelOctreeNode*);
+const char* SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctreeNode*);
+SCE_EVoxelOctreeStatus SCE_VOctree_GetNodeStatus (const SCE_SVoxelOctreeNode*);
+SCEuint SCE_VOctree_GetNodeLevel (const SCE_SVoxelOctreeNode*);
+void SCE_VOctree_GetNodeOriginv (const SCE_SVoxelOctreeNode*,long*,long*,long*);
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree*, long*, long*, long*);
+void SCE_VOctree_GetDimensionsv (const SCE_SVoxelOctree*, long*, long*, long*);
 SCEulong SCE_VOctree_GetWidth (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetHeight (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetDepth (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetTotalWidth (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetTotalHeight (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetTotalDepth (const SCE_SVoxelOctree*);
+SCEulong SCE_VOctree_GetNumNodes (const SCE_SVoxelOctree*);
 
 int SCE_VOctree_LoadFile (SCE_SVoxelOctree*, SCE_SFile*);
 int SCE_VOctree_Load (SCE_SVoxelOctree*, const char*);
