@@ -55,9 +55,9 @@ struct sce_svoxeloctreenode {
                               from \c file? */
     long in_volume;        /* number of voxels in the volume */
     int material;          /* material ID if full */
-    SCE_SListIterator it;
 
     void *udata;           /* user data */
+    SCE_SListIterator it, it2;
 };
 
 
@@ -126,8 +126,12 @@ int SCE_VOctree_GetRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
                            SCEubyte*);
 int SCE_VOctree_SetRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
                            const SCEubyte*);
+int SCE_VOctree_FetchNodes (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
+                            SCE_SList*);
+SCE_SVoxelOctreeNode* SCE_VOctree_FetchNode (SCE_SVoxelOctree*, SCEuint,
+                                             long, long, long);
+int SCE_VOctree_FetchAllNodes (SCE_SVoxelOctree*, SCEuint, SCE_SList*);
 
-int SCE_VOctree_GetNode (SCE_SVoxelOctree*, SCEuint, long, long, long, char*);
 int SCE_VOctree_SyncNode (SCE_SVoxelOctree*, SCE_SVoxelOctreeNode*);
 int SCE_VOctree_CacheNode (SCE_SVoxelOctree*, SCE_SVoxelOctreeNode*);
 

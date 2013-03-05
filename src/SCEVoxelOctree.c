@@ -43,6 +43,8 @@ static void SCE_VOctree_InitNode (SCE_SVoxelOctreeNode *node)
     node->udata = NULL;
     SCE_List_InitIt (&node->it);
     SCE_List_SetData (&node->it, node);
+    SCE_List_InitIt (&node->it2);
+    SCE_List_SetData (&node->it2, node);
 }
 static void SCE_VOctree_DeleteNode (SCE_SVoxelOctreeNode*);
 static void SCE_VOctree_ClearNode (SCE_SVoxelOctreeNode *node)
@@ -54,6 +56,7 @@ static void SCE_VOctree_ClearNode (SCE_SVoxelOctreeNode *node)
         SCE_File_Close (&node->file);
     SCE_VGrid_Clear (&node->grid);
     SCE_List_Remove (&node->it);
+    SCE_List_Remove (&node->it2);
 }
 static SCE_SVoxelOctreeNode* SCE_VOctree_CreateNode (void)
 {
@@ -976,56 +979,65 @@ int SCE_VOctree_SetRegion (SCE_SVoxelOctree *vo, SCEuint level,
 }
 
 
-static SCE_EVoxelOctreeStatus
-SCE_VOctree_Node (const SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
-                  const SCE_SLongRect3 *node_rect, SCEuint level,
-                  SCEuint depth, long x, long y, long z, char *fname)
+
+static void SCE_VOctree_AddNode (SCE_SList *list, SCE_SVoxelOctreeNode *node)
 {
+    SCE_List_Remove (&node->it2);
+    SCE_List_Appendl (list, &node->it2);
+}
+
+static int
+SCE_VOctree_Fetch (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
+                   const SCE_SLongRect3 *node_rect, SCEuint level, SCEuint depth,
+                   const SCE_SLongRect3 *area, SCE_SList *list)
+{
+    SCE_SLongRect3 inter;
     SCEuint clevel;
+
+    if (!SCE_Rectangle3_Intersectionl (node_rect, area, &inter))
+        return SCE_OK;
 
     clevel = level + depth;
 
     switch (node->status) {
     case SCE_VOCTREE_NODE_EMPTY:
+        if (depth == 0)
+            SCE_VOctree_AddNode (list, node);
+        break;
     case SCE_VOCTREE_NODE_FULL:
-        return node->status;
+        if (depth == 0)
+            SCE_VOctree_AddNode (list, node);
+        break;
     case SCE_VOCTREE_NODE_LEAF:
-        if (level == clevel) {
-            strcpy (fname, node->fname);
-            return node->status;
-        } else {
-            if (node->in_volume > (vo->w * vo->h * vo->d) / 2)
-                return SCE_VOCTREE_NODE_FULL;
-            else
-                return SCE_VOCTREE_NODE_EMPTY;
-        }
+        if (depth == 0)
+            SCE_VOctree_AddNode (list, node);
+        break;
     case SCE_VOCTREE_NODE_NODE:
         if (depth == 0) {
-            strcpy (fname, node->fname);
-            return node->status;
+            SCE_VOctree_AddNode (list, node);
         } else {
             /* recurse */
             size_t i;
             SCE_SLongRect3 r;
             for (i = 0; i < 8; i++) {
                 SCE_VOctree_ConstructRect (node_rect, i, &r);
-                if (SCE_Rectangle3_IsInl (&r, x, y, z)) {
-                    return SCE_VOctree_Node (vo, node->children[i], &r, level,
-                                             depth - 1, x, y, z, fname);
-                }
+                if (SCE_VOctree_Fetch (vo, node->children[i], &r, level,
+                                       depth - 1, area, list) < 0)
+                    goto fail;
             }
         }
+        break;
     }
 
-#ifdef SCE_DEBUG
-    SCEE_SendMsg ("voctree: querying a node that is not in the tree\n");
-#endif
-    return SCE_VOCTREE_NODE_EMPTY; /* wtf? */
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
 }
 
 
-int SCE_VOctree_GetNode (SCE_SVoxelOctree *vo, SCEuint level, long x, long y,
-                         long z, char *fname)
+int SCE_VOctree_FetchNodes (SCE_SVoxelOctree *vo, SCEuint level,
+                            const SCE_SLongRect3 *area, SCE_SList *list)
 {
     SCEuint depth;
     SCE_SLongRect3 node_rect;
@@ -1033,13 +1045,64 @@ int SCE_VOctree_GetNode (SCE_SVoxelOctree *vo, SCEuint level, long x, long y,
     depth = vo->max_depth - level;
     SCE_Rectangle3_SetFromOriginl (&node_rect, vo->x, vo->y, vo->z,
                                    vo->w, vo->h, vo->d);
+    /* NOTE: we could use Rectangle3_Mull() but whatever. */
     SCE_Rectangle3_Pow2l (&node_rect, depth);
 
-    if (SCE_Rectangle3_IsInl (&node_rect, x, y, z))
-        return SCE_VOctree_Node (vo, &vo->root, &node_rect, level, depth,
-                                 x, y, z, fname);
-    else
-        return -1;
+    return SCE_VOctree_Fetch (vo, &vo->root, &node_rect, level, depth,
+                              area, list);
+}
+
+/**
+ * \brief Fetch a single node from world space coordinates
+ * \param vo 
+ * \param level 
+ * \param x 
+ * \param y 
+ * \param z 
+ * 
+ * \return an octree node, NULL if none found or error, so be cafeful.
+ * \sa SCE_VOctree_FetchNodes(), SCE_VWorld_FetchNode()
+ */
+SCE_SVoxelOctreeNode*
+SCE_VOctree_FetchNode (SCE_SVoxelOctree *vo, SCEuint level,
+                       long x, long y, long z)
+{
+    SCE_SLongRect3 r;
+    SCE_SList list;
+    void *data = NULL;
+
+    SCE_Rectangle3_SetFromOriginl (&r, x, y, z, 1, 1, 1);
+    SCE_List_Init (&list);
+    if (SCE_VOctree_FetchNodes (vo, level, &r, &list) < 0) {
+        SCE_List_Flush (&list);
+        SCEE_LogSrc ();
+        return NULL;
+    }
+
+    /* NOTE: would be funny if the list had more than one element */
+    if (SCE_List_HasElements (&list))
+        data = SCE_List_GetData (SCE_List_GetFirst (&list));
+
+    /* important: we dont want any iterator to keep a pointer to this list */
+    SCE_List_Flush (&list);
+
+    return data;
+}
+
+int SCE_VOctree_FetchAllNodes (SCE_SVoxelOctree *vo, SCEuint level,
+                               SCE_SList *list)
+{
+    SCEuint depth;
+    SCE_SLongRect3 node_rect;
+
+    depth = vo->max_depth - level;
+    SCE_Rectangle3_SetFromOriginl (&node_rect, vo->x, vo->y, vo->z,
+                                   vo->w, vo->h, vo->d);
+    /* NOTE: we could use Rectangle3_Mull() but whatever. */
+    SCE_Rectangle3_Pow2l (&node_rect, depth);
+
+    return SCE_VOctree_Fetch (vo, &vo->root, &node_rect, level, depth,
+                              &node_rect, list);
 }
 
 
