@@ -44,6 +44,7 @@ struct sce_svoxelworld {
 
     SCEulong w, h, d;
     SCEuint n_lod;
+    int create_trees;
     char prefix[128];           /* root directory */
     SCE_SFileSystem *fs;
     SCE_SFileCache *fcache;

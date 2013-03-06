@@ -69,6 +69,7 @@ void SCE_VWorld_Init (SCE_SVoxelWorld *vw)
     SCE_List_SetFreeFunc (&vw->trees, SCE_VWorld_FreeFunc);
     vw->w = vw->h = vw->d = 0;
     vw->n_lod = 1;
+    vw->create_trees = SCE_TRUE;
     memset (vw->prefix, 0, sizeof vw->prefix);
     vw->fs = NULL;
     vw->fcache = NULL;
@@ -463,42 +464,60 @@ static int SCE_VWorld_PopZone (SCE_SVoxelWorld *vw, SCE_SLongRect3 *r)
 
 
 int SCE_VWorld_GetRegion (SCE_SVoxelWorld *vw, SCEuint level,
-                          const SCE_SLongRect3 *region,
-                          SCEubyte *data)
+                          const SCE_SLongRect3 *region, SCEubyte *data)
 {
+    SCE_SList list;
     SCE_SListIterator *it = NULL;
 
-    SCE_List_ForEach (it, &vw->trees) {
-        SCE_SVoxelOctree *vo = NULL;
+    SCE_List_Init (&list);
+    vw->create_trees = SCE_FALSE;
+    if (SCE_VWorld_FetchTrees (vw, level, region, &list) < 0)
+        goto fail;
+    vw->create_trees = SCE_TRUE;
+
+    SCE_List_ForEach (it, &list) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
-        vo = &wt->vo;
-        if (SCE_VOctree_GetRegion (vo, level, region, data) < 0) {
-            SCEE_LogSrc ();
-            return SCE_ERROR;
-        }
+        if (SCE_VOctree_GetRegion (&wt->vo, level, region, data) < 0)
+            goto fail;
     }
 
+    SCE_List_Flush (&list);
+
     return SCE_OK;
+fail:
+    vw->create_trees = SCE_TRUE;
+    SCE_List_Flush (&list);
+    SCEE_LogSrc ();
+    return SCE_ERROR;
 }
 static int
 SCE_VWorld_Set (SCE_SVoxelWorld *vw, SCEuint level,
                 const SCE_SLongRect3 *region, const SCEubyte *data)
 {
+    SCE_SList list;
     SCE_SListIterator *it = NULL;
 
-    SCE_List_ForEach (it, &vw->trees) {
-        SCE_SVoxelOctree *vo = NULL;
+    SCE_List_Init (&list);
+    vw->create_trees = SCE_FALSE;
+    if (SCE_VWorld_FetchTrees (vw, level, region, &list) < 0)
+        goto fail;
+    vw->create_trees = SCE_TRUE;
+
+    SCE_List_ForEach (it, &list) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
-        vo = &wt->vo;
-        if (SCE_VOctree_SetRegion (vo, level, region, data) < 0) {
-            SCEE_LogSrc ();
-            return SCE_ERROR;
-        }
+        if (SCE_VOctree_SetRegion (&wt->vo, level, region, data) < 0)
+            goto fail;
     }
+    SCE_List_Flush (&list);
 
     SCE_VWorld_PushZone (vw, region, level);
 
     return SCE_OK;
+fail:
+    vw->create_trees = SCE_TRUE;
+    SCE_List_Flush (&list);
+    SCEE_LogSrc ();
+    return SCE_ERROR;
 }
 int SCE_VWorld_SetRegion (SCE_SVoxelWorld *vw, const SCE_SLongRect3 *region,
                           const SCEubyte *data)
@@ -719,6 +738,8 @@ int SCE_VWorld_FetchTrees (SCE_SVoxelWorld *vw, SCEuint level,
         for (j = p1[1]; j <= p2[1]; j++) {
             wt = SCE_VWorld_GetTree (vw, i, j, 0);
             if (!wt) {
+                if (!vw->create_trees)
+                    continue;
                 if (!(wt = SCE_VWorld_AddNewTree (vw, i, j, 0))) {
                     SCEE_LogSrc ();
                     return SCE_ERROR;
