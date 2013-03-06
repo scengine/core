@@ -41,6 +41,7 @@ static void SCE_VOctree_InitNode (SCE_SVoxelOctreeNode *node)
     node->in_volume = 0;
     node->material = 0;
     node->udata = NULL;
+    node->fun = NULL;
     SCE_List_InitIt (&node->it);
     SCE_List_SetData (&node->it, node);
     SCE_List_InitIt (&node->it2);
@@ -50,6 +51,8 @@ static void SCE_VOctree_DeleteNode (SCE_SVoxelOctreeNode*);
 static void SCE_VOctree_ClearNode (SCE_SVoxelOctreeNode *node)
 {
     size_t i;
+    if (node->fun)
+        node->fun (node->udata);
     for (i = 0; i < 8; i++)
         SCE_VOctree_DeleteNode (node->children[i]);
     if (node->is_open)
@@ -98,9 +101,12 @@ void SCE_VOctree_Init (SCE_SVoxelOctree *vo)
     SCE_List_Init (&vo->cached);
 
     vo->udata = NULL;
+    vo->fun = NULL;
 }
 void SCE_VOctree_Clear (SCE_SVoxelOctree *vo)
 {
+    if (vo->fun)
+        vo->fun (vo->udata);
     SCE_VOctree_ClearNode (&vo->root);
     SCE_List_Clear (&vo->cached);
 }
@@ -176,6 +182,11 @@ void* SCE_VOctree_GetData (SCE_SVoxelOctree *vo)
 {
     return vo->udata;
 }
+void SCE_VOctree_SetFreeFunc (SCE_SVoxelOctree *vo,
+                              SCE_FVoxelOctreeFreeFunc fun)
+{
+    vo->fun = fun;
+}
 void SCE_VOctree_SetNodeData (SCE_SVoxelOctreeNode *node, void *data)
 {
     node->udata = data;
@@ -183,6 +194,11 @@ void SCE_VOctree_SetNodeData (SCE_SVoxelOctreeNode *node, void *data)
 void* SCE_VOctree_GetNodeData (SCE_SVoxelOctreeNode *node)
 {
     return node->udata;
+}
+void SCE_VOctree_SetNodeFreeFunc (SCE_SVoxelOctreeNode *node,
+                                  SCE_FVoxelOctreeFreeFunc fun)
+{
+    node->fun = fun;
 }
 const char* SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctreeNode *node)
 {

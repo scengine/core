@@ -40,6 +40,8 @@ typedef enum {
     SCE_VOCTREE_NODE_NODE
 } SCE_EVoxelOctreeStatus;
 
+typedef void (*SCE_FVoxelOctreeFreeFunc)(void*);
+
 typedef struct sce_svoxeloctreenode SCE_SVoxelOctreeNode;
 struct sce_svoxeloctreenode {
     SCE_EVoxelOctreeStatus status;
@@ -57,6 +59,7 @@ struct sce_svoxeloctreenode {
     int material;          /* material ID if full */
 
     void *udata;           /* user data */
+    SCE_FVoxelOctreeFreeFunc fun; /* not so fun, this is actually awful */
     SCE_SListIterator it, it2;
 };
 
@@ -79,6 +82,7 @@ struct sce_svoxeloctree {
     SCE_SList cached;
 
     void *udata;
+    SCE_FVoxelOctreeFreeFunc fun;
 };
 
 
@@ -100,8 +104,11 @@ void SCE_VOctree_SetMaxCachedNodes (SCE_SVoxelOctree*, SCEulong);
 
 void SCE_VOctree_SetData (SCE_SVoxelOctree*, void*);
 void* SCE_VOctree_GetData (SCE_SVoxelOctree*);
+void SCE_VOctree_SetFreeFunc (SCE_SVoxelOctree*, SCE_FVoxelOctreeFreeFunc);
 void SCE_VOctree_SetNodeData (SCE_SVoxelOctreeNode*, void*);
 void* SCE_VOctree_GetNodeData (SCE_SVoxelOctreeNode*);
+void SCE_VOctree_SetNodeFreeFunc (SCE_SVoxelOctreeNode*,
+                                  SCE_FVoxelOctreeFreeFunc);
 const char* SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctreeNode*);
 SCE_EVoxelOctreeStatus SCE_VOctree_GetNodeStatus (const SCE_SVoxelOctreeNode*);
 SCEuint SCE_VOctree_GetNodeLevel (const SCE_SVoxelOctreeNode*);
