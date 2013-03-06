@@ -506,6 +506,11 @@ int SCE_VWorld_SetRegion (SCE_SVoxelWorld *vw, const SCE_SLongRect3 *region,
     return SCE_VWorld_Set (vw, 0, region, data);
 }
 
+void SCE_VWorld_AddUpdatedRegion (SCE_SVoxelWorld *vw, SCEuint level,
+                                  const SCE_SLongRect3 *zone)
+{
+    SCE_VWorld_PushZone (vw, zone, level);
+}
 int SCE_VWorld_GetNextUpdatedRegion (SCE_SVoxelWorld *vw, SCE_SLongRect3 *zone)
 {
     return SCE_VWorld_PopZone (vw, zone);

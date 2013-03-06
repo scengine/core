@@ -104,6 +104,8 @@ int SCE_VWorld_GetRegion (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
 int SCE_VWorld_SetRegion (SCE_SVoxelWorld*, const SCE_SLongRect3*,
                           const SCEubyte*);
 
+void SCE_VWorld_AddUpdatedRegion (SCE_SVoxelWorld*, SCEuint,
+                                  const SCE_SLongRect3*);
 int SCE_VWorld_GetNextUpdatedRegion (SCE_SVoxelWorld*, SCE_SLongRect3*);
 
 int SCE_VWorld_GenerateLOD (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
