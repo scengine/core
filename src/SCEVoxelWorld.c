@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/05/2012
-   updated: 15/05/2012 */
+   updated: 06/03/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -31,6 +31,8 @@ static void SCE_VWorld_InitTree (SCE_SVoxelWorldTree *wt)
     wt->udata = NULL;
     SCE_List_InitIt (&wt->it);
     SCE_List_SetData (&wt->it, wt);
+    SCE_List_InitIt (&wt->it2);
+    SCE_List_SetData (&wt->it2, wt);
 }
 static void SCE_VWorld_ClearTree (SCE_SVoxelWorldTree *wt)
 {
@@ -670,22 +672,194 @@ int SCE_VWorld_GenerateAllLOD (SCE_SVoxelWorld *vw, SCEuint level,
 }
 
 
-int SCE_VWorld_GetNode (SCE_SVoxelWorld *vw, SCEuint level, long x, long y,
-                        long z, char *fname)
+/**
+ * \brief Fills a list with trees that are inside a given region
+ * \param vw a voxel world
+ * \param level LOD of the region coordinates
+ * \param region region
+ * \param l list to fill, will be filled with SCE_SVoxelWorldTree elements
+ *
+ * If you call this function twice on the same voxel world, the list filled with
+ * the first call might be corrupted but you can still access it safely.
+ *
+ * Trees inside \p region that do not exist will be created and set empty.
+ * \return SCE_ERROR on error, SCE_OK otherwise
+ */
+int SCE_VWorld_FetchTrees (SCE_SVoxelWorld *vw, SCEuint level,
+                           const SCE_SLongRect3 *region, SCE_SList *l)
 {
-    SCE_SListIterator *it = NULL;
-    int r;
+    long i, j, p1[3], p2[3], w, h, d;
+    SCE_SLongRect3 r;
+    SCE_SVoxelWorldTree *wt = NULL;
 
-    SCE_List_ForEach (it, &vw->trees) {
-        SCE_SVoxelOctree *vo = NULL;
-        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
-        vo = &wt->vo;
-        r = SCE_VOctree_GetNode (vo, level, x, y, z, fname);
-        if (r > -1)
-            return r;
+    r = *region;
+    SCE_Rectangle3_Mull (&r, 1 << level, 1 << level, 1 << level);
+    SCE_Rectangle3_GetPointslv (&r, p1, p2);
+
+    w = SCE_VWorld_GetTotalWidth (vw);
+    h = SCE_VWorld_GetTotalHeight (vw);
+    d = SCE_VWorld_GetTotalDepth (vw);
+    if (p1[0] < 0) p1[0] += 1 - w;
+    if (p1[1] < 0) p1[1] += 1 - h;
+    if (p1[2] < 0) p1[2] += 1 - d;
+    if (p2[0] < 0) p2[0] += 1 - w;
+    if (p2[1] < 0) p2[1] += 1 - h;
+    if (p2[2] < 0) p2[2] += 1 - d;
+
+    SCE_Rectangle3_Setlv (&r, p1, p2);
+    SCE_Rectangle3_Divl (&r, w, h, d);
+    SCE_Rectangle3_GetPointslv (&r, p1, p2);
+
+    for (i = p1[0]; i <= p2[0]; i++) {
+        for (j = p1[1]; j <= p2[1]; j++) {
+            wt = SCE_VWorld_GetTree (vw, i, j, 0);
+            if (!wt) {
+                if (!(wt = SCE_VWorld_AddNewTree (vw, i, j, 0))) {
+                    SCEE_LogSrc ();
+                    return SCE_ERROR;
+                }
+            }
+            SCE_List_Remove (&wt->it2);
+            SCE_List_Appendl (l, &wt->it2);
+        }
     }
 
-    return SCE_VOCTREE_NODE_EMPTY;
+    return SCE_OK;
+}
+/**
+ * \brief Fetch a single tree from world space coordinates
+ * \param vw
+ * \param level 
+ * \param x 
+ * \param y 
+ * \param z 
+ * 
+ * \return an octree node, NULL if none found or error, so be cafeful.
+ * \sa SCE_VWorld_FetchTrees()
+ */
+SCE_SVoxelWorldTree* SCE_VWorld_FetchTree (SCE_SVoxelWorld *vw, SCEuint level,
+                                           long x, long y, long z)
+{
+    SCE_SLongRect3 r;
+    SCE_SList list;
+    void *data = NULL;
+
+    SCE_Rectangle3_SetFromOriginl (&r, x, y, z, 1, 1, 1);
+    SCE_List_Init (&list);
+    if (SCE_VWorld_FetchTrees (vw, level, &r, &list) < 0) {
+        SCE_List_Flush (&list);
+        SCEE_LogSrc ();
+        return NULL;
+    }
+
+    /* NOTE: would be funny if the list had more than one element */
+    if (SCE_List_HasElements (&list))
+        data = SCE_List_GetData (SCE_List_GetFirst (&list));
+
+    /* important: we dont want any iterator to keep a pointer to this list */
+    SCE_List_Flush (&list);
+
+    return data;
+}
+
+/**
+ * \brief Fetch nodes inside a given region
+ * \param vw voxel world
+ * \param level LOD of \p r
+ * \param r a region in \p level space
+ * \param list fetched nodes will be put here
+ *
+ * This function calls SCE_VWorld_FetchTrees() so it might break your
+ * previous retrieved list of trees.
+ *
+ * \return SCE_ERROR on error, SCE_OK otherwise
+ */
+int SCE_VWorld_FetchNodes (SCE_SVoxelWorld *vw, SCEuint level,
+                           const SCE_SLongRect3 *r, SCE_SList *list)
+{
+    SCE_SListIterator *it = NULL;
+    SCE_SList trees;
+
+    SCE_List_Init (&trees);
+    if (SCE_VWorld_FetchTrees (vw, level, r, &trees) < 0)
+        goto fail;
+    SCE_List_ForEach (it, &trees) {
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+        if (SCE_VOctree_FetchNodes (&wt->vo, level, r, list) < 0)
+            goto fail;
+    }
+
+    /* important: we dont want any iterator to keep a pointer to this list */
+    SCE_List_Flush (&trees);
+
+    return SCE_OK;
+fail:
+    SCE_List_Flush (&trees);
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+/**
+ * \brief Fetch a single node from world space coordinates
+ * \param vw
+ * \param level 
+ * \param x 
+ * \param y 
+ * \param z 
+ * 
+ * \return an octree node, NULL if none found or error, so be cafeful.
+ * \sa SCE_VWorld_FetchNodes(), SCE_VOctree_FetchNode()
+ */
+SCE_SVoxelOctreeNode* SCE_VWorld_FetchNode (SCE_SVoxelWorld *vw, SCEuint level,
+                                            long x, long y, long z)
+{
+    SCE_SLongRect3 r;
+    SCE_SList list;
+    void *data = NULL;
+
+    SCE_Rectangle3_SetFromOriginl (&r, x, y, z, 1, 1, 1);
+    SCE_List_Init (&list);
+    if (SCE_VWorld_FetchNodes (vw, level, &r, &list) < 0) {
+        SCE_List_Flush (&list);
+        SCEE_LogSrc ();
+        return NULL;
+    }
+
+    /* NOTE: would be funny if the list had more than one element */
+    if (SCE_List_HasElements (&list))
+        data = SCE_List_GetData (SCE_List_GetFirst (&list));
+
+    /* important: we dont want any iterator to keep a pointer to this list */
+    SCE_List_Flush (&list);
+
+    return data;
+}
+
+int SCE_VWorld_FetchAllNodes (SCE_SVoxelWorld *vw, SCEuint level,
+                              SCE_SList *list)
+{
+    SCE_SListIterator *it = NULL;
+
+    SCE_List_ForEach (it, &vw->trees) {
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+        if (SCE_VOctree_FetchAllNodes (&wt->vo, level, list) < 0) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
+    }
+    return SCE_OK;
+}
+
+int SCE_VWorld_FetchAllTreeNodes (SCE_SVoxelWorld *vw, long x, long y, long z,
+                                  SCEuint level, SCE_SList *list)
+{
+    SCE_SVoxelWorldTree *wt = SCE_VWorld_GetTree (vw, x, y, z);
+    if (wt) {
+        if (SCE_VOctree_FetchAllNodes (&wt->vo, level, list) < 0) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
+    }
+    return SCE_OK;
 }
 
 

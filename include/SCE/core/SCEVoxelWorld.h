@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/05/2012
-   updated: 12/08/2012 */
+   updated: 06/03/2013 */
 
 #ifndef SCEVOXELWORLD_H
 #define SCEVOXELWORLD_H
@@ -32,8 +32,8 @@ extern "C" {
 typedef struct sce_svoxelworldtree SCE_SVoxelWorldTree;
 struct sce_svoxelworldtree {
     SCE_SVoxelOctree vo;
-    SCE_SListIterator it;
     void *udata;
+    SCE_SListIterator it, it2;
 };
 
 #define SCE_MAX_VWORLD_UPDATE_ZONES 128
@@ -111,7 +111,19 @@ int SCE_VWorld_GenerateLOD (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
 int SCE_VWorld_GenerateAllLOD (SCE_SVoxelWorld*, SCEuint,
                                const SCE_SLongRect3*);
 
-int SCE_VWorld_GetNode (SCE_SVoxelWorld*, SCEuint, long, long, long, char*);
+int SCE_VWorld_FetchTrees (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
+                           SCE_SList*);
+SCE_SVoxelWorldTree* SCE_VWorld_FetchTree (SCE_SVoxelWorld*, SCEuint,
+                                           long, long, long);
+
+int SCE_VWorld_FetchNodes (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
+                           SCE_SList*);
+SCE_SVoxelOctreeNode* SCE_VWorld_FetchNode (SCE_SVoxelWorld*, SCEuint,
+                                            long, long, long);
+int SCE_VWorld_FetchAllNodes (SCE_SVoxelWorld*, SCEuint, SCE_SList*);
+int SCE_VWorld_FetchAllTreeNodes (SCE_SVoxelWorld*, long, long, long,
+                                  SCEuint, SCE_SList*);
+
 
 int SCE_VWorld_UpdateCache (SCE_SVoxelWorld*);
 int SCE_VWorld_SyncCache (SCE_SVoxelWorld*);
