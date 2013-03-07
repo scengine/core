@@ -34,6 +34,7 @@ libscecore_la_SOURCES   = libwar.c \
                           SCEVoxelOctree.c \
                           SCEVoxelWorld.c \
                           SCEMarchingTetrahedra.c \
+                          SCEMarchingCube.c \
                           SCEForestTree.c \
                           SCEOBJLoader.c \
                           SCESphereGeometry.c \

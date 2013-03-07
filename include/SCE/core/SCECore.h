@@ -45,6 +45,7 @@
 #include "SCE/core/SCEVoxelOctree.h"
 #include "SCE/core/SCEVoxelWorld.h"
 #include "SCE/core/SCEMarchingTetrahedra.h"
+#include "SCE/core/SCEMarchingCube.h"
 #include "SCE/core/SCEForestTree.h"
 #include "SCE/core/SCEOBJLoader.h"
 #include "SCE/core/SCESphereGeometry.h"
