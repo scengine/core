@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/03/2013
-   updated: 07/03/2013 */
+   updated: 08/03/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -411,14 +411,17 @@ static void SCE_MC_Interp (SCEvertices *v, SCEubyte a_, SCEubyte b_,
 }
 
 static size_t SCE_MC_MakeCellVertices (SCE_SMCCell *cell, SCEubyte corners[8],
-                                       size_t n_vertices, SCEvertices *vertices)
+                                       size_t n_vertices, SCEvertices *vertices,
+                                       float coefx, float coefy, float coefz)
 {
     SCEuint conf, corner3;
     size_t n = 0;
-    SCE_TVector3 vertex0, vertex1;
+    SCE_TVector3 vertex0, vertex1, div;
 
+    SCE_Vector3_Set (div, coefx, coefy, coefz);
     vertices = &vertices[n_vertices * 3];
     SCE_Vector3_Set (vertex0, (float)cell->x, (float)cell->y, (float)cell->z);
+    SCE_Vector3_Operator1v (vertex0, *=, div);
 
     conf = cell->conf;
     corner3 = (conf >> 3) & 1;
@@ -428,7 +431,7 @@ static size_t SCE_MC_MakeCellVertices (SCE_SMCCell *cell, SCEubyte corners[8],
         cell->indices[0] = n_vertices;
         n++;
         SCE_Vector3_Copy (vertex1, vertex0);
-        vertex1[1] += 1.0;
+        vertex1[1] += div[1];
         SCE_MC_Interp (vertices, corners[3], corners[0], vertex0, vertex1);
         vertices = &vertices[3];
     }
@@ -437,7 +440,7 @@ static size_t SCE_MC_MakeCellVertices (SCE_SMCCell *cell, SCEubyte corners[8],
         cell->indices[1] = n_vertices + n;
         n++;
         SCE_Vector3_Copy (vertex1, vertex0);
-        vertex1[0] += 1.0;
+        vertex1[0] += div[0];
         SCE_MC_Interp (vertices, corners[3], corners[2], vertex0, vertex1);
         vertices = &vertices[3];
     }
@@ -446,7 +449,7 @@ static size_t SCE_MC_MakeCellVertices (SCE_SMCCell *cell, SCEubyte corners[8],
         cell->indices[2] = n_vertices + n;
         n++;
         SCE_Vector3_Copy (vertex1, vertex0);
-        vertex1[2] += 1.0;
+        vertex1[2] += div[2];
         SCE_MC_Interp (vertices, corners[3], corners[7], vertex0, vertex1);
         vertices = &vertices[3];
     }
@@ -463,13 +466,17 @@ size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
 {
     SCE_SMCCell *cell = NULL;
     SCEuint x, y, z, x_, y_, z_, w, h, d;
+    float a, b, c;
     SCEubyte corners[8];
     size_t n_vertices = 0, n;
     int p1[3], p2[3];
 
-    w = mc->w = SCE_Rectangle3_GetWidth (region) - 1;
-    h = mc->h = SCE_Rectangle3_GetHeight (region) - 1;
-    d = mc->d = SCE_Rectangle3_GetDepth (region) - 1;
+    w = mc->w = SCE_Rectangle3_GetWidth (region);
+    h = mc->h = SCE_Rectangle3_GetHeight (region);
+    d = mc->d = SCE_Rectangle3_GetDepth (region);
+    a = 1.0 / SCE_Grid_GetWidth (grid);
+    b = 1.0 / SCE_Grid_GetHeight (grid);
+    c = 1.0 / SCE_Grid_GetDepth (grid);
 
     SCE_Rectangle3_GetPointsv (region, p1, p2);
     mc->n_indices = 0;
@@ -497,7 +504,7 @@ size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
 
                 if (cell->conf != 0 && cell->conf != 255) {
                     n = SCE_MC_MakeCellVertices (cell, corners, n_vertices,
-                                                 vertices);
+                                                 vertices, a, b, c);
                     n_vertices += n;
                     /* cell must be non empty and not across a border */
                     if (x < w - 1 && y < h - 1 && z < d - 1) {
