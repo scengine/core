@@ -567,7 +567,7 @@ size_t SCE_MC_GenerateIndices (const SCE_SMCGenerator *mc, SCEindices *indices)
 {
     SCE_SMCCell *cell = NULL;
     SCEuint i;
-    size_t n_indices = 0, n;
+    size_t n_indices = 0;
 
     for (i = 0; i < mc->n_indices; i++) {
         cell = &mc->cells[mc->cell_indices[i]];

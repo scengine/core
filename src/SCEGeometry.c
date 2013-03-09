@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 25/07/2009
-   updated: 02/02/2012 */
+   updated: 09/03/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -1594,6 +1594,7 @@ int SCE_Geometry_GenerateTBN (SCE_SGeometry *geom, SCEvertices **t,
     }
 #endif
 
+    /* TODO: these malloc obviously lack some *3 multiplication */
     if (t) {
         if (!(tangent = SCE_malloc (geom->n_vertices * sizeof *tangent)))
             goto fail;
@@ -1632,6 +1633,7 @@ fail:
 /**
  * \brief Generates and adds vertex attributes
  * \sa SCE_Geometry_GenerateTBN()
+ * \deprecated
  */
 int SCE_Geometry_AddGenerateTBN (SCE_SGeometry *geom, unsigned int unit,
                                  int flags)
@@ -1664,6 +1666,128 @@ fail:
     SCE_free (n);
     SCE_free (b);
     SCE_free (t);
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+
+/**
+ * \brief Compute the normals for a triangle
+ * \param vertex the vertices' positions of the triangle
+ * \param index face's indices to use, can be NULL
+ * \param normals here is written the computed normals, can be NULL
+ */
+static void SCE_Mesh_ComputeTriangleNormals (SCEvertices *vertex,
+                                             SCEindices *index,
+                                             SCEvertices *normals)
+{
+    SCE_TVector3 side0, side1;
+    SCE_TVector3 tmp;
+    SCEindices default_indices[3] = {0, 1, 2};
+
+    if (!index)
+        index = default_indices;
+
+    SCE_Vector3_Operator2v (side0, =, &vertex[index[1]*3],
+                                   -, &vertex[index[0]*3]);
+    SCE_Vector3_Operator2v (side1, =, &vertex[index[2]*3],
+                                   -, &vertex[index[0]*3]);
+
+    SCE_Vector3_Cross (tmp, side0, side1);
+    /* funny. */
+    if (fabs (tmp[0]) + fabs (tmp[1]) + fabs (tmp[2]) < 0.00001)
+        return;
+    SCE_Vector3_Normalize (tmp);
+    SCE_Vector3_Operator1v (&normals[index[0]*3], +=, tmp);
+    SCE_Vector3_Operator1v (&normals[index[1]*3], +=, tmp);
+    SCE_Vector3_Operator1v (&normals[index[2]*3], +=, tmp);
+}
+
+
+/**
+ * \brief Compute the normals of a polygon soup
+ * \param icount number of indices
+ * \param vcount number of vertices
+ * \returns SCE_ERROR on error, SCE_OK otherwise
+ */
+int SCE_Geometry_ComputeNormals (SCEvertices *vertex, SCEindices *indices,
+                                 size_t vcount, size_t icount,
+                                 SCEvertices *normals)
+{
+    size_t i;
+    SCEindices *index = NULL;
+    size_t count;
+
+    for (i = 0; i < vcount; i++)
+        SCE_Vector3_Set (&normals[i*3], 0.0f, 0.0f, 0.0f);
+
+    if (indices) {
+        index = indices;
+        count = icount;
+        for (i = 0; i < count; i += 3)
+            SCE_Mesh_ComputeTriangleNormals (vertex, &index[i], normals);
+    } else {
+        SCEindices ind[3];
+        count = vcount;
+        for (i = 0; i < count; i += 3) {
+            ind[0] = i;
+            ind[1] = i + 1;
+            ind[2] = i + 2;
+            SCE_Mesh_ComputeTriangleNormals (vertex, ind, normals);
+        }
+    }
+
+
+    if (!indices)
+        SCE_free (index);
+
+    for (i = 0; i < vcount; i++)
+        SCE_Vector3_Normalize (&normals[i*3]);
+
+    return SCE_OK;
+}
+
+/**
+ * \brief Generates the normal vectors for a geometry
+ */
+int SCE_Geometry_GenerateNormals (SCE_SGeometry *geom, SCEvertices **n)
+{
+    SCE_SGeometryArrayData *data;
+    SCEvertices *normal = NULL;
+
+    if (!(normal = SCE_malloc (geom->n_vertices * 3 * sizeof *normal)))
+        goto fail;
+
+    data = SCE_Geometry_GetArrayData (geom->index_array);
+    if (SCE_Geometry_ComputeNormals (geom->pos_data, data->data,
+                                     geom->n_vertices, geom->n_indices,
+                                     normal) < 0)
+        goto fail;
+
+    *n = normal;
+    return SCE_OK;
+fail:
+    SCE_free (normal);
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+/**
+ * \brief Generates and adds normals
+ * \sa SCE_Geometry_GenerateNormals()
+ */
+int SCE_Geometry_AddGenerateNormals (SCE_SGeometry *geom)
+{
+    SCEvertices *n = NULL;
+
+    if (SCE_Geometry_GenerateNormals (geom, &n) < 0)
+        goto fail;
+    if (!SCE_Geometry_AddNewArray (geom, SCE_NORMAL, SCE_VERTICES_TYPE,
+                                   0, 3, n, SCE_TRUE))
+        goto fail;
+    return SCE_OK;
+fail:
+    SCE_free (n);
     SCEE_LogSrc ();
     return SCE_ERROR;
 }
