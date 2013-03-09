@@ -52,6 +52,7 @@ struct sce_smcgenerator {
     SCE_SMCCell *cells;
     size_t n_indices;
     SCEuint *cell_indices;
+    SCEuint x, y, z;
     SCEuint w, h, d;
 };
 
@@ -65,6 +66,7 @@ int SCE_MC_Build (SCE_SMCGenerator*);
 
 size_t SCE_MC_GenerateVertices (SCE_SMCGenerator*, const SCE_SIntRect3*,
                                 const SCE_SGrid*, SCEvertices*);
+void SCE_MC_GenerateNormals (SCE_SMCGenerator*, const SCE_SGrid*, SCEvertices*);
 size_t SCE_MC_GenerateIndices (const SCE_SMCGenerator*, SCEindices*);
 
 #ifdef __cplusplus

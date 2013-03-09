@@ -308,6 +308,7 @@ static void SCE_MC_InitCell (SCE_SMCCell *cell)
 }
 static void SCE_MC_ClearCell (SCE_SMCCell *cell)
 {
+    (void)cell;
 }
 
 
@@ -317,6 +318,7 @@ void SCE_MC_Init (SCE_SMCGenerator *mc)
     mc->cells = NULL;
     mc->n_indices = 0;
     mc->cell_indices = NULL;
+    mc->x = mc->y = mc->z = 0;
     mc->w = mc->h = mc->d = 0;
 }
 void SCE_MC_Clear (SCE_SMCGenerator *mc)
@@ -479,6 +481,11 @@ size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
     c = 1.0 / SCE_Grid_GetDepth (grid);
 
     SCE_Rectangle3_GetPointsv (region, p1, p2);
+    /* memorize the origin for generatenormals() below */
+    mc->x = p1[0];
+    mc->y = p1[1];
+    mc->z = p1[2];
+
     mc->n_indices = 0;
 
     for (z = 0, z_ = p1[2]; z < d; z++, z_++) {
@@ -506,11 +513,8 @@ size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
                     n = SCE_MC_MakeCellVertices (cell, corners, n_vertices,
                                                  vertices, a, b, c);
                     n_vertices += n;
-                    /* cell must be non empty and not across a border */
-                    if (x < w - 1 && y < h - 1 && z < d - 1) {
-                        mc->cell_indices[mc->n_indices] = offset;
-                        mc->n_indices++;
-                    }
+                    mc->cell_indices[mc->n_indices] = offset;
+                    mc->n_indices++;
                 }
             }
         }
@@ -518,6 +522,92 @@ size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
 
     return n_vertices;
 }
+
+
+static void SCE_MC_MakeNormal (const SCE_SGrid *grid, int x, int y, int z,
+                               SCE_TVector3 normal)
+{
+    SCEubyte p[6];
+    SCE_Grid_GetPoint (grid, x - 1, y,     z, &p[0]);
+    SCE_Grid_GetPoint (grid, x + 1, y,     z, &p[1]);
+    SCE_Grid_GetPoint (grid, x,     y - 1, z, &p[2]);
+    SCE_Grid_GetPoint (grid, x,     y + 1, z, &p[3]);
+    SCE_Grid_GetPoint (grid, x,     y,     z - 1, &p[4]);
+    SCE_Grid_GetPoint (grid, x,     y,     z + 1, &p[5]);
+    normal[0] = (float)p[0] - (float)p[1];
+    normal[1] = (float)p[2] - (float)p[3];
+    normal[2] = (float)p[4] - (float)p[5];
+    SCE_Vector3_Normalize (normal);
+}
+
+static size_t SCE_MC_MakeCellNormals (const SCE_SGrid *grid, SCEuint conf,
+                                      int x, int y, int z, SCEubyte corners[8],
+                                      SCEvertices *vertices)
+{
+    SCEuint corner3;
+    size_t n = 0;
+    SCE_TVector3 vertex0, vertex1;
+
+    SCE_MC_MakeNormal (grid, x, y, z, vertex0);
+
+    corner3 = (conf >> 3) & 1;
+
+    /* corners 3 and 0 */
+    if (corner3 != (conf & 1)) {
+        n++;
+        SCE_MC_MakeNormal (grid, x, y + 1, z, vertex1);
+        SCE_MC_Interp (vertices, corners[3], corners[0], vertex0, vertex1);
+        SCE_Vector3_Normalize (vertices);
+        vertices = &vertices[3];
+    }
+    /* corners 3 and 2 */
+    if (corner3 != ((conf >> 2) & 1)) {
+        n++;
+        SCE_MC_MakeNormal (grid, x + 1, y, z, vertex1);
+        SCE_MC_Interp (vertices, corners[3], corners[2], vertex0, vertex1);
+        SCE_Vector3_Normalize (vertices);
+        vertices = &vertices[3];
+    }
+    /* corners 3 and 7 */
+    if (corner3 != ((conf >> 7) & 1)) {
+        n++;
+        SCE_MC_MakeNormal (grid, x, y, z + 1, vertex1);
+        SCE_MC_Interp (vertices, corners[3], corners[7], vertex0, vertex1);
+        SCE_Vector3_Normalize (vertices);
+        vertices = &vertices[3];
+    }
+
+    return n;
+}
+
+void SCE_MC_GenerateNormals (SCE_SMCGenerator *mc, const SCE_SGrid *grid,
+                             SCEvertices *vertices)
+{
+    SCE_SMCCell *cell = NULL;
+    SCEuint x, y, z;
+    SCEubyte corners[8];
+    size_t n_vertices = 0, i;
+
+    for (i = 0; i < mc->n_indices; i++) {
+        cell = &mc->cells[mc->cell_indices[i]];
+
+        x = cell->x + mc->x;
+        y = cell->y + mc->y;
+        z = cell->z + mc->z;
+
+        /* NOTE: grid fetch overhead: vertices and normal generation could
+                 be merged */
+        SCE_Grid_GetPoint (grid, x,     y,     z,     &corners[3]);
+        SCE_Grid_GetPoint (grid, x + 1, y,     z,     &corners[2]);
+        SCE_Grid_GetPoint (grid, x,     y + 1, z,     &corners[0]);
+        SCE_Grid_GetPoint (grid, x,     y,     z + 1, &corners[7]);
+
+        n_vertices += SCE_MC_MakeCellNormals (grid, cell->conf, x, y, z,
+                                              corners, &vertices[n_vertices*3]);
+    }
+}
+
+
 
 static SCE_SMCCell* fetch_cell (const SCE_SMCGenerator *mc, SCEuint x,
                                 SCEuint y, SCEuint z)
@@ -571,7 +661,11 @@ size_t SCE_MC_GenerateIndices (const SCE_SMCGenerator *mc, SCEindices *indices)
 
     for (i = 0; i < mc->n_indices; i++) {
         cell = &mc->cells[mc->cell_indices[i]];
-        n_indices += SCE_MC_MakeCellIndices (mc, cell, &indices[n_indices]);
+        /* cell must not be across a border
+           we could have removed those cells at vertices generation,
+           but we actually need them for normal generation */
+        if (cell->x < mc->w - 1 && cell->y < mc->h - 1 && cell->z < mc->d - 1)
+            n_indices += SCE_MC_MakeCellIndices (mc, cell, &indices[n_indices]);
     }
 
     return n_indices;
