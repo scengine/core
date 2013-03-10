@@ -28,6 +28,7 @@ libscecore_la_SOURCES   = libwar.c \
                           SCEImage.c \
                           SCETextureData.c \
                           SCEGeometry.c \
+                          SCEQEMDecimator.c \
                           SCEGrid.c \
                           SCEVoxelGrid.c \
                           SCEVoxelStore.c \

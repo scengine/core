@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
  
 /* created: 11/04/2010
-   updated: 11/05/2012 */
+   updated: 10/03/2013 */
 
 #ifndef SCECORE_H
 #define SCECORE_H
@@ -37,6 +37,7 @@
 #include "SCE/core/SCENode.h"
 #include "SCE/core/SCECamera.h"
 #include "SCE/core/SCEGeometry.h"
+#include "SCE/core/SCEQEMDecimator.h"
 #include "SCE/core/SCEImage.h"
 #include "SCE/core/SCETextureData.h"
 #include "SCE/core/SCEGrid.h"
