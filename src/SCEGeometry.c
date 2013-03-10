@@ -1695,7 +1695,7 @@ static void SCE_Mesh_ComputeTriangleNormals (SCEvertices *vertex,
 
     SCE_Vector3_Cross (tmp, side0, side1);
     /* funny. */
-    if (fabs (tmp[0]) + fabs (tmp[1]) + fabs (tmp[2]) < 0.00001)
+    if (SCE_Vector3_IsNull (tmp))
         return;
     SCE_Vector3_Normalize (tmp);
     SCE_Vector3_Operator1v (&normals[index[0]*3], +=, tmp);
