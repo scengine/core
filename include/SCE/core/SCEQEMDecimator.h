@@ -46,6 +46,7 @@ struct sce_sqemmesh {
     SCEuint n_vertices;
     SCEuint n_indices;
 
+    const SCEvertices *original_vertices;
     SCE_SQEMVertex *vertices;
     SCEindices *indices;
 };
@@ -64,7 +65,6 @@ void SCE_QEMD_AnchorVertices (SCE_SQEMMesh*, const SCEindices*, SCEuint);
 void SCE_QEMD_Get (SCE_SQEMMesh*, SCEvertices*, SCEindices*, SCEuint*,SCEuint*);
 
 void SCE_QEMD_Process (SCE_SQEMMesh*, SCEuint);
-void SCE_QEMD_FixInversion (SCE_SQEMMesh*, const SCEvertices*);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 09/03/2013
-   updated: 10/03/2013 */
+   updated: 11/03/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -28,6 +28,7 @@ void SCE_QEMD_Init (SCE_SQEMMesh *mesh)
 {
     mesh->max_vertices = mesh->max_indices = 0;
     mesh->n_vertices = mesh->n_indices = 0;
+    mesh->original_vertices = NULL;
     mesh->vertices = NULL;
     mesh->indices = NULL;
 }
@@ -121,11 +122,13 @@ void SCE_QEMD_Set (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
 
     mesh->n_vertices = n_vertices;
     mesh->n_indices = n_indices;
+    mesh->original_vertices = vertices;
 
     memcpy (mesh->indices, indices, n_indices * sizeof *indices);
     for (i = 0; i < n_vertices; i++) {
         SCE_Vector3_Copy (mesh->vertices[i].v, &vertices[i * 3]);
         mesh->vertices[i].index = -1;
+        mesh->vertices[i].final = 0;
     }
 
     SCE_QEMD_InitQuadrics (mesh);
@@ -156,7 +159,7 @@ static SCEuint SCE_QEMD_SolveVertexList (SCE_SQEMMesh *mesh, SCEuint v)
         /* get last index */
         do {
             last = vertex->index;
-            vertex = &mesh->vertices[vertex->index];
+            vertex = &mesh->vertices[last];
         } while (vertex->index > -1);
 
         /* replace indices of the vertices with last index */
@@ -178,12 +181,18 @@ void SCE_QEMD_Get (SCE_SQEMMesh *mesh, SCEvertices *vertices,
     SCE_SQEMVertex *v = NULL;
     SCEuint i1, i2, i3;
 
+    /* mark used vertices */
+    for (i = 0; i < mesh->n_indices; i++) {
+        index = SCE_QEMD_SolveVertexList (mesh, mesh->indices[i]);
+        mesh->vertices[index].final = 1;
+    }
+
     /* vertices output is pretty straightforward, we just reassign them
        a new index */
     index = 0;
     for (i = 0; i < mesh->n_vertices; i++) {
         v = &mesh->vertices[i];
-        if (v->index == -1) {
+        if (v->index == -1 && v->final) {
             SCE_Vector3_Copy (&vertices[index * 3], v->v);
             v->final = index;
             index++;
@@ -192,26 +201,22 @@ void SCE_QEMD_Get (SCE_SQEMMesh *mesh, SCEvertices *vertices,
     *n_vertices = index;
 
     /* solve vertex lists */
-    for (i = 0; i < mesh->n_vertices; i++) {
-        index = SCE_QEMD_SolveVertexList (mesh, i);
-        mesh->vertices[i].final = mesh->vertices[index].final;
+    for (i = 0; i < mesh->n_indices; i++) {
+        v = &mesh->vertices[mesh->indices[i]];
+        if (v->index > -1)
+            v->final = mesh->vertices[v->index].final;
     }
 
-    /* TODO: we dont need to check for removed triangles if we
-       already removed them (via FixInversion for example) */
-    index = 0;
     for (i = 0; i < mesh->n_indices; i += 3) {
         i1 = mesh->vertices[mesh->indices[i]].final;
         i2 = mesh->vertices[mesh->indices[i + 1]].final;
         i3 = mesh->vertices[mesh->indices[i + 2]].final;
-        if (i1 != i2 && i2 != i3 && i1 != i3) {
-            indices[index + 0] = i1;
-            indices[index + 1] = i2;
-            indices[index + 2] = i3;
-            index += 3;
-        }
+        /* invalid triangles have been removed by FixInversion() */
+        indices[i + 0] = i1;
+        indices[i + 1] = i2;
+        indices[i + 2] = i3;
     }
-    *n_indices = index;
+    *n_indices = mesh->n_indices;
 }
 
 
@@ -338,57 +343,12 @@ static void SCE_QEMD_CollapseLeastErrorEdge (SCE_SQEMMesh *mesh, SCEuint n,
 }
 
 
-#define SCE_QEMD_NUM_CANDIDATES 10
-
-/**
- * \brief Decimate the mesh
- * \param mesh a QEM mesh
- * \param n number of edge contractions to perform
- */
-void SCE_QEMD_Process (SCE_SQEMMesh *mesh, SCEuint n)
-{
-    int i, n_candidates;
-    Edge candidates[SCE_QEMD_NUM_CANDIDATES];
-
-    while (n) {
-        /* pick random edges */
-        n_candidates = SCE_QEMD_NUM_CANDIDATES;
-        SCE_QEMD_PickCandidates (mesh, n_candidates, candidates);
-
-        /* solve vertex list */
-        for (i = 0; i < n_candidates; i++) {
-            candidates[i].v1 = SCE_QEMD_SolveVertexList (mesh,candidates[i].v1);
-            candidates[i].v2 = SCE_QEMD_SolveVertexList (mesh,candidates[i].v2);
-            if (candidates[i].v1 == candidates[i].v2) {
-                /* edge was already merged, remove triangle */
-                SCE_QEMD_RemoveTriangle (mesh, candidates[i].index);
-                n_candidates--;
-                candidates[i].v1 = candidates[n_candidates].v1;
-                candidates[i].v2 = candidates[n_candidates].v2;
-                candidates[i].index = candidates[n_candidates].index;
-                i--;
-            }
-        }
-
-#define THRESHOLD (SCE_QEMD_NUM_CANDIDATES / 2)
-        if (n_candidates < THRESHOLD)
-            continue;
-
-        /* compute their cost */
-        for (i = 0; i < n_candidates; i++)
-            SCE_QEMD_ComputeError (mesh, &candidates[i]);
-
-        SCE_QEMD_CollapseLeastErrorEdge (mesh, n_candidates, candidates);
-
-        n--;
-    }
-}
-
-void SCE_QEMD_FixInversion (SCE_SQEMMesh *mesh, const SCEvertices *vertices)
+static void SCE_QEMD_FixInversion (SCE_SQEMMesh *mesh)
 {
     long i;
     SCEuint i1, i2, i3;
     SCE_TVector3 n1, n2, s1, s2;
+    const SCEvertices *vertices = mesh->original_vertices;
 
     /* for each face */
     for (i = 0; i < mesh->n_indices; i += 3) {
@@ -397,9 +357,11 @@ void SCE_QEMD_FixInversion (SCE_SQEMMesh *mesh, const SCEvertices *vertices)
         i2 = SCE_QEMD_SolveVertexList (mesh, mesh->indices[i + 1]);
         i3 = SCE_QEMD_SolveVertexList (mesh, mesh->indices[i + 2]);
         /* ignore removed trianles */
-        /* NOTE: remove the triangle to spare Get() some work */
-        if (i1 == i2 || i2 == i3 || i1 == i3)
+        if (i1 == i2 || i2 == i3 || i1 == i3) {
+            SCE_QEMD_RemoveTriangle (mesh, i);
+            i -= 3;
             continue;
+        }
 
         /* get original normal */
         SCE_Vector3_Operator2v (s1, =, &vertices[3 * mesh->indices[i + 1]],
@@ -448,4 +410,54 @@ void SCE_QEMD_FixInversion (SCE_SQEMMesh *mesh, const SCEvertices *vertices)
             i -= 3;
         }
     }
+}
+
+
+#define SCE_QEMD_NUM_CANDIDATES 10
+
+/**
+ * \brief Decimate the mesh
+ * \param mesh a QEM mesh
+ * \param n number of edge contractions to perform
+ */
+void SCE_QEMD_Process (SCE_SQEMMesh *mesh, SCEuint n)
+{
+    int i, n_candidates;
+    Edge candidates[SCE_QEMD_NUM_CANDIDATES];
+
+    while (n) {
+        /* pick random edges */
+        n_candidates = SCE_QEMD_NUM_CANDIDATES;
+        SCE_QEMD_PickCandidates (mesh, n_candidates, candidates);
+
+        /* solve vertex list */
+        for (i = 0; i < n_candidates; i++) {
+            candidates[i].v1 = SCE_QEMD_SolveVertexList (mesh,candidates[i].v1);
+            candidates[i].v2 = SCE_QEMD_SolveVertexList (mesh,candidates[i].v2);
+            if (candidates[i].v1 == candidates[i].v2) {
+                /* edge was already merged, remove triangle */
+                SCE_QEMD_RemoveTriangle (mesh, candidates[i].index);
+                n_candidates--;
+                candidates[i].v1 = candidates[n_candidates].v1;
+                candidates[i].v2 = candidates[n_candidates].v2;
+                candidates[i].index = candidates[n_candidates].index;
+                i--;
+            }
+        }
+
+#define THRESHOLD (SCE_QEMD_NUM_CANDIDATES / 2)
+        if (n_candidates < THRESHOLD)
+            continue;
+
+        /* compute their cost */
+        for (i = 0; i < n_candidates; i++)
+            SCE_QEMD_ComputeError (mesh, &candidates[i]);
+
+        SCE_QEMD_CollapseLeastErrorEdge (mesh, n_candidates, candidates);
+
+        n--;
+    }
+
+    /* remove flipped and merged triangles */
+    SCE_QEMD_FixInversion (mesh);
 }
