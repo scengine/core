@@ -60,6 +60,7 @@ int SCE_QEMD_Build (SCE_SQEMMesh*);
 
 void SCE_QEMD_Set (SCE_SQEMMesh*, const SCEvertices*, const SCEindices*,
                    SCEuint, SCEuint);
+void SCE_QEMD_AnchorVertices (SCE_SQEMMesh*, const SCEindices*, SCEuint);
 void SCE_QEMD_Get (SCE_SQEMMesh*, SCEvertices*, SCEindices*, SCEuint*,SCEuint*);
 
 void SCE_QEMD_Process (SCE_SQEMMesh*, SCEuint);

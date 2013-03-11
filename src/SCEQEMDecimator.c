@@ -131,6 +131,19 @@ void SCE_QEMD_Set (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
     SCE_QEMD_InitQuadrics (mesh);
 }
 
+void SCE_QEMD_AnchorVertices (SCE_SQEMMesh *mesh, const SCEindices *indices,
+                              SCEuint n)
+{
+    SCEuint i, j;
+    SCE_SQEMVertex *v;
+
+    for (i = 0; i < n; i++) {
+        v = &mesh->vertices[indices[i]];
+        for (j = 0; j < 16; j++)
+            v->q[j] = 10000.0;  /* derp */
+    }
+}
+
 
 static SCEuint SCE_QEMD_SolveVertexList (SCE_SQEMMesh *mesh, SCEuint v)
 {
@@ -202,6 +215,7 @@ void SCE_QEMD_Get (SCE_SQEMMesh *mesh, SCEvertices *vertices,
 }
 
 
+/* TODO: wtf there's still no function to do that in the sce? */
 static SCEuint myrand (SCEuint inf, SCEuint sup)
 {
     float n = random ();
