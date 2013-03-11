@@ -129,6 +129,7 @@ void SCE_QEMD_Set (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
         SCE_Vector3_Copy (mesh->vertices[i].v, &vertices[i * 3]);
         mesh->vertices[i].index = -1;
         mesh->vertices[i].final = 0;
+        mesh->vertices[i].anchor = SCE_FALSE;
     }
 
     SCE_QEMD_InitQuadrics (mesh);
@@ -137,14 +138,10 @@ void SCE_QEMD_Set (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
 void SCE_QEMD_AnchorVertices (SCE_SQEMMesh *mesh, const SCEindices *indices,
                               SCEuint n)
 {
-    SCEuint i, j;
-    SCE_SQEMVertex *v;
+    SCEuint i;
 
-    for (i = 0; i < n; i++) {
-        v = &mesh->vertices[indices[i]];
-        for (j = 0; j < 16; j++)
-            v->q[j] = 10000.0;  /* derp */
-    }
+    for (i = 0; i < n; i++)
+        mesh->vertices[indices[i]].anchor = SCE_TRUE;
 }
 
 
@@ -280,10 +277,19 @@ static void SCE_QEMD_ComputeError (SCE_SQEMMesh *mesh, Edge *edge)
 {
     SCE_TVector3 d;
     SCE_TMatrix4 m;
+    float coef = 0.0;
 
     SCE_Matrix4_Add (mesh->vertices[edge->v1].q, mesh->vertices[edge->v2].q,
                      edge->q);
 
+    /* check for anchors */
+    if (mesh->vertices[edge->v1].anchor) {
+        SCE_Vector3_Copy (edge->v, mesh->vertices[edge->v1].v);
+        coef = 1000.0;
+    } else if (mesh->vertices[edge->v2].anchor) {
+        SCE_Vector3_Copy (edge->v, mesh->vertices[edge->v2].v);
+        coef = 1000.0;
+    } else
     /* compute least error vertex position */
     if (SCE_Matrix4_Inverse (edge->q, m) && m[15] > SCE_EPSILONF) {
         SCE_Matrix4_GetTranslation (m, edge->v);
@@ -298,6 +304,7 @@ static void SCE_QEMD_ComputeError (SCE_SQEMMesh *mesh, Edge *edge)
     SCE_Vector3_Operator2v (d, =, mesh->vertices[edge->v1].v, -,
                             mesh->vertices[edge->v2].v);
     edge->error *= SCE_Vector3_Dot (d, d);
+    edge->error += coef;
 }
 
 static void SCE_QEMD_RemoveTriangle (SCE_SQEMMesh *mesh, SCEuint index)
@@ -315,6 +322,8 @@ static void SCE_QEMD_CollapseEdge (SCE_SQEMMesh *mesh, Edge *edge)
     /* copy data */
     SCE_Vector3_Copy (mesh->vertices[edge->v1].v, edge->v);
     SCE_Matrix4_Copy (mesh->vertices[edge->v1].q, edge->q);
+    mesh->vertices[edge->v1].anchor = mesh->vertices[edge->v2].anchor ||
+        mesh->vertices[edge->v1].anchor;
 
     /* invalidate triangle in the index list */
     SCE_QEMD_RemoveTriangle (mesh, edge->index);

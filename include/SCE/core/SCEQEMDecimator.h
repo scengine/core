@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 09/03/2013
-   updated: 10/03/2013 */
+   updated: 11/03/2013 */
 
 #ifndef SCEQEMDECIMATION_H
 #define SCEQEMDECIMATION_H
@@ -36,6 +36,7 @@ struct sce_sqemvertex {
     long index;                 /* in case this vertex has been merged, index
                                    to the new vertex, -1 otherwise */
     SCEuint final;
+    int anchor;
 };
 
 typedef struct sce_sqemmesh SCE_SQEMMesh;
