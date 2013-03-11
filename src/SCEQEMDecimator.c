@@ -278,20 +278,17 @@ static void SCE_QEMD_ComputeError (SCE_SQEMMesh *mesh, Edge *edge)
 
     SCE_Matrix4_Add (mesh->vertices[edge->v1].q, mesh->vertices[edge->v2].q,
                      edge->q);
-    /* TODO: for some reason it doesnt work very well
-       (and it makes the algorithm twice slower you know.) */
-#if 0
-    if (SCE_Matrix4_Inverse (edge->q, m)) {
+
+    /* compute least error vertex position */
+    if (SCE_Matrix4_Inverse (edge->q, m) && m[15] > SCE_EPSILONF) {
         SCE_Matrix4_GetTranslation (m, edge->v);
         SCE_Vector3_Operator1 (edge->v, /=, m[15]);
     } else {
         SCE_Vector3_Operator2v (edge->v, = 0.5 *, mesh->vertices[edge->v1].v,
                                 + 0.5 *, mesh->vertices[edge->v2].v);
+        /* TODO: choose between v1, v2 and (v1 + v2) / 2 */
     }
-#else
-    SCE_Vector3_Operator2v (edge->v, = 0.5 *, mesh->vertices[edge->v1].v,
-                            + 0.5 *, mesh->vertices[edge->v2].v);
-#endif
+
     edge->error = SCE_QEMD_VertexError (edge->q, edge->v);
     SCE_Vector3_Operator2v (d, =, mesh->vertices[edge->v1].v, -,
                             mesh->vertices[edge->v2].v);
@@ -310,7 +307,9 @@ static void SCE_QEMD_CollapseEdge (SCE_SQEMMesh *mesh, Edge *edge)
 {
     /* merge vertices by linking them */
     mesh->vertices[edge->v2].index = edge->v1;
+    /* copy data */
     SCE_Vector3_Copy (mesh->vertices[edge->v1].v, edge->v);
+    SCE_Matrix4_Copy (mesh->vertices[edge->v1].q, edge->q);
 
     /* invalidate triangle in the index list */
     SCE_QEMD_RemoveTriangle (mesh, edge->index);
