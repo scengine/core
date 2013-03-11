@@ -459,9 +459,19 @@ static size_t SCE_MC_MakeCellVertices (SCE_SMCCell *cell, SCEubyte corners[8],
     return n;
 }
 
-/* we are going to assume that mc->n_cells is big enough */
-/* also, make sure to leave additionnal slices in grid filled with 0
-   to properly generate vertices in the borders */
+/**
+ * \brief Generates vertices according to the marching cube algorithm
+ * \param mc a mc generator
+ * \param region a region
+ * \param grid voxel grid
+ * \param vertices output vertices
+ *
+ * Make sure to leave additionnal slices in grid filled with 0
+ * to properly generate vertices in the borders, otherwise unused vertices
+ * will be generated
+ *
+ * \return the number of vertices generated
+ */
 size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
                                 const SCE_SIntRect3 *region,
                                 const SCE_SGrid *grid, SCEvertices *vertices)
