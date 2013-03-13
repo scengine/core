@@ -231,6 +231,7 @@ struct edge {
     SCEuint index;
     SCEindices v1, v2;
     float error;
+    int anchored;
     SCE_TVector3 v;
     SCE_TMatrix4 q;
 };
@@ -241,6 +242,7 @@ static void SCE_QEMD_PickCandidates (SCE_SQEMMesh *mesh, SCEuint n,
     SCEuint step = mesh->n_indices / (3 * n);
     SCEuint m = n, i;
 
+    /* NOTE: hopefully, step > 0 */
     while (n--) {
         /* TODO: stupid trick to avoid duplicates */
         SCEuint r = myrand (step * n, step * (n + 1) - 1);
@@ -282,9 +284,12 @@ static void SCE_QEMD_ComputeError (SCE_SQEMMesh *mesh, Edge *edge)
     SCE_Matrix4_Add (mesh->vertices[edge->v1].q, mesh->vertices[edge->v2].q,
                      edge->q);
 
+    edge->anchored = SCE_FALSE;
     /* check for anchors */
     if (mesh->vertices[edge->v1].anchor) {
         SCE_Vector3_Copy (edge->v, mesh->vertices[edge->v1].v);
+        if (mesh->vertices[edge->v2].anchor)
+            edge->anchored = SCE_TRUE;
         coef = 1000.0;
     } else if (mesh->vertices[edge->v2].anchor) {
         SCE_Vector3_Copy (edge->v, mesh->vertices[edge->v2].v);
@@ -330,7 +335,7 @@ static void SCE_QEMD_CollapseEdge (SCE_SQEMMesh *mesh, Edge *edge)
 }
 
 
-static void SCE_QEMD_CollapseLeastErrorEdge (SCE_SQEMMesh *mesh, SCEuint n,
+static int SCE_QEMD_CollapseLeastErrorEdge (SCE_SQEMMesh *mesh, SCEuint n,
                                              Edge *edges)
 {
     SCEuint i;
@@ -341,14 +346,19 @@ static void SCE_QEMD_CollapseLeastErrorEdge (SCE_SQEMMesh *mesh, SCEuint n,
     best = &edges[0];
     error = best->error;
     for (i = 1; i < n; i++) {
-        if (edges[i].error < error) {
+        if (edges[i].error < error && !edges[i].anchored) {
             best = &edges[i];
             error = best->error;
         }
     }
 
     /* collapse the edge */
-    SCE_QEMD_CollapseEdge (mesh, best);
+    if (best->anchored)
+        return SCE_FALSE;
+    else {
+        SCE_QEMD_CollapseEdge (mesh, best);
+        return SCE_TRUE;
+    }
 }
 
 
@@ -413,10 +423,12 @@ static void SCE_QEMD_FixInversion (SCE_SQEMMesh *mesh)
                 SCE_QEMD_ComputeError (mesh, &edges[i]);
 
             /* collapse one of them */
-            SCE_QEMD_CollapseLeastErrorEdge (mesh, 3, edges);
-
-            /* triangle has been replaced */
-            i -= 3;
+            if (SCE_QEMD_CollapseLeastErrorEdge (mesh, 3, edges)) {
+                /* triangle has been replaced */
+                i -= 3;
+                /* NOTE: it's funny because an anchored triangle is not
+                   likely to be flipped */
+            }
         }
     }
 }
@@ -462,9 +474,8 @@ void SCE_QEMD_Process (SCE_SQEMMesh *mesh, SCEuint n)
         for (i = 0; i < n_candidates; i++)
             SCE_QEMD_ComputeError (mesh, &candidates[i]);
 
-        SCE_QEMD_CollapseLeastErrorEdge (mesh, n_candidates, candidates);
-
-        n--;
+        if (SCE_QEMD_CollapseLeastErrorEdge (mesh, n_candidates, candidates))
+            n--;
     }
 
     /* remove flipped and merged triangles */
