@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/03/2013
-   updated: 08/03/2013 */
+   updated: 13/03/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -316,10 +316,14 @@ void SCE_MC_Init (SCE_SMCGenerator *mc)
 {
     mc->n_cells = 0;
     mc->cells = NULL;
+    mc->n_vertices = 0;
     mc->n_indices = 0;
     mc->cell_indices = NULL;
     mc->x = mc->y = mc->z = 0;
     mc->w = mc->h = mc->d = 0;
+
+    mc->last_x = mc->last_y = mc->last_z = 0;
+    mc->finished = SCE_TRUE;
 }
 void SCE_MC_Clear (SCE_SMCGenerator *mc)
 {
@@ -468,19 +472,43 @@ static size_t SCE_MC_MakeCellVertices (SCE_SMCCell *cell, SCEubyte corners[8],
  *
  * Make sure to leave additionnal slices in grid filled with 0
  * to properly generate vertices in the borders, otherwise unused vertices
- * will be generated
+ * will be generated.
  *
  * \return the number of vertices generated
+ * \sa SCE_MC_GenerateVerticesRange()
  */
 size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
                                 const SCE_SIntRect3 *region,
                                 const SCE_SGrid *grid, SCEvertices *vertices)
 {
+    return SCE_MC_GenerateVerticesRange (mc, region, grid, vertices, 0);
+}
+
+/**
+ * \brief Generates vertices according to the marching cube algorithm
+ * \param mc a mc generator
+ * \param region a region
+ * \param grid voxel grid
+ * \param vertices output vertices
+ * \param num number of cells to process
+ *
+ * Make sure to leave additionnal slices in grid filled with 0
+ * to properly generate vertices in the borders, otherwise unused vertices
+ * will be generated.
+ *
+ * \return the number of vertices generated
+ * \sa SCE_MC_GenerateVertices()
+ */
+size_t SCE_MC_GenerateVerticesRange (SCE_SMCGenerator *mc,
+                                     const SCE_SIntRect3 *region,
+                                     const SCE_SGrid *grid,
+                                     SCEvertices *vertices, size_t num)
+{
     SCE_SMCCell *cell = NULL;
     SCEuint x, y, z, x_, y_, z_, w, h, d;
     float a, b, c;
     SCEubyte corners[8];
-    size_t n_vertices = 0, n;
+    size_t n;
     int p1[3], p2[3];
 
     w = mc->w = SCE_Rectangle3_GetWidth (region);
@@ -496,12 +524,31 @@ size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
     mc->y = p1[1];
     mc->z = p1[2];
 
-    mc->n_indices = 0;
+    /* ignore num if null */
+    if (num == 0)
+        num = 2 * SCE_Grid_GetNumPoints (grid); /* times two, because. */
 
-    for (z = 0, z_ = p1[2]; z < d; z++, z_++) {
-        for (y = 0, y_ = p1[1]; y < h; y++, y_++) {
-            for (x = 0, x_ = p1[0]; x < w; x++, x_++) {
+    mc->finished = SCE_FALSE;
+
+    z = mc->last_z;
+    mc->last_z = 0;
+    for (z_ = p1[2] + z; z < d; z++, z_++) {
+        y = mc->last_y;
+        mc->last_y = 0;
+        for (y_ = p1[1] + y; y < h; y++, y_++) {
+            x = mc->last_x;
+            mc->last_x = 0;
+            for (x_ = p1[0] + x; x < w; x++, x_++) {
                 size_t offset = w * (z * h + y) + x;
+
+                if (num == 0) {
+                    /* save up and quit */
+                    mc->last_x = x;
+                    mc->last_y = y;
+                    mc->last_z = z;
+                    return 0;
+                }
+                num--;
 
                 cell = &mc->cells[offset];
                 cell->x = x;
@@ -520,9 +567,9 @@ size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
                 cell->conf = SCE_MC_GetConfig (corners);
 
                 if (cell->conf != 0 && cell->conf != 255) {
-                    n = SCE_MC_MakeCellVertices (cell, corners, n_vertices,
+                    n = SCE_MC_MakeCellVertices (cell, corners, mc->n_vertices,
                                                  vertices, a, b, c);
-                    n_vertices += n;
+                    mc->n_vertices += n;
                     mc->cell_indices[mc->n_indices] = offset;
                     mc->n_indices++;
                 }
@@ -530,7 +577,17 @@ size_t SCE_MC_GenerateVertices (SCE_SMCGenerator *mc,
         }
     }
 
-    return n_vertices;
+    mc->last_x = mc->last_y = mc->last_z = 0;
+    mc->finished = SCE_TRUE;
+    n = mc->n_vertices;
+    mc->n_vertices = 0;
+
+    return n;
+}
+
+int SCE_MC_IsGenerationFinished (const SCE_SMCGenerator *mc)
+{
+    return mc->finished;
 }
 
 
@@ -663,7 +720,7 @@ static size_t SCE_MC_MakeCellIndices (const SCE_SMCGenerator *mc,
     return n_tri * 3;
 }
 
-size_t SCE_MC_GenerateIndices (const SCE_SMCGenerator *mc, SCEindices *indices)
+size_t SCE_MC_GenerateIndices (SCE_SMCGenerator *mc, SCEindices *indices)
 {
     SCE_SMCCell *cell = NULL;
     SCEuint i;
@@ -677,6 +734,9 @@ size_t SCE_MC_GenerateIndices (const SCE_SMCGenerator *mc, SCEindices *indices)
         if (cell->x < mc->w - 1 && cell->y < mc->h - 1 && cell->z < mc->d - 1)
             n_indices += SCE_MC_MakeCellIndices (mc, cell, &indices[n_indices]);
     }
+
+    /* kinda important for split generation */
+    mc->n_indices = 0;
 
     return n_indices;
 }

@@ -50,10 +50,15 @@ typedef struct sce_smcgenerator SCE_SMCGenerator;
 struct sce_smcgenerator {
     size_t n_cells;
     SCE_SMCCell *cells;
+    size_t n_vertices;
     size_t n_indices;
     SCEuint *cell_indices;
     SCEuint x, y, z;
     SCEuint w, h, d;
+
+    /* used for split vertex processing */
+    SCEuint last_x, last_y, last_z;
+    int finished;
 };
 
 void SCE_MC_Init (SCE_SMCGenerator*);
@@ -66,8 +71,12 @@ int SCE_MC_Build (SCE_SMCGenerator*);
 
 size_t SCE_MC_GenerateVertices (SCE_SMCGenerator*, const SCE_SIntRect3*,
                                 const SCE_SGrid*, SCEvertices*);
+size_t SCE_MC_GenerateVerticesRange (SCE_SMCGenerator*, const SCE_SIntRect3*,
+                                     const SCE_SGrid*, SCEvertices*, size_t);
+int SCE_MC_IsGenerationFinished (const SCE_SMCGenerator*);
+
 void SCE_MC_GenerateNormals (SCE_SMCGenerator*, const SCE_SGrid*, SCEvertices*);
-size_t SCE_MC_GenerateIndices (const SCE_SMCGenerator*, SCEindices*);
+size_t SCE_MC_GenerateIndices (SCE_SMCGenerator*, SCEindices*);
 
 #ifdef __cplusplus
 } /* extern "C" */
