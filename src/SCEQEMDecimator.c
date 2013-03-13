@@ -308,7 +308,7 @@ static void SCE_QEMD_ComputeError (SCE_SQEMMesh *mesh, Edge *edge)
     edge->error = SCE_QEMD_VertexError (edge->q, edge->v);
     SCE_Vector3_Operator2v (d, =, mesh->vertices[edge->v1].v, -,
                             mesh->vertices[edge->v2].v);
-    edge->error *= SCE_Vector3_Dot (d, d);
+    edge->error += 0.001 * SCE_Vector3_Dot (d, d);
     edge->error += coef;
 }
 
