@@ -445,8 +445,13 @@ void SCE_QEMD_Process (SCE_SQEMMesh *mesh, SCEuint n)
 {
     int i, n_candidates;
     Edge candidates[SCE_QEMD_NUM_CANDIDATES];
+    SCEuint num = n;
 
     while (n) {
+        /* TODO: some stupid check */
+        if (mesh->n_indices < 42)
+            break;
+
         /* pick random edges */
         n_candidates = SCE_QEMD_NUM_CANDIDATES;
         SCE_QEMD_PickCandidates (mesh, n_candidates, candidates);
@@ -478,6 +483,8 @@ void SCE_QEMD_Process (SCE_SQEMMesh *mesh, SCEuint n)
             n--;
     }
 
-    /* remove flipped and merged triangles */
-    SCE_QEMD_FixInversion (mesh);
+    if (num) {
+        /* remove flipped and merged triangles */
+        SCE_QEMD_FixInversion (mesh);
+    }
 }
