@@ -364,7 +364,7 @@ static int SCE_QEMD_CollapseLeastErrorEdge (SCE_SQEMMesh *mesh, SCEuint n,
 
 static void SCE_QEMD_FixInversion (SCE_SQEMMesh *mesh)
 {
-    long i;
+    long i, j;
     SCEuint i1, i2, i3;
     SCE_TVector3 n1, n2, s1, s2;
     const SCEvertices *vertices = mesh->original_vertices;
@@ -419,8 +419,8 @@ static void SCE_QEMD_FixInversion (SCE_SQEMMesh *mesh)
             edges[2].index = i;
 
             /* compute their cost */
-            for (i = 0; i < 3; i++)
-                SCE_QEMD_ComputeError (mesh, &edges[i]);
+            for (j = 0; j < 3; j++)
+                SCE_QEMD_ComputeError (mesh, &edges[j]);
 
             /* collapse one of them */
             if (SCE_QEMD_CollapseLeastErrorEdge (mesh, 3, edges)) {
