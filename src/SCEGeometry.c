@@ -1741,8 +1741,10 @@ int SCE_Geometry_ComputeNormals (SCEvertices *vertex, SCEindices *indices,
     if (!indices)
         SCE_free (index);
 
-    for (i = 0; i < vcount; i++)
-        SCE_Vector3_Normalize (&normals[i*3]);
+    for (i = 0; i < vcount; i++) {
+        if (!SCE_Vector3_IsNull (&normals[i*3]))
+            SCE_Vector3_Normalize (&normals[i*3]);
+    }
 
     return SCE_OK;
 }
