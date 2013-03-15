@@ -401,7 +401,7 @@ static void SCE_QEMD_FixInversion (SCE_SQEMMesh *mesh)
             SCE_Vector3_Normalize (n2);
 
         /* compare */
-        if (SCE_Vector3_Dot (n1, n2) < 0.2 || SCE_Vector3_IsNull (n2) ||
+        if (SCE_Vector3_Dot (n1, n2) < 0.6 || SCE_Vector3_IsNull (n2) ||
             SCE_Vector3_IsNull (n1)) {
 
             /* normal has been flipped, remove triangle */
