@@ -69,6 +69,7 @@ void SCE_VWorld_Init (SCE_SVoxelWorld *vw)
     SCE_List_SetFreeFunc (&vw->trees, SCE_VWorld_FreeFunc);
     vw->w = vw->h = vw->d = 0;
     vw->n_lod = 1;
+    vw->usage = SCE_VOCTREE_DENSITY_FIELD;
     vw->create_trees = SCE_TRUE;
     memset (vw->prefix, 0, sizeof vw->prefix);
     vw->fs = NULL;
@@ -153,7 +154,10 @@ void SCE_VWorld_SetPrefix (SCE_SVoxelWorld *vw, const char *prefix)
 {
     strncpy (vw->prefix, prefix, sizeof vw->prefix - 1);
 }
-
+void SCE_VWorld_SetUsage (SCE_SVoxelWorld *vw, SCE_EVoxelOctreeUsage usage)
+{
+    vw->usage = usage;
+}
 
 /**
  * \brief Must be called before any octree is added to the world
@@ -207,6 +211,7 @@ SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
     SCE_VOctree_SetFileSystem (&wt->vo, vw->fs);
     SCE_VOctree_SetFileCache (&wt->vo, vw->fcache);
     SCE_VOctree_SetMaxCachedNodes (&wt->vo, vw->max_cached_nodes);
+    SCE_VOctree_SetUsage (&wt->vo, vw->usage);
     SCE_List_Appendl (&vw->trees, &wt->it);
 
     return wt;
@@ -288,6 +293,7 @@ int SCE_VWorld_Load (SCE_SVoxelWorld *vw, const char *fname)
     vw->h = SCE_Decode_StreamLong (&fp);
     vw->d = SCE_Decode_StreamLong (&fp);
     vw->n_lod = SCE_Decode_StreamLong (&fp);
+    vw->usage = SCE_Decode_StreamLong (&fp);
 
     n = SCE_Decode_StreamLong (&fp);
 
@@ -325,6 +331,7 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld *vw, const char *fname)
     SCE_Encode_StreamLong (vw->h, &fp);
     SCE_Encode_StreamLong (vw->d, &fp);
     SCE_Encode_StreamLong (vw->n_lod, &fp);
+    SCE_Encode_StreamLong (vw->usage, &fp);
 
     n = SCE_List_GetLength (&vw->trees);
     SCE_Encode_StreamLong (n, &fp);
@@ -538,8 +545,8 @@ int SCE_VWorld_GetNextUpdatedRegion (SCE_SVoxelWorld *vw, SCE_SLongRect3 *zone)
 
 
 static void
-SCE_VWorld_ComputeLODPoint (SCE_SVoxelGrid *in, SCE_SVoxelGrid *out,
-                            SCEulong x, SCEulong y, SCEulong z)
+SCE_VWorld_ComputeDensityLODPoint (SCE_SVoxelGrid *in, SCE_SVoxelGrid *out,
+                                   SCEulong x, SCEulong y, SCEulong z)
 {
     SCEubyte buf[28] = {0};
     float kernel[28] = {
@@ -581,16 +588,53 @@ SCE_VWorld_ComputeLODPoint (SCE_SVoxelGrid *in, SCE_SVoxelGrid *out,
     *ptr = value * 256.0;
 }
 
+static void
+SCE_VWorld_ComputeMaterialLODPoint (SCE_SVoxelGrid *in, SCE_SVoxelGrid *out,
+                                    SCEulong x, SCEulong y, SCEulong z)
+{
+    SCEubyte buf[28] = {0};
+    float value = 0.0;
+    size_t i, j, k, offset;
+    SCEubyte *ptr = NULL;
+
+    offset = 0;
+    for (k = z - 1; k < z + 2; k++) {
+        for (j = y - 1; j < y + 2; j++) {
+            for (i = x - 1; i < x + 2; i++) {
+                buf[offset] = *SCE_VGrid_Offset (in, i, j, k);
+                offset++;
+            }
+        }
+    }
+
+    value = buf[13] / 256.0;
+
+    ptr = SCE_VGrid_Offset (out, (x - 1) / 2, (y - 1) / 2, (z - 1) / 2);
+    *ptr = value * 256.0;
+}
+
 
 static void
-SCE_VWorld_ComputeLOD (SCE_SVoxelGrid *in, SCE_SVoxelGrid *out)
+SCE_VWorld_ComputeDensityLOD (SCE_SVoxelGrid *in, SCE_SVoxelGrid *out)
 {
     SCEulong x, y, z;
 
     for (z = 1; z < in->d - 1; z += 2) {
         for (y = 1; y < in->h - 1; y += 2) {
             for (x = 1; x < in->w - 1; x += 2)
-                SCE_VWorld_ComputeLODPoint (in, out, x, y, z);
+                SCE_VWorld_ComputeDensityLODPoint (in, out, x, y, z);
+        }
+    }
+}
+static void
+SCE_VWorld_ComputeMaterialLOD (SCE_SVoxelGrid *in, SCE_SVoxelGrid *out)
+{
+    SCEulong x, y, z;
+
+    for (z = 1; z < in->d - 1; z += 2) {
+        for (y = 1; y < in->h - 1; y += 2) {
+            for (x = 1; x < in->w - 1; x += 2)
+                SCE_VWorld_ComputeMaterialLODPoint (in, out, x, y, z);
         }
     }
 }
@@ -666,7 +710,10 @@ int SCE_VWorld_GenerateLOD (SCE_SVoxelWorld *vw, SCEuint level,
         /* retrieve source voxels */
         if (SCE_VWorld_GetRegion (vw, level, &src, in.data) < 0)
             goto fail;
-        SCE_VWorld_ComputeLOD (&in, &out);
+        if (vw->usage == SCE_VOCTREE_DENSITY_FIELD)
+            SCE_VWorld_ComputeDensityLOD (&in, &out);
+        else
+            SCE_VWorld_ComputeMaterialLOD (&in, &out);
         if (SCE_VWorld_Set (vw, level + 1, &dst, out.data) < 0)
             goto fail;
 

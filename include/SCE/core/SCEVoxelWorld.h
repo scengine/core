@@ -44,6 +44,7 @@ struct sce_svoxelworld {
 
     SCEulong w, h, d;
     SCEuint n_lod;
+    SCE_EVoxelOctreeUsage usage;
     int create_trees;
     char prefix[128];           /* root directory */
     SCE_SFileSystem *fs;
@@ -75,6 +76,7 @@ SCEulong SCE_VWorld_GetTotalDepth (const SCE_SVoxelWorld*);
 void SCE_VWorld_SetNumLevels (SCE_SVoxelWorld*, SCEuint);
 SCEuint SCE_VWorld_GetNumLevels (SCE_SVoxelWorld*);
 void SCE_VWorld_SetPrefix (SCE_SVoxelWorld*, const char*);
+void SCE_VWorld_SetUsage (SCE_SVoxelWorld*, SCE_EVoxelOctreeUsage);
 
 void SCE_VWorld_SetFileSystem (SCE_SVoxelWorld*, SCE_SFileSystem*);
 void SCE_VWorld_SetFileCache (SCE_SVoxelWorld*, SCE_SFileCache*);

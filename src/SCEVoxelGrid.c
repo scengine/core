@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 27/04/2012
-   updated: 17/08/2012 */
+   updated: 15/03/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -128,6 +128,8 @@ void SCE_VGrid_Fill (SCE_SVoxelGrid *vg, const SCE_SLongRect3 *region,
                 memcpy (&vg->data[VOFFSET (vg, x, y, z)], pattern, vg->n_cmp);
         }
     }
+
+    vg->full_checked = vg->empty_checked = SCE_FALSE;
 }
 
 void SCE_VGrid_Copy (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
@@ -158,6 +160,8 @@ void SCE_VGrid_Copy (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
             }
         }
     }
+
+    dst->full_checked = dst->empty_checked = SCE_FALSE;
 }
 
 /* this function assumes n_cmp = 1 */
@@ -194,7 +198,41 @@ long SCE_VGrid_CopyStats (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
         }
     }
 
+    dst->full_checked = dst->empty_checked = SCE_FALSE;
+
     return diff;
+}
+void SCE_VGrid_CopyStats2 (const SCE_SLongRect3 *dst_region,SCE_SVoxelGrid *dst,
+                           const SCE_SLongRect3 *src_region,
+                           const SCE_SVoxelGrid *src, long diff[256])
+{
+    long dst_p1[3], dst_p2[3];
+    long src_p1[3], src_p2[3];
+    long x1, y1, z1, x2, y2, z2;
+    SCE_SLongRect3 default_dst_region, default_src_region;
+    SCEubyte *ptr1 = NULL, *ptr2 = NULL;
+
+    SCE_Rectangle3_Setl (&default_dst_region, 0, 0, 0, dst->w, dst->h, dst->d);
+    SCE_Rectangle3_Setl (&default_src_region, 0, 0, 0, src->w, src->h, src->d);
+    if (!dst_region) dst_region = &default_dst_region;
+    if (!src_region) src_region = &default_src_region;
+
+    SCE_Rectangle3_GetPointslv (dst_region, dst_p1, dst_p2);
+    SCE_Rectangle3_GetPointslv (src_region, src_p1, src_p2);
+
+    for (z1 = dst_p1[2], z2 = src_p1[2]; z1 < dst_p2[2]; z1++, z2++) {
+        for (y1 = dst_p1[1], y2 = src_p1[1]; y1 < dst_p2[1]; y1++, y2++) {
+            for (x1 = dst_p1[0], x2 = src_p1[0]; x1 < dst_p2[0]; x1++, x2++) {
+                ptr1 = &dst->data[VOFFSET (dst, x1, y1, z1)];
+                ptr2 = &src->data[VOFFSET (src, x2, y2, z2)];
+                diff[ptr1[0]]--;
+                diff[ptr2[0]]++;
+                ptr1[0] = ptr2[0];
+            }
+        }
+    }
+
+    dst->full_checked = dst->empty_checked = SCE_FALSE;
 }
 
 SCEubyte* SCE_VGrid_Offset (SCE_SVoxelGrid *vg, SCEulong x, SCEulong y,
@@ -214,7 +252,10 @@ int SCE_VGrid_IsEmpty (SCE_SVoxelGrid *vg, const SCE_SLongRect3 *region)
 
         if (!vg->empty_checked) {
             vg->empty_checked = SCE_TRUE;
+            vg->empty = SCE_FALSE;
             vg->empty = SCE_VGrid_IsEmpty (vg, NULL);
+            if (vg->empty)
+                return SCE_TRUE;
         }
 
         if (region)
@@ -248,7 +289,10 @@ int SCE_VGrid_IsFull (SCE_SVoxelGrid *vg, const SCE_SLongRect3 *region)
 
         if (!vg->full_checked) {
             vg->full_checked = SCE_TRUE;
+            vg->full = SCE_FALSE;
             vg->full = SCE_VGrid_IsFull (vg, NULL);
+            if (vg->full)
+                return SCE_TRUE;
         }
 
         if (region)

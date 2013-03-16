@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 27/04/2012
-   updated: 17/08/2012 */
+   updated: 15/03/2013 */
 
 #ifndef SCEVOXELGRID_H
 #define SCEVOXELGRID_H
@@ -59,6 +59,9 @@ void SCE_VGrid_Copy (const SCE_SLongRect3*, SCE_SVoxelGrid*,
                      const SCE_SLongRect3*, const SCE_SVoxelGrid*);
 long SCE_VGrid_CopyStats (const SCE_SLongRect3*, SCE_SVoxelGrid*,
                           const SCE_SLongRect3*, const SCE_SVoxelGrid*);
+void SCE_VGrid_CopyStats2 (const SCE_SLongRect3*, SCE_SVoxelGrid*,
+                           const SCE_SLongRect3*, const SCE_SVoxelGrid*,
+                           long[256]);
 
 SCEubyte* SCE_VGrid_Offset (SCE_SVoxelGrid*, SCEulong, SCEulong, SCEulong);
 

@@ -56,6 +56,7 @@ struct sce_svoxeloctreenode {
     int cached;            /* is \c grid on memory or does it need reloading
                               from \c file? */
     long in_volume;        /* number of voxels in the volume */
+    long *in;              /* number of voxels of each type */
     int material;          /* material ID if full */
 
     void *udata;           /* user data */
@@ -63,10 +64,15 @@ struct sce_svoxeloctreenode {
     SCE_SListIterator it, it2;
 };
 
+typedef enum {
+    SCE_VOCTREE_DENSITY_FIELD,
+    SCE_VOCTREE_MATERIAL
+} SCE_EVoxelOctreeUsage;
 
 typedef struct sce_svoxeloctree SCE_SVoxelOctree;
 struct sce_svoxeloctree {
     SCE_SVoxelOctreeNode root;
+    SCE_EVoxelOctreeUsage usage;
     size_t max_depth;
 
     long x, y, z;
@@ -95,7 +101,7 @@ void SCE_VOctree_DeleteChildren (SCE_SVoxelOctreeNode*);
 void SCE_VOctree_SetOrigin (SCE_SVoxelOctree*, long, long, long);
 void SCE_VOctree_SetDimensions (SCE_SVoxelOctree*, SCEulong, SCEulong,SCEulong);
 void SCE_VOctree_SetMaxDepth (SCE_SVoxelOctree*, size_t);
-
+void SCE_VOctree_SetUsage (SCE_SVoxelOctree*, SCE_EVoxelOctreeUsage);
 void SCE_VOctree_SetPrefix (SCE_SVoxelOctree*, const char*);
 
 void SCE_VOctree_SetFileSystem (SCE_SVoxelOctree*, SCE_SFileSystem*);
