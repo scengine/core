@@ -77,6 +77,7 @@ void SCE_VWorld_SetNumLevels (SCE_SVoxelWorld*, SCEuint);
 SCEuint SCE_VWorld_GetNumLevels (SCE_SVoxelWorld*);
 void SCE_VWorld_SetPrefix (SCE_SVoxelWorld*, const char*);
 void SCE_VWorld_SetUsage (SCE_SVoxelWorld*, SCE_EVoxelOctreeUsage);
+void SCE_VWorld_SetCreateTrees (SCE_SVoxelWorld*, int);
 
 void SCE_VWorld_SetFileSystem (SCE_SVoxelWorld*, SCE_SFileSystem*);
 void SCE_VWorld_SetFileCache (SCE_SVoxelWorld*, SCE_SFileCache*);

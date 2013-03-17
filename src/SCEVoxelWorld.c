@@ -158,6 +158,10 @@ void SCE_VWorld_SetUsage (SCE_SVoxelWorld *vw, SCE_EVoxelOctreeUsage usage)
 {
     vw->usage = usage;
 }
+void SCE_VWorld_SetCreateTrees (SCE_SVoxelWorld *vw, int c)
+{
+    vw->create_trees = c;
+}
 
 /**
  * \brief Must be called before any octree is added to the world
@@ -475,12 +479,14 @@ int SCE_VWorld_GetRegion (SCE_SVoxelWorld *vw, SCEuint level,
 {
     SCE_SList list;
     SCE_SListIterator *it = NULL;
+    int tmp;
 
     SCE_List_Init (&list);
+    tmp = vw->create_trees;
     vw->create_trees = SCE_FALSE;
     if (SCE_VWorld_FetchTrees (vw, level, region, &list) < 0)
         goto fail;
-    vw->create_trees = SCE_TRUE;
+    vw->create_trees = tmp;
 
     SCE_List_ForEach (it, &list) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
@@ -492,7 +498,7 @@ int SCE_VWorld_GetRegion (SCE_SVoxelWorld *vw, SCEuint level,
 
     return SCE_OK;
 fail:
-    vw->create_trees = SCE_TRUE;
+    vw->create_trees = tmp;
     SCE_List_Flush (&list);
     SCEE_LogSrc ();
     return SCE_ERROR;
@@ -503,12 +509,14 @@ SCE_VWorld_Set (SCE_SVoxelWorld *vw, SCEuint level,
 {
     SCE_SList list;
     SCE_SListIterator *it = NULL;
+    int tmp;
 
     SCE_List_Init (&list);
+    tmp = vw->create_trees;
     vw->create_trees = SCE_FALSE;
     if (SCE_VWorld_FetchTrees (vw, level, region, &list) < 0)
         goto fail;
-    vw->create_trees = SCE_TRUE;
+    vw->create_trees = tmp;
 
     SCE_List_ForEach (it, &list) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
@@ -521,7 +529,7 @@ SCE_VWorld_Set (SCE_SVoxelWorld *vw, SCEuint level,
 
     return SCE_OK;
 fail:
-    vw->create_trees = SCE_TRUE;
+    vw->create_trees = tmp;
     SCE_List_Flush (&list);
     SCEE_LogSrc ();
     return SCE_ERROR;
