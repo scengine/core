@@ -42,6 +42,8 @@ typedef enum {
 
 typedef void (*SCE_FVoxelOctreeFreeFunc)(void*);
 
+typedef struct sce_svoxeloctree SCE_SVoxelOctree;
+
 typedef struct sce_svoxeloctreenode SCE_SVoxelOctreeNode;
 struct sce_svoxeloctreenode {
     SCE_EVoxelOctreeStatus status;
@@ -62,6 +64,7 @@ struct sce_svoxeloctreenode {
     void *udata;           /* user data */
     SCE_FVoxelOctreeFreeFunc fun; /* not so fun, this is actually awful */
     SCE_SListIterator it, it2;
+    SCE_SVoxelOctree *vo;
 };
 
 typedef enum {
@@ -69,7 +72,6 @@ typedef enum {
     SCE_VOCTREE_MATERIAL
 } SCE_EVoxelOctreeUsage;
 
-typedef struct sce_svoxeloctree SCE_SVoxelOctree;
 struct sce_svoxeloctree {
     SCE_SVoxelOctreeNode root;
     SCE_EVoxelOctreeUsage usage;
@@ -119,6 +121,8 @@ const char* SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctreeNode*);
 SCE_EVoxelOctreeStatus SCE_VOctree_GetNodeStatus (const SCE_SVoxelOctreeNode*);
 SCEuint SCE_VOctree_GetNodeLevel (const SCE_SVoxelOctreeNode*);
 void SCE_VOctree_GetNodeOriginv (const SCE_SVoxelOctreeNode*,long*,long*,long*);
+SCE_SVoxelOctreeNode** SCE_VOctree_GetNodeChildren (SCE_SVoxelOctreeNode*);
+SCE_SVoxelOctree* SCE_VOctree_GetNodeOctree (SCE_SVoxelOctreeNode*);
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree*, long*, long*, long*);
 void SCE_VOctree_GetDimensionsv (const SCE_SVoxelOctree*, long*, long*, long*);
@@ -128,7 +132,9 @@ SCEulong SCE_VOctree_GetDepth (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetTotalWidth (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetTotalHeight (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetTotalDepth (const SCE_SVoxelOctree*);
+size_t SCE_VOctree_GetMaxDepth (const SCE_SVoxelOctree*);
 SCEulong SCE_VOctree_GetNumNodes (const SCE_SVoxelOctree*);
+SCE_SVoxelOctreeNode* SCE_VOctree_GetRootNode (SCE_SVoxelOctree*);
 
 int SCE_VOctree_LoadFile (SCE_SVoxelOctree*, SCE_SFile*);
 int SCE_VOctree_Load (SCE_SVoxelOctree*, const char*);

@@ -47,6 +47,7 @@ static void SCE_VOctree_InitNode (SCE_SVoxelOctreeNode *node)
     SCE_List_SetData (&node->it, node);
     SCE_List_InitIt (&node->it2);
     SCE_List_SetData (&node->it2, node);
+    node->vo = NULL;
 }
 static void SCE_VOctree_DeleteNode (SCE_SVoxelOctreeNode*);
 static void SCE_VOctree_ClearNode (SCE_SVoxelOctreeNode *node)
@@ -63,13 +64,15 @@ static void SCE_VOctree_ClearNode (SCE_SVoxelOctreeNode *node)
     SCE_List_Remove (&node->it);
     SCE_List_Remove (&node->it2);
 }
-static SCE_SVoxelOctreeNode* SCE_VOctree_CreateNode (void)
+static SCE_SVoxelOctreeNode* SCE_VOctree_CreateNode (SCE_SVoxelOctree *vo)
 {
     SCE_SVoxelOctreeNode *node = NULL;
     if (!(node = SCE_malloc (sizeof *node)))
         SCEE_LogSrc ();
-    else
+    else {
         SCE_VOctree_InitNode (node);
+        node->vo = vo;
+    }
     return node;
 }
 static void SCE_VOctree_DeleteNode (SCE_SVoxelOctreeNode *node)
@@ -91,6 +94,7 @@ SCE_VOctree_SetFilename (SCE_SVoxelOctreeNode *node, const char *fname)
 void SCE_VOctree_Init (SCE_SVoxelOctree *vo)
 {
     SCE_VOctree_InitNode (&vo->root);
+    vo->root.vo = vo;
     vo->usage = SCE_VOCTREE_DENSITY_FIELD;
     vo->max_depth = 0;
     vo->x = vo->y = vo->z = 0;
@@ -235,7 +239,14 @@ void SCE_VOctree_GetNodeOriginv (const SCE_SVoxelOctreeNode *node,
 {
     *x = node->x; *y = node->y; *z = node->z;
 }
-
+SCE_SVoxelOctreeNode** SCE_VOctree_GetNodeChildren (SCE_SVoxelOctreeNode *node)
+{
+    return node->children;
+}
+SCE_SVoxelOctree* SCE_VOctree_GetNodeOctree (SCE_SVoxelOctreeNode *node)
+{
+    return node->vo;
+}
 
 void SCE_VOctree_GetOriginv (const SCE_SVoxelOctree *vo, long *x, long *y,
                              long *z)
@@ -271,6 +282,10 @@ SCEulong SCE_VOctree_GetTotalDepth (const SCE_SVoxelOctree *vo)
 {
     return vo->d * (1 << vo->max_depth);
 }
+size_t SCE_VOctree_GetMaxDepth (const SCE_SVoxelOctree *vo)
+{
+    return vo->max_depth;
+}
 static SCEulong SCE_VOctree_Getnnodes (const SCE_SVoxelOctreeNode *node)
 {
     int i;
@@ -291,6 +306,10 @@ static SCEulong SCE_VOctree_Getnnodes (const SCE_SVoxelOctreeNode *node)
 SCEulong SCE_VOctree_GetNumNodes (const SCE_SVoxelOctree *vo)
 {
     return SCE_VOctree_Getnnodes (&vo->root);
+}
+SCE_SVoxelOctreeNode* SCE_VOctree_GetRootNode (SCE_SVoxelOctree *vo)
+{
+    return &vo->root;
 }
 
 static void SCE_VOctree_SetNodeGrid (SCE_SVoxelOctreeNode *node, SCEulong w,
@@ -369,7 +388,7 @@ SCE_VOctree_LoadNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         node->in_volume = SCE_Decode_StreamLong (fp);
         node->material = SCE_Decode_StreamLong (fp);
         for (i = 0; i < 8; i++) {
-            if (!(node->children[i] = SCE_VOctree_CreateNode ()))
+            if (!(node->children[i] = SCE_VOctree_CreateNode (vo)))
                 goto fail;
             SCE_VOctree_ConstructRect (node_rect, i, &rect);
             SCE_VOctree_LoadNode (vo, node->children[i], fp, &rect, level - 1);
@@ -892,7 +911,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             node->status = SCE_VOCTREE_NODE_NODE;
             /* create 8 children and recurse */
             for (i = 0; i < 8; i++) {
-                if (!(node->children[i] = SCE_VOctree_CreateNode ()))
+                if (!(node->children[i] = SCE_VOctree_CreateNode (vo)))
                     goto fail;
                 node->children[i]->status = SCE_VOCTREE_NODE_EMPTY;
                 node->children[i]->in_volume = 0;
@@ -943,7 +962,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             node->status = SCE_VOCTREE_NODE_NODE;
             /* create 8 children and recurse */
             for (i = 0; i < 8; i++) {
-                if (!(node->children[i] = SCE_VOctree_CreateNode ()))
+                if (!(node->children[i] = SCE_VOctree_CreateNode (vo)))
                     goto fail;
                 node->children[i]->status = SCE_VOCTREE_NODE_FULL;
                 node->children[i]->in_volume = vo->w * vo->h * vo->d;
@@ -985,7 +1004,7 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
             /* create 8 children and recurse */
             for (i = 0; i < 8; i++) {
-                if (!(node->children[i] = SCE_VOctree_CreateNode ()))
+                if (!(node->children[i] = SCE_VOctree_CreateNode (vo)))
                     goto fail;
                 node->children[i]->status = status;
                 node->children[i]->in_volume = in_volume;
