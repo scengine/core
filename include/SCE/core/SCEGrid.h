@@ -66,6 +66,7 @@ void SCE_Grid_SetData (SCE_SGrid*, void*);
 void* SCE_Grid_GetData (SCE_SGrid*);
 
 int SCE_Grid_Build (SCE_SGrid*);
+void SCE_Grid_FillupZeros (SCE_SGrid*);
 
 void SCE_Grid_Serialize (SCE_SGrid*, SCE_FSerializeGrid, void*);
 

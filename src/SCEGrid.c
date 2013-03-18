@@ -131,7 +131,7 @@ void* SCE_Grid_GetData (SCE_SGrid *grid)
 }
 
 
-static void SCE_Grid_FillupZeros (SCE_SGrid *grid)
+void SCE_Grid_FillupZeros (SCE_SGrid *grid)
 {
     unsigned char buf[256] = {0};
     int x, y, z;
@@ -267,6 +267,7 @@ void SCE_Grid_ToTexture (const SCE_SGrid *grid, SCE_STexData *tex,
     SCE_TexData_SetDataType (tex, type);
     SCE_TexData_SetDimensions (tex, grid->width, grid->height, grid->depth);
     SCE_TexData_SetPixelFormat (tex, pxf);
+    /* TODO: wtf red? what about REDI dude? */
     SCE_TexData_SetDataFormat (tex, SCE_IMAGE_RED);
     SCE_TexData_SetType (tex, SCE_IMAGE_3D);
     SCE_TexData_SetData (tex, grid->data, SCE_FALSE);
