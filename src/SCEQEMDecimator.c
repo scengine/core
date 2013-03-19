@@ -31,6 +31,7 @@ void SCE_QEMD_Init (SCE_SQEMMesh *mesh)
     mesh->original_vertices = NULL;
     mesh->vertices = NULL;
     mesh->indices = NULL;
+    mesh->interleaved = SCE_FALSE;
 }
 void SCE_QEMD_Clear (SCE_SQEMMesh *mesh)
 {
@@ -115,6 +116,7 @@ static void SCE_QEMD_InitQuadrics (SCE_SQEMMesh *mesh)
 }
 
 void SCE_QEMD_Set (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
+                   const SCEvertices *normals,
                    const SCEindices *indices, SCEuint n_vertices,
                    SCEuint n_indices)
 {
@@ -123,10 +125,35 @@ void SCE_QEMD_Set (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
     mesh->n_vertices = n_vertices;
     mesh->n_indices = n_indices;
     mesh->original_vertices = vertices;
+    mesh->interleaved = SCE_FALSE;
 
     memcpy (mesh->indices, indices, n_indices * sizeof *indices);
     for (i = 0; i < n_vertices; i++) {
         SCE_Vector3_Copy (mesh->vertices[i].v, &vertices[i * 3]);
+        if (normals)
+            SCE_Vector3_Copy (mesh->vertices[i].n, &normals[i * 3]);
+        mesh->vertices[i].index = -1;
+        mesh->vertices[i].final = 0;
+        mesh->vertices[i].anchor = SCE_FALSE;
+    }
+
+    SCE_QEMD_InitQuadrics (mesh);
+}
+void SCE_QEMD_SetInterleaved (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
+                              const SCEindices *indices, SCEuint n_vertices,
+                              SCEuint n_indices)
+{
+    size_t i;
+
+    mesh->n_vertices = n_vertices;
+    mesh->n_indices = n_indices;
+    mesh->original_vertices = vertices;
+    mesh->interleaved = SCE_TRUE;
+
+    memcpy (mesh->indices, indices, n_indices * sizeof *indices);
+    for (i = 0; i < n_vertices; i++) {
+        SCE_Vector3_Copy (mesh->vertices[i].v, &vertices[i * 6]);
+        SCE_Vector3_Copy (mesh->vertices[i].n, &vertices[i * 6 + 3]);
         mesh->vertices[i].index = -1;
         mesh->vertices[i].final = 0;
         mesh->vertices[i].anchor = SCE_FALSE;
@@ -172,7 +199,8 @@ static SCEuint SCE_QEMD_SolveVertexList (SCE_SQEMMesh *mesh, SCEuint v)
 }
 
 void SCE_QEMD_Get (SCE_SQEMMesh *mesh, SCEvertices *vertices,
-                   SCEindices *indices, SCEuint *n_vertices, SCEuint *n_indices)
+                   SCEvertices *normals, SCEindices *indices,
+                   SCEuint *n_vertices, SCEuint *n_indices)
 {
     size_t i, index;
     SCE_SQEMVertex *v = NULL;
@@ -187,12 +215,26 @@ void SCE_QEMD_Get (SCE_SQEMMesh *mesh, SCEvertices *vertices,
     /* vertices output is pretty straightforward, we just reassign them
        a new index */
     index = 0;
-    for (i = 0; i < mesh->n_vertices; i++) {
-        v = &mesh->vertices[i];
-        if (v->index == -1 && v->final) {
-            SCE_Vector3_Copy (&vertices[index * 3], v->v);
-            v->final = index;
-            index++;
+    if (mesh->interleaved) {
+        for (i = 0; i < mesh->n_vertices; i++) {
+            v = &mesh->vertices[i];
+            if (v->index == -1 && v->final) {
+                SCE_Vector3_Copy (&vertices[index * 6], v->v);
+                SCE_Vector3_Copy (&vertices[index * 6 + 3], v->n);
+                v->final = index;
+                index++;
+            }
+        }
+    } else {
+        for (i = 0; i < mesh->n_vertices; i++) {
+            v = &mesh->vertices[i];
+            if (v->index == -1 && v->final) {
+                SCE_Vector3_Copy (&vertices[index * 3], v->v);
+                if (normals)
+                    SCE_Vector3_Copy (&normals[index * 3], v->n);
+                v->final = index;
+                index++;
+            }
         }
     }
     *n_vertices = index;
@@ -232,7 +274,7 @@ struct edge {
     SCEindices v1, v2;
     float error;
     int anchored;
-    SCE_TVector3 v;
+    SCE_TVector3 v, n;
     SCE_TMatrix4 q;
 };
 
@@ -288,20 +330,27 @@ static void SCE_QEMD_ComputeError (SCE_SQEMMesh *mesh, Edge *edge)
     /* check for anchors */
     if (mesh->vertices[edge->v1].anchor) {
         SCE_Vector3_Copy (edge->v, mesh->vertices[edge->v1].v);
+        SCE_Vector3_Copy (edge->n, mesh->vertices[edge->v1].n);
         if (mesh->vertices[edge->v2].anchor)
             edge->anchored = SCE_TRUE;
         coef = 1000.0;
     } else if (mesh->vertices[edge->v2].anchor) {
         SCE_Vector3_Copy (edge->v, mesh->vertices[edge->v2].v);
+        SCE_Vector3_Copy (edge->n, mesh->vertices[edge->v2].n);
         coef = 1000.0;
     } else
     /* compute least error vertex position */
     if (SCE_Matrix4_Inverse (edge->q, m) && m[15] > SCE_EPSILONF) {
         SCE_Matrix4_GetTranslation (m, edge->v);
         SCE_Vector3_Operator1 (edge->v, /=, m[15]);
+        SCE_Vector3_Operator2v (edge->n, = 0.5 *, mesh->vertices[edge->v1].n,
+                                + 0.5 *, mesh->vertices[edge->v2].n);
+        /* NOTE: renormalize edge->n ? */
     } else {
         SCE_Vector3_Operator2v (edge->v, = 0.5 *, mesh->vertices[edge->v1].v,
                                 + 0.5 *, mesh->vertices[edge->v2].v);
+        SCE_Vector3_Operator2v (edge->n, = 0.5 *, mesh->vertices[edge->v1].n,
+                                + 0.5 *, mesh->vertices[edge->v2].n);
         /* TODO: choose between v1, v2 and (v1 + v2) / 2 */
     }
 

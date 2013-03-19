@@ -32,7 +32,7 @@ extern "C" {
 typedef struct sce_sqemvertex SCE_SQEMVertex;
 struct sce_sqemvertex {
     SCE_TMatrix4 q;
-    SCE_TVector3 v;
+    SCE_TVector3 v, n;
     long index;                 /* in case this vertex has been merged, index
                                    to the new vertex, -1 otherwise */
     SCEuint final;
@@ -50,6 +50,8 @@ struct sce_sqemmesh {
     const SCEvertices *original_vertices;
     SCE_SQEMVertex *vertices;
     SCEindices *indices;
+
+    int interleaved;
 };
 
 void SCE_QEMD_Init (SCE_SQEMMesh*);
@@ -60,10 +62,13 @@ void SCE_QEMD_SetMaxIndices (SCE_SQEMMesh*, SCEuint);
 
 int SCE_QEMD_Build (SCE_SQEMMesh*);
 
-void SCE_QEMD_Set (SCE_SQEMMesh*, const SCEvertices*, const SCEindices*,
-                   SCEuint, SCEuint);
+void SCE_QEMD_Set (SCE_SQEMMesh*, const SCEvertices*, const SCEvertices*,
+                   const SCEindices*, SCEuint, SCEuint);
+void SCE_QEMD_SetInterleaved (SCE_SQEMMesh*, const SCEvertices*,
+                              const SCEindices*, SCEuint, SCEuint);
 void SCE_QEMD_AnchorVertices (SCE_SQEMMesh*, const SCEindices*, SCEuint);
-void SCE_QEMD_Get (SCE_SQEMMesh*, SCEvertices*, SCEindices*, SCEuint*,SCEuint*);
+void SCE_QEMD_Get (SCE_SQEMMesh*, SCEvertices*, SCEvertices*, SCEindices*,
+                   SCEuint*,SCEuint*);
 
 void SCE_QEMD_Process (SCE_SQEMMesh*, SCEuint);
 
