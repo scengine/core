@@ -494,11 +494,11 @@ void SCE_QEMD_Process (SCE_SQEMMesh *mesh, SCEuint n)
 {
     int i, n_candidates;
     Edge candidates[SCE_QEMD_NUM_CANDIDATES];
-    SCEuint num = n;
+    SCEuint num = n, infinite = 0;
 
     while (n) {
-        /* TODO: some stupid check */
-        if (mesh->n_indices < 42)
+        /* TODO: some stupid checks */
+        if (mesh->n_indices < 42 || infinite >= 10)
             break;
 
         /* pick random edges */
@@ -521,15 +521,21 @@ void SCE_QEMD_Process (SCE_SQEMMesh *mesh, SCEuint n)
         }
 
 #define THRESHOLD (SCE_QEMD_NUM_CANDIDATES / 2)
-        if (n_candidates < THRESHOLD)
+        if (n_candidates < THRESHOLD) {
+            infinite++;
             continue;
+        }
 
         /* compute their cost */
         for (i = 0; i < n_candidates; i++)
             SCE_QEMD_ComputeError (mesh, &candidates[i]);
 
-        if (SCE_QEMD_CollapseLeastErrorEdge (mesh, n_candidates, candidates))
+        if (SCE_QEMD_CollapseLeastErrorEdge (mesh, n_candidates, candidates)) {
+            infinite = 0;
             n--;
+        } else
+            infinite++;
+
     }
 
     if (num) {
