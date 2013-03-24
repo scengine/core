@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 25/07/2009
-   updated: 09/03/2013 */
+   updated: 25/03/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -605,7 +605,7 @@ SCE_SGeometryArray* SCE_Geometry_AddArrayRecDup (SCE_SGeometry *geom,
                                                  SCE_SGeometryArray *array,
                                                  int canfree)
 {
-    SCE_SGeometryArray *root = NULL, *a = array;
+    SCE_SGeometryArray *last = NULL, *root = NULL, *a = array;
     while (a) {
         SCE_SGeometryArray *new = SCE_Geometry_AddArrayDup (geom, a, canfree);
         if (!new) {
@@ -614,8 +614,9 @@ SCE_SGeometryArray* SCE_Geometry_AddArrayRecDup (SCE_SGeometry *geom,
         }
         if (!root)
             root = new;
-        else
-            SCE_Geometry_AttachArray (root, new);
+        if (last)
+            SCE_Geometry_AttachArray (last, new);
+        last = new;
         a = a->child;
     }
     return root;
