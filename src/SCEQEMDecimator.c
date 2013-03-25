@@ -116,9 +116,9 @@ static void SCE_QEMD_InitQuadrics (SCE_SQEMMesh *mesh)
 }
 
 void SCE_QEMD_Set (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
-                   const SCEvertices *normals,
-                   const SCEindices *indices, SCEuint n_vertices,
-                   SCEuint n_indices)
+                   const SCEvertices *normals, const SCEubyte *colors,
+                   const SCEubyte *anchors, const SCEindices *indices,
+                   SCEuint n_vertices, SCEuint n_indices)
 {
     size_t i;
 
@@ -132,9 +132,14 @@ void SCE_QEMD_Set (SCE_SQEMMesh *mesh, const SCEvertices *vertices,
         SCE_Vector3_Copy (mesh->vertices[i].v, &vertices[i * 3]);
         if (normals)
             SCE_Vector3_Copy (mesh->vertices[i].n, &normals[i * 3]);
+        if (colors)
+            mesh->vertices[i].color = colors[i];
         mesh->vertices[i].index = -1;
         mesh->vertices[i].final = 0;
-        mesh->vertices[i].anchor = SCE_FALSE;
+        if (anchors)
+            mesh->vertices[i].anchor = anchors[i];
+        else
+            mesh->vertices[i].anchor = SCE_FALSE;
     }
 
     SCE_QEMD_InitQuadrics (mesh);
@@ -199,7 +204,7 @@ static SCEuint SCE_QEMD_SolveVertexList (SCE_SQEMMesh *mesh, SCEuint v)
 }
 
 void SCE_QEMD_Get (SCE_SQEMMesh *mesh, SCEvertices *vertices,
-                   SCEvertices *normals, SCEindices *indices,
+                   SCEvertices *normals, SCEubyte *colors, SCEindices *indices,
                    SCEuint *n_vertices, SCEuint *n_indices)
 {
     size_t i, index;
@@ -232,6 +237,8 @@ void SCE_QEMD_Get (SCE_SQEMMesh *mesh, SCEvertices *vertices,
                 SCE_Vector3_Copy (&vertices[index * 3], v->v);
                 if (normals)
                     SCE_Vector3_Copy (&normals[index * 3], v->n);
+                if (colors)
+                    colors[index] = v->color;
                 v->final = index;
                 index++;
             }
