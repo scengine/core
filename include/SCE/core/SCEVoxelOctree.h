@@ -61,8 +61,8 @@ struct sce_svoxeloctreenode {
     long *in;              /* number of voxels of each type */
     int material;          /* material ID if full */
 
-    void *udata;           /* user data */
-    SCE_FVoxelOctreeFreeFunc fun; /* not so fun, this is actually awful */
+    void *udata, *udata2;               /* user data */
+    SCE_FVoxelOctreeFreeFunc fun, fun2; /* not so fun, this is actually awful */
     SCE_SListIterator it, it2;
     SCE_SVoxelOctree *vo;
 };
@@ -116,6 +116,10 @@ void SCE_VOctree_SetFreeFunc (SCE_SVoxelOctree*, SCE_FVoxelOctreeFreeFunc);
 void SCE_VOctree_SetNodeData (SCE_SVoxelOctreeNode*, void*);
 void* SCE_VOctree_GetNodeData (SCE_SVoxelOctreeNode*);
 void SCE_VOctree_SetNodeFreeFunc (SCE_SVoxelOctreeNode*,
+                                  SCE_FVoxelOctreeFreeFunc);
+void SCE_VOctree_SetNodeData2 (SCE_SVoxelOctreeNode*, void*);
+void* SCE_VOctree_GetNodeData2 (SCE_SVoxelOctreeNode*);
+void SCE_VOctree_SetNodeFreeFunc2 (SCE_SVoxelOctreeNode*,
                                   SCE_FVoxelOctreeFreeFunc);
 const char* SCE_VOctree_GetNodeFilename (const SCE_SVoxelOctreeNode*);
 SCE_EVoxelOctreeStatus SCE_VOctree_GetNodeStatus (const SCE_SVoxelOctreeNode*);
