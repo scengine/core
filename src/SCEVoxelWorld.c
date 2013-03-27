@@ -755,13 +755,14 @@ int SCE_VWorld_GenerateAllLOD (SCE_SVoxelWorld *vw, SCEuint level,
  * \brief Fills a list with trees that are inside a given region
  * \param vw a voxel world
  * \param level LOD of the region coordinates
- * \param region region
+ * \param region region in \c level's space
  * \param l list to fill, will be filled with SCE_SVoxelWorldTree elements
  *
  * If you call this function twice on the same voxel world, the list filled with
  * the first call might be corrupted but you can still access it safely.
  *
- * Trees inside \p region that do not exist will be created and set empty.
+ * Trees inside \p region that do not exist will be created and set empty by
+ * default, to change this behavior see SCE_VWorld_SetCreateTrees().
  * \return SCE_ERROR on error, SCE_OK otherwise
  */
 int SCE_VWorld_FetchTrees (SCE_SVoxelWorld *vw, SCEuint level,
@@ -772,6 +773,7 @@ int SCE_VWorld_FetchTrees (SCE_SVoxelWorld *vw, SCEuint level,
     SCE_SVoxelWorldTree *wt = NULL;
 
     r = *region;
+    /* set in level0's space */
     SCE_Rectangle3_Mull (&r, 1 << level, 1 << level, 1 << level);
     SCE_Rectangle3_GetPointslv (&r, p1, p2);
 
@@ -786,6 +788,7 @@ int SCE_VWorld_FetchTrees (SCE_SVoxelWorld *vw, SCEuint level,
     if (p2[2] < 0) p2[2] += 1 - d;
 
     SCE_Rectangle3_Setlv (&r, p1, p2);
+    /* 1 unit = 1 octree */
     SCE_Rectangle3_Divl (&r, w, h, d);
     SCE_Rectangle3_GetPointslv (&r, p1, p2);
 
