@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/08/2009
-   updated: 07/08/2009 */
+   updated: 06/04/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEGeometry.h"
@@ -34,15 +34,16 @@ static int is_init = SCE_FALSE;
 #define p6  1.0f, -1.0f,  1.0f
 #define p7 -1.0f, -1.0f,  1.0f
 
+/* ccw triangles */
 static SCEvertices pos_indiv_triangle[] = {
     /* front Z */
-    p0, p1, p2, p2, p3, p0,
+    p0, p3, p2, p2, p1, p0,
     /* back Z */
-    p4, p5, p6, p6, p7, p4,
+    p4, p7, p6, p6, p5, p4,
     /* front X */
-    p1, p2, p5, p5, p6, p1,
+    p0, p7, p4, p4, p3, p0,
     /* back X */
-    p0, p3, p4, p4, p7, p0,
+    p1, p2, p5, p5, p6, p1,
     /* front Y */
     p0, p1, p6, p6, p7, p0,
     /* back Y */
@@ -104,6 +105,7 @@ static SCEindices indices_lines[] = {
     5, 4,  5, 2,  6, 1,  0, 7
 };
 
+/* cw triangles */
 static SCEindices indices_triangles[] = {
     1, 0, 2,  2, 0, 3,
     3, 0, 4,  4, 0, 7,
