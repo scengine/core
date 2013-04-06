@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2010  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/08/2009
-   updated: 07/08/2009 */
+   updated: 06/04/2013 */
 
 #ifndef SCEBOXGEOMETRY_H
 #define SCEBOXGEOMETRY_H
@@ -37,13 +37,22 @@ enum sce_eboxgeomtexcoordmode {
 };
 typedef enum sce_eboxgeomtexcoordmode SCE_EBoxGeomTexCoordMode;
 
+enum sce_eboxgeomnormalmode {
+    SCE_BOX_NONE_NORMALS,
+    SCE_BOX_SHARP_NORMALS,
+    SCE_BOX_SMOOTH_NORMALS
+};
+typedef enum sce_eboxgeomnormalmode SCE_EBoxGeomNormalMode;
+
 int SCE_Init_BoxGeom (void);
 void SCE_Quit_BoxGeom (void);
 
 int SCE_BoxGeom_Generate (SCE_SBox*, SCE_EPrimitiveType,
-                          SCE_EBoxGeomTexCoordMode, SCE_SGeometry*);
+                          SCE_EBoxGeomTexCoordMode, SCE_EBoxGeomNormalMode,
+                          SCE_SGeometry*);
 SCE_SGeometry* SCE_BoxGeom_Create (SCE_SBox*, SCE_EPrimitiveType,
-                                   SCE_EBoxGeomTexCoordMode);
+                                   SCE_EBoxGeomTexCoordMode,
+                                   SCE_EBoxGeomNormalMode);
 
 #ifdef __cplusplus
 } /* extern "C" */

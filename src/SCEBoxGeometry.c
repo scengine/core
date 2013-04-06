@@ -34,6 +34,13 @@ static int is_init = SCE_FALSE;
 #define p6  1.0f, -1.0f,  1.0f
 #define p7 -1.0f, -1.0f,  1.0f
 
+#define n_px  1.0f,  0.0f,  0.0f
+#define n_nx -1.0f,  0.0f,  0.0f
+#define n_py  0.0f,  1.0f,  0.0f
+#define n_ny  0.0f, -1.0f,  0.0f
+#define n_pz  0.0f,  0.0f,  1.0f
+#define n_nz  0.0f,  0.0f, -1.0f
+
 /* ccw triangles */
 static SCEvertices pos_indiv_triangle[] = {
     /* front Z */
@@ -48,6 +55,21 @@ static SCEvertices pos_indiv_triangle[] = {
     p0, p1, p6, p6, p7, p0,
     /* back Y */
     p2, p3, p4, p4, p5, p2
+};
+
+static SCEvertices nor_indiv_triangle[] = {
+    /* front Z */
+    n_nz, n_nz, n_nz, n_nz, n_nz, n_nz,
+    /* back Z */
+    n_pz, n_pz, n_pz, n_pz, n_pz, n_pz,
+    /* front X */
+    n_nx, n_nx, n_nx, n_nx, n_nx, n_nx,
+    /* back X */
+    n_px, n_px, n_px, n_px, n_px, n_px,
+    /* front Y */
+    n_ny, n_ny, n_ny, n_ny, n_ny, n_ny,
+    /* back Y */
+    n_py, n_py, n_py, n_py, n_py, n_py
 };
 
 static SCEvertices texcoord_interior_triangle[] = {
@@ -208,15 +230,17 @@ static void SCE_BoxGeom_MulIndiv (SCEvertices *v, SCE_SBox *box)
 }
 static int SCE_BoxGeom_GenTriangles (SCE_SBox *box,
                                      SCE_EBoxGeomTexCoordMode mode,
+                                     SCE_EBoxGeomNormalMode nmode,
                                      SCE_SGeometry *geom)
 {
-    SCEvertices *v = NULL, *t = NULL;
+    SCEvertices *v = NULL, *t = NULL, *n = NULL;
     SCEindices *i = NULL;
     int indiv = SCE_TRUE;
     int t_size = 2;
 
     SCE_Geometry_SetNumVertices (geom, 36);
     v = pos_indiv_triangle;
+
     switch (mode) {
     case SCE_BOX_EXTERIOR_TEXCOORD:
         t = texcoord_exterior_triangle;
@@ -226,14 +250,33 @@ static int SCE_BoxGeom_GenTriangles (SCE_SBox *box,
         break;
     case SCE_BOX_CUBEMAP_TEXCOORD:
         t = texcoord_cubemap;
-    case SCE_BOX_NONE_TEXCOORD:
+    default:;
+    }
+
+    switch (nmode) {
+    case SCE_BOX_SMOOTH_NORMALS:
+        /* TODO: not supported yet */
+        n = NULL; /*nor_smoothed_triangle;*/
+        break;
+    case SCE_BOX_SHARP_NORMALS:
+        n = nor_indiv_triangle;
+        break;
+    default:;
+    }
+
+
+    if (mode == SCE_BOX_NONE_TEXCOORD && nmode != SCE_BOX_SHARP_NORMALS) {
         SCE_Geometry_SetNumVertices (geom, 8);
         SCE_Geometry_SetNumIndices (geom, 36);
         v = SCE_Box_GetPoints (box);
+        if (nmode != SCE_BOX_NONE_NORMALS)
+            n = texcoord_cubemap;
         i = indices_triangles;
         indiv = SCE_FALSE;
         t_size = 3;
     }
+
+
     {
         SCE_SGeometryArray array, *ap = NULL;
         SCE_Geometry_InitArray (&array);
@@ -248,6 +291,13 @@ static int SCE_BoxGeom_GenTriangles (SCE_SBox *box,
             SCE_Geometry_InitArray (&array);
             SCE_Geometry_SetArrayData (&array, SCE_TEXCOORD0, SCE_VERTICES_TYPE,
                                        0, t_size, t, SCE_FALSE);
+            if (!SCE_Geometry_AddArrayDupDup (geom, &array, SCE_FALSE))
+                goto fail;
+        }
+        if (n) {
+            SCE_Geometry_InitArray (&array);
+            SCE_Geometry_SetArrayData (&array, SCE_NORMAL, SCE_VERTICES_TYPE,
+                                       0, 3, n, SCE_FALSE);
             if (!SCE_Geometry_AddArrayDupDup (geom, &array, SCE_FALSE))
                 goto fail;
         }
@@ -275,7 +325,8 @@ fail:
  * \sa SCE_BoxGeom_Create()
  */
 int SCE_BoxGeom_Generate (SCE_SBox *box, SCE_EPrimitiveType prim,
-                          SCE_EBoxGeomTexCoordMode mode, SCE_SGeometry *geom)
+                          SCE_EBoxGeomTexCoordMode mode,
+                          SCE_EBoxGeomNormalMode nmode, SCE_SGeometry *geom)
 {
     switch (prim) {
     case SCE_POINTS:
@@ -290,7 +341,7 @@ int SCE_BoxGeom_Generate (SCE_SBox *box, SCE_EPrimitiveType prim,
         break;
     case SCE_TRIANGLES:
         SCE_Geometry_SetPrimitiveType (geom, SCE_TRIANGLES);
-        if (SCE_BoxGeom_GenTriangles (box, mode, geom) < 0)
+        if (SCE_BoxGeom_GenTriangles (box, mode, nmode, geom) < 0)
             goto fail;
     }
     return SCE_OK;
@@ -308,13 +359,14 @@ fail:
  * \sa SCE_BoxGeom_Generate()
  */
 SCE_SGeometry* SCE_BoxGeom_Create (SCE_SBox *box, SCE_EPrimitiveType prim,
-                                   SCE_EBoxGeomTexCoordMode mode)
+                                   SCE_EBoxGeomTexCoordMode mode,
+                                   SCE_EBoxGeomNormalMode nmode)
 {
     SCE_SGeometry * geom = NULL;
     if (!(geom = SCE_Geometry_Create ()))
         SCEE_LogSrc ();
     else {
-        if (SCE_BoxGeom_Generate (box, prim, mode, geom) < 0) {
+        if (SCE_BoxGeom_Generate (box, prim, mode, nmode, geom) < 0) {
             SCE_Geometry_Delete (geom), geom = NULL;
             SCEE_LogSrc ();
         }
