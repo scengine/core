@@ -225,7 +225,7 @@ static void SCE_BoxGeom_MulIndiv (SCEvertices *v, SCE_SBox *box)
     coeff[1] = SCE_Box_GetHeight (box) * 0.5f;
     coeff[2] = SCE_Box_GetDepth (box) * 0.5f;
     SCE_Box_GetCenterv (box, center);
-    for (i = 0; i < 24; i++)
+    for (i = 0; i < 36; i++)
         SCE_Vector3_Operator2v (&v[i * 3], *=, coeff, +, center);
 }
 static int SCE_BoxGeom_GenTriangles (SCE_SBox *box,
