@@ -155,7 +155,7 @@ int SCE_TexData_SetImage (SCE_STexData *d, SCE_SImage *img, int canfree)
     memcpy (d->data, SCE_Image_GetData (img), d->data_size);
     d->img = img;
     d->canfree = canfree;
-    d->target = SCE_Image_GetType (img);
+    d->type = d->target = SCE_Image_GetType (img);
     d->level = SCE_Image_GetMipmapLevel (img);
     d->w = SCE_Image_GetWidth (img);
     d->h = SCE_Image_GetHeight (img);
@@ -397,4 +397,65 @@ void SCE_TexData_GetModified3 (const SCE_STexData *td, int *x, int *y, int *z,
 int SCE_TexData_IsModified (const SCE_STexData *d)
 {
     return d->modified;
+}
+
+static int SCE_TexData_Diff (const SCE_STexData *td1, const SCE_STexData *td2)
+{
+#define COMP(f) (f(td1) == f(td2))
+    return (COMP (SCE_TexData_GetType) &&
+            COMP (SCE_TexData_GetWidth) &&
+            COMP (SCE_TexData_GetHeight) &&
+            COMP (SCE_TexData_GetDepth) &&
+            COMP (SCE_TexData_GetPixelFormat) &&
+            COMP (SCE_TexData_GetDataFormat) &&
+            COMP (SCE_TexData_GetDataType));
+}
+
+/* TODO: move this to the image module */
+SCE_STexData* SCE_TexData_Merge2D (const SCE_STexData **tds, size_t n_tds)
+{
+    size_t i, size, total_size;
+    SCE_STexData *new = NULL;
+    SCEubyte *ptr = NULL;
+
+    /* check that they are all in the same format/dimensions */
+    for (i = 1; i < n_tds; i++) {
+        if (!SCE_TexData_Diff (tds[0], tds[i])) {
+            SCEE_Log (SCE_INVALID_ARG);
+            SCEE_LogMsg ("merging texdata differ in size or format\n");
+            return NULL;
+        }
+    }
+
+    if (SCE_TexData_GetType (tds[0]) != SCE_IMAGE_2D) {
+        SCEE_Log (SCE_INVALID_ARG);
+        SCEE_LogMsg ("expecting the texdata to be 2D images\n");
+        return NULL;
+    }
+
+    if (!(new = SCE_TexData_Create ())) goto fail;
+
+    /* making the data */
+    SCE_TexData_Copy (new, tds[0]);
+    new->img = NULL;
+    new->d = n_tds;
+    new->target = new->type = SCE_IMAGE_3D;
+    new->level = 0;
+    new->data_user = SCE_FALSE;
+
+    size = tds[0]->data_size;
+    total_size = n_tds * size;
+
+    if (!(new->data = SCE_malloc (total_size)))
+        goto fail;
+
+    ptr = new->data;
+    for (i = 0; i < n_tds; i++)
+        memcpy (&ptr[i * size], tds[i]->data, size);
+
+    return new;
+fail:
+    SCEE_LogSrc ();
+    SCE_TexData_Delete (new);
+    return NULL;
 }

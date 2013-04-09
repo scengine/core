@@ -109,6 +109,8 @@ void SCE_TexData_GetModified3 (const SCE_STexData*, int*, int*, int*,
                                int*, int*, int*);
 int SCE_TexData_IsModified (const SCE_STexData*);
 
+SCE_STexData* SCE_TexData_Merge2D (const SCE_STexData**, size_t);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
