@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 19/04/2012
-   updated: 22/04/2012 */
+   updated: 11/04/2013 */
 
 #ifndef SCEFORESTTREE_H
 #define SCEFORESTTREE_H
@@ -57,7 +57,7 @@ struct sce_sforesttreenode {
     /* final geom */
     size_t n_vertices2;
     size_t n_indices2;
-    SCE_SListIterator it;
+    SCE_SListIterator it, it2;
 };
 
 typedef struct sce_sforesttree SCE_SForestTree;
@@ -86,6 +86,16 @@ struct sce_sforesttree {
     SCEuint vertex_counter;     /* Internal use for vertex arrays generation */
 
     /*SCE_SGeometryArrayUser u1, u2, u3, u4;*/
+};
+
+/* generation parameters */
+typedef struct sce_sforesttreeparameters SCE_SForestTreeParameters;
+struct sce_sforesttreeparameters {
+    float grow_dist;            /* growing distance factor */
+    float kill_dist;            /* points p as |p - closest_node| < kill_dist
+                                   will be removed */
+    float radius;               /* radius of influence */
+    long max_nodes;             /* maximum number of nodes to generate */
 };
 
 void SCE_FTree_InitNode (SCE_SForestTreeNode*);
@@ -129,6 +139,10 @@ SCE_SGeometry* SCE_FTree_GetTreeGeometry (SCE_SForestTree*);
 SCE_SGeometry* SCE_FTree_GetFinalGeometry (SCE_SForestTree*);
 size_t SCE_FTree_GetBushNumInstances (SCE_SForestTree*, SCEuint);
 float* SCE_FTree_GetBushMatrix (SCE_SForestTree*, SCEuint, SCEuint);
+
+int SCE_FTree_SpaceColonization (SCE_SForestTree*,
+                                 const SCE_SForestTreeParameters*,
+                                 const SCE_TVector3, SCE_TVector3*, size_t);
 
 #ifdef __cplusplus
 } /* extern "C" */

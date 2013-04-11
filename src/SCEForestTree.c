@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
     SCEngine - A 3D real time rendering engine written in the C language
-    Copyright (C) 2006-2012  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
+    Copyright (C) 2006-2013  Antony Martin <martin(dot)antony(at)yahoo(dot)fr>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 19/04/2012
-   updated: 21/04/2012 */
+   updated: 11/04/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -49,6 +49,8 @@ void SCE_FTree_InitNode (SCE_SForestTreeNode *node)
     node->n_vertices2 = node->n_indices2 = 0;
     SCE_List_InitIt (&node->it);
     SCE_List_SetData (&node->it, node);
+    SCE_List_InitIt (&node->it2);
+    SCE_List_SetData (&node->it2, node);
 }
 void SCE_FTree_ClearNode (SCE_SForestTreeNode *node)
 {
@@ -556,6 +558,37 @@ void SCE_FTree_UpdateTreeGeometry (SCE_SForestTree *ft)
 
 
 
+#if 0
+/* generate wireframe geometry of the tree (just one segment per branch) */
+static void SCE_FTree_UpdateFinalAux (SCE_SForestTree *ft, SCE_SForestTreeNode *node)
+{
+    int j;
+    SCEvertices *v = ft->vertices;
+    SCEindices *i = ft->indices;
+    if (node->parent) {
+        /* generate a segment */
+        size_t i1 = ft->vertex_counter;
+        size_t i2 = ft->index_counter;
+        SCE_Matrix4x3_GetTranslation (node->parent->matrix, &v[i1 * V_SIZE]);
+        SCE_Matrix4x3_GetTranslation (node->matrix, &v[(i1 + 1) * V_SIZE]);
+        i[i2] = i1; i[i2 + 1] = i1 + 1;
+        ft->vertex_counter += 2;
+        ft->index_counter += 2;
+    }
+    for (j = 0; j < node->n_children; j++)
+        SCE_FTree_UpdateFinalAux (ft, node->children[j]);
+}
+void SCE_FTree_UpdateFinalGeometry2 (SCE_SForestTree *ft)
+{
+    ft->vertex_counter = 0;
+    ft->index_counter = 0;
+    SCE_FTree_UpdateFinalAux (ft, &ft->root);
+    SCE_Geometry_SetNumVertices (&ft->final_geom, ft->vertex_counter);
+    SCE_Geometry_SetNumIndices (&ft->final_geom, ft->index_counter);
+    SCE_Geometry_SetPrimitiveType (&ft->final_geom, SCE_LINES);
+}
+#endif
+
 void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
 {
     size_t i, j;
@@ -585,6 +618,10 @@ void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
         SCE_Vector3_Copy (z, &ft->matrix_data[i * 15 + 9]);
         SCE_Vector3_Normalize (z);
         SCE_Line3_SetNormal (&l, z);
+#if 0
+        if (fabsf (SCE_Vector3_Dot (p.n, z)) < 0.01)
+            SCEE_SendMsg ("too perpendicular\n");
+#endif
 
         for (j = 0; j < ft->npoly_data[i] + 1; j++) {
             SCE_TVector3 pos, posnorm;
@@ -746,3 +783,165 @@ float* SCE_FTree_GetBushMatrix (SCE_SForestTree *ft, SCEuint bush, SCEuint offse
 {
     return &ft->bushes[bush][offset * 4 * 3];
 }
+
+
+/**
+ * \brief 
+ * 
+ * \param ft 
+ * \param param parameters
+ * \param origin origin of the root
+ * \param p point cloud
+ * \param n number of points
+ * 
+ * \return 
+ */
+int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
+                                 const SCE_SForestTreeParameters *param,
+                                 const SCE_TVector3 origin, SCE_TVector3 *p,
+                                 size_t n)
+{
+    long i;
+    SCE_SList nodes, attracted;
+    SCE_SListIterator *it = NULL, *pro = NULL;
+    int run = SCE_TRUE;
+    long n_nodes = 0;
+
+    SCE_List_Init (&nodes);
+
+    /* init root */
+    SCE_Matrix4x3_Translatev (ft->root.matrix, origin);
+    SCE_List_Appendl (&nodes, &ft->root.it);
+
+    while (run) {
+        /* for each point */
+        SCE_List_Init (&attracted);
+
+        for (i = 0; i < n; i++) {
+            float min_d = -1.0;
+            SCE_SForestTreeNode *closest = NULL;
+            SCE_TVector3 pos;
+
+            /* for each node */
+            SCE_List_ForEachProtected (pro, it, &nodes) {
+                /* find the closest */
+                SCE_SForestTreeNode *node = SCE_List_GetData (it);
+                SCE_TVector3 diff;
+                float d;
+
+                if (node->n_children == SCE_MAX_FTREE_DEGREE) {
+                    SCE_List_Remove (&node->it);
+                    continue;
+                }
+
+                SCE_Matrix4x3_GetTranslation (node->matrix, pos);
+                SCE_Vector3_Operator2v (diff, =, pos, -, p[i]);
+                d = SCE_Vector3_Dot (diff, diff); /* squared distance */
+                if (d < param->kill_dist) {
+                    /* remove attraction point from the cloud */
+                    SCE_Vector3_Copy (p[i], p[n - 1]);
+                    closest = NULL;
+                    n--;
+                    i--;
+                    break;
+                } else if (d < param->radius &&
+                           (min_d < 0.0 || d < min_d)) {
+                    /* attraction point is valid */
+                    min_d = d;
+                    closest = node;
+                }
+            }
+
+            if (closest) {
+                /* add attraction */
+                SCE_TVector3 dir;
+                SCE_Matrix4x3_GetTranslation (closest->matrix, pos);
+                SCE_Vector3_Operator2v (dir, =, p[i], -, pos);
+                SCE_Vector3_Normalize (dir);
+                SCE_Vector3_Operator1v (closest->plane, +=, dir);
+                closest->n_vertices1 = 1;
+                SCE_List_Remove (&closest->it2);
+                SCE_List_Appendl (&attracted, &closest->it2);
+            }
+        }
+
+        run = SCE_FALSE;
+
+        /* TODO: remove nodes with max children... also remove nodes which dont have any attraction */
+
+        /* for each node with an attraction vector */
+        SCE_List_ForEachProtected (pro, it, &attracted) {
+            SCE_SForestTreeNode *parent = SCE_List_GetData (it);
+            SCE_SForestTreeNode *node = NULL;
+            SCE_TVector3 b1, b2, b3;
+            SCE_TMatrix4x3 rot;
+
+            /* stop when there's no longer any parent to expand */
+            run = SCE_TRUE;
+
+            if (!(node = SCE_FTree_CreateNode ()))
+                goto fail;
+
+            /* compute matrix of the new node */
+            SCE_Vector3_Normalize (parent->plane);
+
+            SCE_Matrix4x3_GetBase (parent->matrix, b1, b2, b3);
+            SCE_Vector3_Normalize (b3);
+            SCE_Vector3_Copy (b1, b3);
+            SCE_Vector3_Copy (b2, parent->plane);
+            if (SCE_Vector3_Collinear (b3, parent->plane))
+                SCE_Matrix4x3_Copy (node->matrix, parent->matrix);
+            else {
+                SCE_Matrix4x3_Rotation (rot, b3, parent->plane);
+                SCE_Matrix4x3_Mul (rot, parent->matrix, node->matrix);
+            }
+            SCE_Vector3_Operator1v (b3, = param->grow_dist *, parent->plane);
+            SCE_Matrix4x3_GetTranslation (parent->matrix, b2);
+            SCE_Vector3_Operator1v (b3, +=, b2);
+            SCE_Matrix4x3_SetTranslation (node->matrix, b3);
+
+            node->distance = param->grow_dist;
+
+            /* check that the node is far enough from its parent's parent,
+               it would otherwise create a plan perpendicular to the node
+               direction vector, which would lead to wrong vertex projection
+               onto the plane */
+            /* TODO: I should actually check the angle and not the distance
+                     itself, but whatever */
+            SCE_Matrix4x3_GetTranslation (node->matrix, b3);
+            if (parent->parent)
+                SCE_Matrix4x3_GetTranslation (parent->parent->matrix, b2);
+            else
+                SCE_Vector3_Operator1v (b2, = 2.0 *, b3);
+            SCE_Vector3_Operator2v (b1, =, b2, -, b3);
+            if (SCE_Vector3_Length (b1) > 0.1 * param->grow_dist) {
+                /* add new node */
+                SCE_FTree_AddNode (parent, node);
+                node->n_polygons = parent->n_polygons;
+                SCE_List_Appendl (&nodes, &node->it);
+                n_nodes++;
+                node->radius = 0.1;
+            }
+
+            /* reset attraction vector & co */
+            SCE_Vector3_Set (parent->plane, 0.0, 0.0, 0.0);
+            parent->n_vertices1 = 0;
+        }
+
+        SCE_List_Flush (&attracted);
+        n_nodes++;              /* ensure the loop exits */
+
+        if (param->max_nodes && n_nodes > param->max_nodes)
+            run = SCE_FALSE;
+    }
+
+    SCE_List_Flush (&nodes);    /* just in case */
+
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+
+/* TODO: add a Split() function */
