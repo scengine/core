@@ -49,6 +49,7 @@ struct sce_sforesttreenode {
     SCE_SForestTreeNode *children[SCE_MAX_FTREE_DEGREE];
     size_t n_children;
     size_t n_nodes;
+    size_t n_branches;
     size_t n_leaves[SCE_MAX_FTREE_BUSH_TYPES];
 
     /* tree geom */
@@ -129,6 +130,7 @@ void SCE_FTree_SetBush (SCE_SForestTreeNode*, int);
 int SCE_FTree_GetBush (const SCE_SForestTreeNode*);
 void SCE_FTree_SetBushMatrix (SCE_SForestTreeNode*, const SCE_TMatrix4x3);
 
+void SCE_FTree_CountNodes (SCE_SForestTree*);
 int SCE_FTree_Build (SCE_SForestTree*);
 
 void SCE_FTree_UpdateTreeGeometry (SCE_SForestTree*);
@@ -143,6 +145,8 @@ float* SCE_FTree_GetBushMatrix (SCE_SForestTree*, SCEuint, SCEuint);
 int SCE_FTree_SpaceColonization (SCE_SForestTree*,
                                  const SCE_SForestTreeParameters*,
                                  const SCE_TVector3, SCE_TVector3*, size_t);
+
+void SCE_FTree_ComputeRadius (SCE_SForestTree*, float);
 
 #ifdef __cplusplus
 } /* extern "C" */

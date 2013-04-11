@@ -42,6 +42,7 @@ void SCE_FTree_InitNode (SCE_SForestTreeNode *node)
         node->children[i] = NULL;
     node->n_children = 0;
     node->n_nodes = 0;
+    node->n_branches = 0;
     for (i = 0; i < SCE_MAX_FTREE_BUSH_TYPES; i++)
         node->n_leaves[i] = 0;
 
@@ -166,6 +167,7 @@ void SCE_FTree_CopyNode (SCE_SForestTreeNode *dst,
         dst->children[i] = src->children[i];
     dst->n_children = src->n_children;
     dst->n_nodes = src->n_nodes;
+    dst->n_branches = src->n_branches;
     for (i = 0; i < SCE_MAX_FTREE_BUSH_TYPES; i++)
         dst->n_leaves[i] = src->n_leaves[i];
 
@@ -270,11 +272,12 @@ void SCE_FTree_SetBushMatrix (SCE_SForestTreeNode *node, const SCE_TMatrix4x3 m)
 
 
 /* counts the number of nodes */
-static void
-SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
+static
+void SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
 {
     size_t i, j;
-    size_t n_nodes = 0, n_vertices1 = 0, n_vertices2 = 0, n_indices2 = 0;
+    size_t n_nodes = 0, n_branches = 0;
+    size_t n_vertices1 = 0, n_vertices2 = 0, n_indices2 = 0;
     size_t n = node->n_children;
 
     for (i = 0; i < SCE_MAX_FTREE_BUSH_TYPES; i++)
@@ -283,6 +286,7 @@ SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
     for (i = 0; i < n; i++) {
         SCE_FTree_Count (node->children[i]);
         n_nodes += node->children[i]->n_nodes;
+        n_branches += node->children[i]->n_branches;
         n_vertices1 += node->children[i]->n_vertices1;
         n_vertices2 += node->children[i]->n_vertices2;
         n_indices2 += node->children[i]->n_indices2;
@@ -292,6 +296,12 @@ SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
     }
 
     node->n_nodes = n_nodes + 1;
+    switch (n) {
+    case 0: node->n_branches = 1; break;
+    case 1: node->n_branches = n_branches; break;
+    default: node->n_branches = n_branches + 1;
+    }
+
     node->n_vertices1 = n_vertices1 + 1 + (n > 1 ? n - 1 : 0);
     node->n_vertices2 = n_vertices2 + node->n_polygons + 1;
     if (n > 1)
@@ -302,6 +312,11 @@ SCE_FTree_Count /* Dooku */ (SCE_SForestTreeNode *node)
 
     if (node->leaf_index >= 0)
         node->n_leaves[node->leaf_index]++;
+}
+
+void SCE_FTree_CountNodes (SCE_SForestTree *ft)
+{
+    SCE_FTree_Count (&ft->root);
 }
 
 
@@ -943,5 +958,23 @@ fail:
     return SCE_ERROR;
 }
 
+
+void SCE_FTree_ComputeRadiusAux (SCE_SForestTreeNode *node, float r)
+{
+    int i;
+    node->radius = r;
+    for (i = 0; i < node->n_children; i++) {
+        float radius;
+        float factor;
+
+        factor = (float)node->children[i]->n_branches / node->n_branches;
+        radius = sqrt (factor * r * r);
+        SCE_FTree_ComputeRadiusAux (node->children[i], radius);
+    }
+}
+void SCE_FTree_ComputeRadius (SCE_SForestTree *ft, float trunk)
+{
+    SCE_FTree_ComputeRadiusAux (&ft->root, trunk);
+}
 
 /* TODO: add a Split() function */
