@@ -621,6 +621,9 @@ void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
             if (j == ft->npoly_data[i])
                 vertices[6] = 1.;
             else {
+#if 1
+                vertices[6] = j / (float)ft->npoly_data[i];
+#else
                 float dx, dy;
 
                 dx = SCE_Vector3_Dot (posnorm, xnorm);
@@ -633,6 +636,7 @@ void SCE_FTree_UpdateFinalGeometry (SCE_SForestTree *ft)
                 vertices[6] /= 2.0 * M_PI; /* scale between 0 and 1 */
                 vertices[6] = 0.6 * vertices[6] +
                               0.4 * j / (float)ft->npoly_data[i];
+#endif
             }
 
             previous_index++;
