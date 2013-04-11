@@ -29,6 +29,7 @@ void SCE_FTree_InitNode (SCE_SForestTreeNode *node)
 
     node->parent = NULL;
     SCE_Matrix4x3_Identity (node->matrix);
+    SCE_Vector3_Set (node->plane, 0.0, 0.0, 0.0);
     node->radius = 1.0;
     node->distance = 1.0;
     node->n_polygons = 8;
