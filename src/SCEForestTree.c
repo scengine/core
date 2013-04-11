@@ -433,7 +433,8 @@ int SCE_FTree_Build (SCE_SForestTree *ft)
 
     if (ft->root.n_vertices1 >= 256 * 256 ||
         ft->root.n_vertices2 >= 256 * 256) {
-        /* the tree is too fucking big */
+        SCEE_Log (875);
+        SCEE_LogMsg ("the tree is too big, cannot fit SCEindices");
         return SCE_ERROR;
     }
 
