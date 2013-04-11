@@ -497,7 +497,7 @@ SCE_FTree_UpdateNode (SCE_SForestTree *ft, SCE_SForestTreeNode *node)
 {
     size_t i;
     SCE_SForestTreeNode tmp;
-    SCE_TVector3 pos;
+    SCE_TVector3 pos, ppos;     /* node pos, node->parent pos */
 
     /* main branch */
     /* output vertex and index */
@@ -516,7 +516,13 @@ SCE_FTree_UpdateNode (SCE_SForestTree *ft, SCE_SForestTreeNode *node)
     for (i = 1; i < node->n_children; i++) {
         /* construct new vertex */
         SCE_Matrix4x3_GetTranslation (node->children[i]->matrix, tmp.plane);
-        SCE_Vector3_Operator2v (tmp.plane, =, tmp.plane, -, pos);
+        if (!node->parent) {
+            SCE_Vector3_Operator1v (tmp.plane, -=, pos);
+        } else {
+            SCE_Matrix4x3_GetTranslation (node->parent->matrix, ppos);
+            SCE_Vector3_Operator1v (tmp.plane, -=, ppos);
+        }
+
         SCE_Vector3_Normalize (tmp.plane);
         tmp.radius = MIN (node->children[i]->radius, node->radius);
 
