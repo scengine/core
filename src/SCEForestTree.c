@@ -330,7 +330,7 @@ SCE_FTree_ComputeStuffAux (SCE_SForestTreeNode *node)
     SCE_Matrix4x3_GetTranslation (node->parent->matrix, v);
     SCE_Matrix4x3_GetTranslation (node->matrix, pos);
     SCE_Vector3_Operator2v (u, =, pos, -, v);
-    node->distance = SCE_Vector3_Length (u);
+    node->distance = SCE_Vector3_Length (u) / (2.0 * M_PI * node->radius);
     node->distance += node->parent->distance;
     SCE_Vector3_Normalize (u);
 
@@ -914,8 +914,6 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
             SCE_Matrix4x3_GetTranslation (parent->matrix, b2);
             SCE_Vector3_Operator1v (b3, +=, b2);
             SCE_Matrix4x3_SetTranslation (node->matrix, b3);
-
-            node->distance = param->grow_dist;
 
             /* check that the node is far enough from its parent's parent,
                it would otherwise create a plan perpendicular to the node
