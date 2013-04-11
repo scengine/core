@@ -890,6 +890,7 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
             SCE_SForestTreeNode *node = NULL;
             SCE_TVector3 b1, b2, b3;
             SCE_TMatrix4x3 rot;
+            float a;
 
             /* stop when there's no longer any parent to expand */
             run = SCE_TRUE;
@@ -921,13 +922,15 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
                onto the plane */
             /* TODO: I should actually check the angle and not the distance
                      itself, but whatever */
+            /* TODO: _actually_ I should get a better scheme to remove points
+               from the cloud, so that no node is attracted to one of his
+               parents */
             SCE_Matrix4x3_GetTranslation (node->matrix, b3);
             if (parent->parent)
                 SCE_Matrix4x3_GetTranslation (parent->parent->matrix, b2);
-            else
-                SCE_Vector3_Operator1v (b2, = 2.0 *, b3);
             SCE_Vector3_Operator2v (b1, =, b2, -, b3);
-            if (SCE_Vector3_Length (b1) > 0.1 * param->grow_dist) {
+            a = sqrt (2 * param->grow_dist * param->grow_dist);
+            if (SCE_Vector3_Length (b1) > a * 0.99 || !parent->parent) {
                 /* add new node */
                 SCE_FTree_AddNode (parent, node);
                 node->n_polygons = parent->n_polygons;
