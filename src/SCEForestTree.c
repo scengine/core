@@ -978,4 +978,28 @@ void SCE_FTree_ComputeRadius (SCE_SForestTree *ft, float trunk)
     SCE_FTree_ComputeRadiusAux (&ft->root, trunk);
 }
 
+
+static void SCE_FTree_ReduceVertexCountAux (SCE_SForestTreeNode *node, float radius)
+{
+    int i;
+
+    if (node->parent)
+        node->n_polygons = node->parent->n_polygons;
+
+    while (node->radius <= radius / 2.0 && node->n_polygons >= 4) {
+        node->n_polygons /= 2;
+        radius /= 2.0;
+    }
+
+    for (i = 0; i < node->n_children; i++)
+        SCE_FTree_ReduceVertexCountAux (node->children[i], radius);
+}
+
+void SCE_FTree_ReduceVertexCount (SCE_SForestTree *ft)
+{
+    SCE_FTree_ReduceVertexCountAux (&ft->root, ft->root.radius);
+}
+
 /* TODO: add a Split() function */
+/* TODO: and a function to simplify the geometry to merge nodes along a
+         single straight branch */

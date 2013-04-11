@@ -147,6 +147,7 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree*,
                                  const SCE_TVector3, SCE_TVector3*, size_t);
 
 void SCE_FTree_ComputeRadius (SCE_SForestTree*, float);
+void SCE_FTree_ReduceVertexCount (SCE_SForestTree*);
 
 #ifdef __cplusplus
 } /* extern "C" */
