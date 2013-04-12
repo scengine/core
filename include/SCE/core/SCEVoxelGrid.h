@@ -42,9 +42,9 @@ SCE_SVoxelGrid* SCE_VGrid_Create (void);
 void SCE_VGrid_Delete (SCE_SVoxelGrid*);
 
 void SCE_VGrid_SetDimensions (SCE_SVoxelGrid*, SCEulong, SCEulong, SCEulong);
-SCEulong SCE_VGrid_GetWidth (SCE_SVoxelGrid*);
-SCEulong SCE_VGrid_GetHeight (SCE_SVoxelGrid*);
-SCEulong SCE_VGrid_GetDepth (SCE_SVoxelGrid*);
+SCEulong SCE_VGrid_GetWidth (const SCE_SVoxelGrid*);
+SCEulong SCE_VGrid_GetHeight (const SCE_SVoxelGrid*);
+SCEulong SCE_VGrid_GetDepth (const SCE_SVoxelGrid*);
 SCEulong SCE_VGrid_GetNumVoxels (const SCE_SVoxelGrid*);
 size_t SCE_VGrid_GetSize (const SCE_SVoxelGrid*);
 void* SCE_VGrid_GetRaw (SCE_SVoxelGrid*);

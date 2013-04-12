@@ -60,15 +60,15 @@ void SCE_VGrid_SetDimensions (SCE_SVoxelGrid *vg, SCEulong w, SCEulong h,
     vg->h = h;
     vg->d = d;
 }
-SCEulong SCE_VGrid_GetWidth (SCE_SVoxelGrid *vg)
+SCEulong SCE_VGrid_GetWidth (const SCE_SVoxelGrid *vg)
 {
     return vg->w;
 }
-SCEulong SCE_VGrid_GetHeight (SCE_SVoxelGrid *vg)
+SCEulong SCE_VGrid_GetHeight (const SCE_SVoxelGrid *vg)
 {
     return vg->h;
 }
-SCEulong SCE_VGrid_GetDepth (SCE_SVoxelGrid *vg)
+SCEulong SCE_VGrid_GetDepth (const SCE_SVoxelGrid *vg)
 {
     return vg->d;
 }
