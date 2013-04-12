@@ -854,7 +854,11 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
                 d = SCE_Vector3_Dot (diff, diff); /* squared distance */
                 if (d < param->kill_dist) {
                     /* remove attraction point from the cloud */
-                    SCE_Vector3_Copy (p[i], p[n - 1]);
+                    /* dont use SCE_Vector3_Copy(), this function
+                       (or macro rather) calls memcpy */
+                    p[i][0] = p[n - 1][0];
+                    p[i][1] = p[n - 1][1];
+                    p[i][2] = p[n - 1][2];
                     closest = NULL;
                     n--;
                     i--;
@@ -986,6 +990,8 @@ static void SCE_FTree_ReduceVertexCountAux (SCE_SForestTreeNode *node, float rad
     if (node->parent)
         node->n_polygons = node->parent->n_polygons;
 
+    /* TODO: if we generate triangles for a node which has less than half
+       the n_polygons of its parent, it _may_ not work */
     while (node->radius <= radius / 2.0 && node->n_polygons >= 4) {
         node->n_polygons /= 2;
         radius /= 2.0;
