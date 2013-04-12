@@ -800,6 +800,24 @@ float* SCE_FTree_GetBushMatrix (SCE_SForestTree *ft, SCEuint bush, SCEuint offse
 }
 
 
+size_t SCE_FTree_GetNodeNumNodes (const SCE_SForestTreeNode *node)
+{
+    return node->n_nodes;
+}
+size_t SCE_FTree_GetNodeNumBranches (const SCE_SForestTreeNode *node)
+{
+    return node->n_branches;
+}
+
+size_t SCE_FTree_GetNumNodes (const SCE_SForestTree *ft)
+{
+    return SCE_FTree_GetNodeNumNodes (&ft->root);
+}
+size_t SCE_FTree_GetNumBranches (const SCE_SForestTree *ft)
+{
+    return SCE_FTree_GetNodeNumBranches (&ft->root);
+}
+
 /**
  * \brief 
  * 

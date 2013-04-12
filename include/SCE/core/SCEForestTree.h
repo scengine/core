@@ -142,6 +142,12 @@ SCE_SGeometry* SCE_FTree_GetFinalGeometry (SCE_SForestTree*);
 size_t SCE_FTree_GetBushNumInstances (SCE_SForestTree*, SCEuint);
 float* SCE_FTree_GetBushMatrix (SCE_SForestTree*, SCEuint, SCEuint);
 
+size_t SCE_FTree_GetNodeNumNodes (const SCE_SForestTreeNode*);
+size_t SCE_FTree_GetNodeNumBranches (const SCE_SForestTreeNode*);
+
+size_t SCE_FTree_GetNumNodes (const SCE_SForestTree*);
+size_t SCE_FTree_GetNumBranches (const SCE_SForestTree*);
+
 int SCE_FTree_SpaceColonization (SCE_SForestTree*,
                                  const SCE_SForestTreeParameters*,
                                  const SCE_TVector3, SCE_TVector3*, size_t);
