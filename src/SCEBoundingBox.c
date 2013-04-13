@@ -57,6 +57,12 @@ void SCE_BoundingBox_SetFrom (SCE_SBoundingBox *box, const SCE_SBox *b)
     SCE_Box_Copy (&box->box, b);
 }
 
+void SCE_BoundingBox_SetFromRectl (SCE_SBoundingBox *box,
+                                   const SCE_SLongRect3 *r)
+{
+    SCE_Box_SetFromRectl (&box->box, r);
+}
+
 /**
  * \brief Gets the box of a bounding box
  * \sa SCE_Box_Init(), SCE_SBox

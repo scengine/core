@@ -115,6 +115,16 @@ void SCE_Box_SetFromMinMax (SCE_SBox *box, const SCE_TVector3 min,
     SCE_Box_Set (box, min, maxp[0], maxp[1], maxp[2]);
 }
 
+void SCE_Box_SetFromRectl (SCE_SBox *box, const SCE_SLongRect3 *r)
+{
+    SCE_TVector3 a, b;
+    long p1[3], p2[3];
+    SCE_Rectangle3_GetPointslv (r, p1, p2);
+    SCE_Vector3_Set (a, p1[0], p1[1], p1[2]);
+    SCE_Vector3_Set (b, p2[0], p2[1], p2[2]);
+    SCE_Box_SetFromMinMax (box, a, b);
+}
+
 /**
  * \brief Sets the size of a box
  * \param box a box
