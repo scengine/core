@@ -35,32 +35,33 @@ extern "C" {
 #define SCE_COLLIDE_IN 1
 #define SCE_COLLIDE_PARTIALLY 2
 
-int SCE_Collide_PlanesWithPoint (SCE_SPlane*, size_t, float, float,float);
-int SCE_Collide_PlanesWithPointv (SCE_SPlane*, size_t, SCE_TVector3);
+int SCE_Collide_PlanesWithPoint (const SCE_SPlane*, size_t, float, float,float);
+int SCE_Collide_PlanesWithPointv (const SCE_SPlane*, size_t, const SCE_TVector3);
 
-int SCE_Collide_PlanesWithBB (SCE_SPlane*, size_t, SCE_SBoundingBox*);
-int SCE_Collide_PlanesWithBBBool (SCE_SPlane*, size_t, SCE_SBoundingBox*);
-int SCE_Collide_PlanesWithBS (SCE_SPlane*, size_t, SCE_SBoundingSphere*);
-int SCE_Collide_PlanesWithBSBool (SCE_SPlane*, size_t, SCE_SBoundingSphere*);
+int SCE_Collide_PlanesWithBB (const SCE_SPlane*, size_t, const SCE_SBoundingBox*);
+int SCE_Collide_PlanesWithBBBool (const SCE_SPlane*, size_t, const SCE_SBoundingBox*);
+int SCE_Collide_PlanesWithBS (const SCE_SPlane*, size_t, const SCE_SBoundingSphere*);
+int SCE_Collide_PlanesWithBSBool (const SCE_SPlane*, size_t, const SCE_SBoundingSphere*);
 
-/*int SCE_Collide_RectWithBS (SCE_SFloatRect*, SCE_SBoundingSphere*);*/
+/*int SCE_Collide_RectWithBS (const SCE_SFloatRect*, SCE_SBoundingSphere*);*/
 
-int SCE_Collide_AABBWithPoint (SCE_SBoundingBox*, float, float, float);
-int SCE_Collide_AABBWithPointv (SCE_SBoundingBox*, SCE_TVector3);
-int SCE_Collide_AABBWithLine (SCE_SBoundingBox*, SCE_SLine3*);
-int SCE_Collide_AABBWithBS (SCE_SBoundingBox*, SCE_SBoundingSphere*);
-int SCE_Collide_AABBWithBSBool (SCE_SBoundingBox*, SCE_SBoundingSphere*);
+int SCE_Collide_AABBWithPoint (const SCE_SBoundingBox*, float, float, float);
+int SCE_Collide_AABBWithPointv (const SCE_SBoundingBox*, const SCE_TVector3);
+int SCE_Collide_AABBWithLine (const SCE_SBoundingBox*, const SCE_SLine3*);
+int SCE_Collide_AABBWithBS (const SCE_SBoundingBox*, const SCE_SBoundingSphere*);
+int SCE_Collide_AABBWithBSBool (const SCE_SBoundingBox*, const SCE_SBoundingSphere*);
 
-int SCE_Collide_BBWithPoint (SCE_SBoundingBox*, float, float, float);
-int SCE_Collide_BBWithPointv (SCE_SBoundingBox*, SCE_TVector3);
-int SCE_Collide_BBWithLine (SCE_SBoundingBox*, SCE_SLine3*);
-int SCE_Collide_BBWithBS (SCE_SBoundingBox*, SCE_SBoundingSphere*);
-int SCE_Collide_BBWithBB (SCE_SBoundingBox*, SCE_SBoundingBox*);
+int SCE_Collide_BBWithPoint (const SCE_SBoundingBox*, float, float, float);
+int SCE_Collide_BBWithPointv (const SCE_SBoundingBox*, const SCE_TVector3);
+int SCE_Collide_BBWithLine (const SCE_SBoundingBox*, const SCE_SLine3*);
+int SCE_Collide_BBWithBS (const SCE_SBoundingBox*, const SCE_SBoundingSphere*);
+int SCE_Collide_BBWithBB (const SCE_SBoundingBox*, const SCE_SBoundingBox*);
+int SCE_Collide_BBWithBBBool (const SCE_SBoundingBox*, const SCE_SBoundingBox*);
 
-int SCE_Collide_BSWithPoint (SCE_SBoundingSphere*, float, float, float);
-int SCE_Collide_BSWithPointv (SCE_SBoundingSphere*, SCE_TVector3);
-int SCE_Collide_BSWithBB (SCE_SBoundingSphere*, SCE_SBoundingBox*);
-int SCE_Collide_BSWithBS (SCE_SBoundingSphere*, SCE_SBoundingSphere*);
+int SCE_Collide_BSWithPoint (const SCE_SBoundingSphere*, float, float, float);
+int SCE_Collide_BSWithPointv (const SCE_SBoundingSphere*, const SCE_TVector3);
+int SCE_Collide_BSWithBB (const SCE_SBoundingSphere*, const SCE_SBoundingBox*);
+int SCE_Collide_BSWithBS (const SCE_SBoundingSphere*, const SCE_SBoundingSphere*);
 
 int SCE_Collide_BCWithPoint (const SCE_SCone*, float, float, float);
 int SCE_Collide_BCWithPointv (const SCE_SCone*, const SCE_TVector3);

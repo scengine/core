@@ -52,7 +52,7 @@ void SCE_BoundingBox_Init (SCE_SBoundingBox *box)
 /**
  * \brief Set a bounding box from a box
  */
-void SCE_BoundingBox_SetFrom (SCE_SBoundingBox *box, SCE_SBox *b)
+void SCE_BoundingBox_SetFrom (SCE_SBoundingBox *box, const SCE_SBox *b)
 {
     SCE_Box_Copy (&box->box, b);
 }

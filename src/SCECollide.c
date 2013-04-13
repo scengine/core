@@ -49,7 +49,7 @@
  * \return SCE_TRUE if the point is inside the shape, SCE_FALSE otherwise
  * \sa SCE_Collide_PlanesWithPointv()
  */
-int SCE_Collide_PlanesWithPoint (SCE_SPlane *planes, size_t n,
+int SCE_Collide_PlanesWithPoint (const SCE_SPlane *planes, size_t n,
                                  float x, float y, float z)
 {
     size_t i;
@@ -67,8 +67,8 @@ int SCE_Collide_PlanesWithPoint (SCE_SPlane *planes, size_t n,
  * \return SCE_TRUE if the point is inside the shape, SCE_FALSE otherwise
  * \sa SCE_Collide_PlanesWithPoint()
  */
-int SCE_Collide_PlanesWithPointv (SCE_SPlane *planes, size_t n,
-                                  SCE_TVector3 p)
+int SCE_Collide_PlanesWithPointv (const SCE_SPlane *planes, size_t n,
+                                  const SCE_TVector3 p)
 {
     size_t i;
     for (i = 0; i < n; i++) {
@@ -78,12 +78,12 @@ int SCE_Collide_PlanesWithPointv (SCE_SPlane *planes, size_t n,
     return SCE_TRUE;
 }
 
-int SCE_Collide_PlanesWithBB (SCE_SPlane *planes, size_t n,
-                              SCE_SBoundingBox *box)
+int SCE_Collide_PlanesWithBB (const SCE_SPlane *planes, size_t n,
+                              const SCE_SBoundingBox *box)
 {
     size_t i;
     unsigned int total = 0;
-    float *points = SCE_BoundingBox_GetPoints (box);
+    float *points = SCE_BoundingBox_GetPoints ((SCE_SBoundingBox*)box);
     for (i = 0; i < n; i++) {
         size_t j;
         unsigned int k = 0;
@@ -98,11 +98,11 @@ int SCE_Collide_PlanesWithBB (SCE_SPlane *planes, size_t n,
     }
     return (total == n ? SCE_COLLIDE_IN : SCE_COLLIDE_PARTIALLY);
 }
-int SCE_Collide_PlanesWithBBBool (SCE_SPlane *planes, size_t n,
-                                  SCE_SBoundingBox *box)
+int SCE_Collide_PlanesWithBBBool (const SCE_SPlane *planes, size_t n,
+                                  const SCE_SBoundingBox *box)
 {
     size_t i, j;
-    float *points = SCE_BoundingBox_GetPoints (box);
+    float *points = SCE_BoundingBox_GetPoints ((SCE_SBoundingBox*)box);
     for (i = 0; i < n; i++) {
         for (j = 0; j < 8; j++) {
             if (SCE_Plane_DistanceToPointv (&planes[i], &points[j*3]) > 0.0f)
@@ -114,15 +114,15 @@ int SCE_Collide_PlanesWithBBBool (SCE_SPlane *planes, size_t n,
     }
     return SCE_TRUE;
 }
-int SCE_Collide_PlanesWithBS (SCE_SPlane *planes, size_t n,
-                              SCE_SBoundingSphere *sphere)
+int SCE_Collide_PlanesWithBS (const SCE_SPlane *planes, size_t n,
+                              const SCE_SBoundingSphere *sphere)
 {
     float d;
     size_t i;
     unsigned int passed = 0;
     float *c, r;
 
-    c = SCE_BoundingSphere_GetCenter (sphere);
+    c = SCE_BoundingSphere_GetCenter ((SCE_SBoundingSphere*)sphere);
     r = SCE_BoundingSphere_GetRadius (sphere);
 
     /* works only with convex meshs */
@@ -140,13 +140,13 @@ int SCE_Collide_PlanesWithBS (SCE_SPlane *planes, size_t n,
 /**
  * \brief Works only on convex meshes
  */
-int SCE_Collide_PlanesWithBSBool (SCE_SPlane *planes, size_t n,
-                                  SCE_SBoundingSphere *sphere)
+int SCE_Collide_PlanesWithBSBool (const SCE_SPlane *planes, size_t n,
+                                  const SCE_SBoundingSphere *sphere)
 {
     size_t i;
     float *c, r;
 
-    c = SCE_BoundingSphere_GetCenter (sphere);
+    c = SCE_BoundingSphere_GetCenter ((SCE_SBoundingSphere*)sphere);
     r = SCE_BoundingSphere_GetRadius (sphere);
 
     /* works only with convex meshs */
@@ -178,30 +178,33 @@ int SCE_Collide_RectWithBS (SCE_SFloatRect *rect, SCE_SBoundingSphere *sphere)
 }
 #endif
 
-int SCE_Collide_AABBWithPoint (SCE_SBoundingBox *box, float x, float y, float z)
+int SCE_Collide_AABBWithPoint (const SCE_SBoundingBox *box, float x, float y,
+                               float z)
 {
-    float *p = SCE_BoundingBox_GetPoints (box);
+    float *p = SCE_BoundingBox_GetPoints ((SCE_SBoundingBox*)box);
     if (x >= p[0] && x <= p[3] &&
         y >= p[1] && y <= p[10] &&
         z >= p[2] && z <= p[23])
         return SCE_COLLIDE_IN;
     return SCE_COLLIDE_OUT;
 }
-int SCE_Collide_AABBWithPointv (SCE_SBoundingBox *box, SCE_TVector3 p)
+int SCE_Collide_AABBWithPointv (const SCE_SBoundingBox *box,
+                                const SCE_TVector3 p)
 {
     return SCE_Collide_AABBWithPoint (box, p[0], p[1], p[2]);
 }
-int SCE_Collide_AABBWithLine (SCE_SBoundingBox *box, SCE_SLine3 *l)
+int SCE_Collide_AABBWithLine (const SCE_SBoundingBox *box, const SCE_SLine3 *l)
 {
     return SCE_Collide_BBWithLine (box, l);
 }
-int SCE_Collide_AABBWithBS (SCE_SBoundingBox *b, SCE_SBoundingSphere *s)
+int SCE_Collide_AABBWithBS (const SCE_SBoundingBox *b,
+                            const SCE_SBoundingSphere *s)
 {
     float r, *c, *p;
-    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere (s);
+    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere((SCE_SBoundingSphere*)s);
     r = sphere->radius;
     c = sphere->center;
-    p = SCE_BoundingBox_GetPoints (b);
+    p = SCE_BoundingBox_GetPoints ((SCE_SBoundingBox*)b);
 
     if (c[0] >= p[0]-r && c[0] <= p[3]+r &&
         c[1] >= p[1]-r && c[1] <= p[10]+r &&
@@ -215,13 +218,14 @@ int SCE_Collide_AABBWithBS (SCE_SBoundingBox *b, SCE_SBoundingSphere *s)
     }
     return SCE_COLLIDE_OUT;
 }
-int SCE_Collide_AABBWithBSBool (SCE_SBoundingBox *b, SCE_SBoundingSphere *s)
+int SCE_Collide_AABBWithBSBool (const SCE_SBoundingBox *b,
+                                const SCE_SBoundingSphere *s)
 {
     float r, *c, *p;
-    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere (s);
+    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere((SCE_SBoundingSphere*)s);
     r = sphere->radius;
     c = sphere->center;
-    p = SCE_BoundingBox_GetPoints (b);
+    p = SCE_BoundingBox_GetPoints ((SCE_SBoundingBox*)b);
 
     if (c[0] >= p[0]-r && c[0] <= p[3]+r &&
         c[1] >= p[1]-r && c[1] <= p[10]+r &&
@@ -231,31 +235,32 @@ int SCE_Collide_AABBWithBSBool (SCE_SBoundingBox *b, SCE_SBoundingSphere *s)
         return SCE_FALSE;
 }
 
-int SCE_Collide_BBWithPoint (SCE_SBoundingBox *box, float x, float y, float z)
+int SCE_Collide_BBWithPoint (const SCE_SBoundingBox *box, float x, float y,
+                             float z)
 {
     size_t i;
-    SCE_SPlane *planes = SCE_BoundingBox_GetPlanes (box);
+    SCE_SPlane *planes = SCE_BoundingBox_GetPlanes ((SCE_SBoundingBox*)box);
     for (i = 0; i < 6; i++) {
         if (SCE_Plane_DistanceToPoint (&planes[i], x, y, z) > 0.0f)
             return SCE_FALSE;
     }
     return SCE_TRUE;
 }
-int SCE_Collide_BBWithPointv (SCE_SBoundingBox *box, SCE_TVector3 p)
+int SCE_Collide_BBWithPointv (const SCE_SBoundingBox *box, const SCE_TVector3 p)
 {
     size_t i;
-    SCE_SPlane *planes = SCE_BoundingBox_GetPlanes (box);
+    SCE_SPlane *planes = SCE_BoundingBox_GetPlanes ((SCE_SBoundingBox*)box);
     for (i = 0; i < 6; i++) {
         if (SCE_Plane_DistanceToPointv (&planes[i], p) > 0.0f)
             return SCE_FALSE;
     }
     return SCE_TRUE;
 }
-int SCE_Collide_BBWithLine (SCE_SBoundingBox *box, SCE_SLine3 *l)
+int SCE_Collide_BBWithLine (const SCE_SBoundingBox *box, const SCE_SLine3 *l)
 {
     size_t i, j, k[6] = {1, 2, 3, 4, 5, 6};
     SCE_TVector3 p;
-    SCE_SPlane *planes = SCE_BoundingBox_GetPlanes (box);
+    SCE_SPlane *planes = SCE_BoundingBox_GetPlanes ((SCE_SBoundingBox*)box);
 
     for (i = 0; i < 6; i++) {
         if (SCE_Plane_LineIntersection (&planes[i], l, p)) {
@@ -275,36 +280,47 @@ int SCE_Collide_BBWithLine (SCE_SBoundingBox *box, SCE_SLine3 *l)
     }
     return SCE_FALSE;
 }
-int SCE_Collide_BBWithBS (SCE_SBoundingBox *box, SCE_SBoundingSphere *sphere)
+int SCE_Collide_BBWithBS (const SCE_SBoundingBox *box,
+                          const SCE_SBoundingSphere *sphere)
 {
-    return SCE_Collide_PlanesWithBS (SCE_BoundingBox_GetPlanes(box), 6, sphere);
+    return SCE_Collide_PlanesWithBS (SCE_BoundingBox_GetPlanes(
+                                         (SCE_SBoundingBox*)box), 6, sphere);
 }
-int SCE_Collide_BBWithBB (SCE_SBoundingBox *box, SCE_SBoundingBox *box2)
+int SCE_Collide_BBWithBB (const SCE_SBoundingBox *box,
+                          const SCE_SBoundingBox *box2)
 {
-    return SCE_Collide_PlanesWithBB (SCE_BoundingBox_GetPlanes(box), 6, box2);
+    return SCE_Collide_PlanesWithBB (SCE_BoundingBox_GetPlanes(
+                                         (SCE_SBoundingBox*)box), 6, box2);
+}
+int SCE_Collide_BBWithBBBool (const SCE_SBoundingBox *box,
+                              const SCE_SBoundingBox *box2)
+{
+    return SCE_Collide_PlanesWithBBBool (SCE_BoundingBox_GetPlanes(
+                                             (SCE_SBoundingBox*)box), 6, box2);
 }
 
-int SCE_Collide_BSWithPoint (SCE_SBoundingSphere *s,
+int SCE_Collide_BSWithPoint (const SCE_SBoundingSphere *s,
                              float x, float y, float z)
 {
     SCE_TVector3 p;
     SCE_Vector3_Set (p, x, y, z);
     return SCE_Collide_BSWithPointv (s, p);
 }
-int SCE_Collide_BSWithPointv (SCE_SBoundingSphere *s, SCE_TVector3 p)
+int SCE_Collide_BSWithPointv (const SCE_SBoundingSphere *s, const SCE_TVector3 p)
 {
-    float *c, r;
+    float r;
     SCE_TVector3 diff;
-    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere (s);
+    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere ((SCE_SBoundingSphere*)s);
     r = sphere->radius;
     SCE_Vector3_Operator2v (diff, =, sphere->center, -, p);
     return (SCE_Math_Fabsf (SCE_Vector3_Dot (diff, diff)) < r * r);
 }
-int SCE_Collide_BSWithBB (SCE_SBoundingSphere *s, SCE_SBoundingBox *box)
+int SCE_Collide_BSWithBB (const SCE_SBoundingSphere *s,
+                          const SCE_SBoundingBox *box)
 {
     size_t i;
     unsigned int n = 0;
-    float *points = SCE_BoundingBox_GetPoints (box);
+    float *points = SCE_BoundingBox_GetPoints ((SCE_SBoundingBox*)box);
     for (i = 0; i < 8; i++) {
         if (SCE_Collide_BSWithPointv (s, &points[i * 3]))
             n++;
@@ -315,12 +331,12 @@ int SCE_Collide_BSWithBB (SCE_SBoundingSphere *s, SCE_SBoundingBox *box)
     } else
         return (n == 8 ? SCE_COLLIDE_IN : SCE_COLLIDE_PARTIALLY);
 }
-int SCE_Collide_BSWithBS (SCE_SBoundingSphere *s,
-                          SCE_SBoundingSphere *s2)
+int SCE_Collide_BSWithBS (const SCE_SBoundingSphere *s,
+                          const SCE_SBoundingSphere *s2)
 {
     float d, *c, *c2, r, r2;
-    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere (s);
-    SCE_SSphere *sphere2 = SCE_BoundingSphere_GetSphere (s2);
+    SCE_SSphere *sphere = SCE_BoundingSphere_GetSphere((SCE_SBoundingSphere*)s);
+    SCE_SSphere *sphere2=SCE_BoundingSphere_GetSphere((SCE_SBoundingSphere*)s2);
     c = sphere->center;
     r = sphere->radius;
     c2 = sphere2->center;

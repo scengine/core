@@ -105,7 +105,7 @@ float* SCE_BoundingSphere_GetCenter (SCE_SBoundingSphere *sphere)
  * \param sphere a bouding sphere
  * \returns the radius of \p sphere
  */
-float SCE_BoundingSphere_GetRadius (SCE_SBoundingSphere *sphere)
+float SCE_BoundingSphere_GetRadius (const SCE_SBoundingSphere *sphere)
 {
     return sphere->sphere.radius;
 }
