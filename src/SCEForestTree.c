@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 19/04/2012
-   updated: 11/04/2013 */
+   updated: 14/04/2013 */
 
 #include <SCE/utils/SCEUtils.h>
 
@@ -1028,6 +1028,67 @@ void SCE_FTree_ReduceVertexCount (SCE_SForestTree *ft)
     SCE_FTree_ReduceVertexCountAux (&ft->root, ft->root.radius);
 }
 
+
+static void SCE_FTree_MergeNodePair (SCE_SForestTreeNode *node)
+{
+    SCE_SForestTreeNode *child = node->children[0];
+    node->children[0] = child->children[0];
+    child->children[0]->parent = node;
+    /* NOTE: we probably should update node's matrix to be oriented towards
+       its new child but we dont care for now */
+    child->n_children = 0;
+    child->children[0] = NULL;
+    SCE_FTree_DeleteNode (child);
+}
+
+static void SCE_FTree_MergeNodesAux (SCE_SForestTreeNode *node, float height, float angle)
+{
+    int i;
+
+    /* merge branch */
+    while (node->n_children >= 1 && node->children[0]->n_children == 1) {
+        if (height < 0.0 || angle < 0.0) /* merge all nodes on the same branch */
+            SCE_FTree_MergeNodePair (node);
+        else {
+            float a, h, theta;
+            SCE_TVector3 p1, p2, p3;
+            SCE_TVector3 d1, d2;
+
+            /* compute error (a subtle mix between some dot products) */
+            /* angle between two directions of the nodes */
+            SCE_Matrix4x3_GetBase (node, p1, p2, d1);
+            SCE_Matrix4x3_GetBase (node->children[0], p1, p2, d2);
+            theta = 0.5 * (1.0 - SCE_Vector3_Dot (d1, d2));
+            if (theta > angle)
+                break;
+            /* the three nodes form a triangle, check its height */
+            SCE_FTree_GetNodePositionv (node, p1);
+            SCE_FTree_GetNodePositionv (node->children[0], p2);
+            SCE_FTree_GetNodePositionv (node->children[0]->children[0], p3);
+            SCE_Vector3_Operator2v (d1, =, p2, -, p1);
+            SCE_Vector3_Operator2v (d2, =, p3, -, p1);
+            a = SCE_Vector3_Length (d1);
+            SCE_Vector3_Normalize (d1);
+            SCE_Vector3_Normalize (d2);
+            theta = SCE_Vector3_Dot (d1, d2); /* cosine */
+            theta = sqrt (1 - theta * theta); /* sine */
+            h = a * theta;
+            if (h < height)
+                SCE_FTree_MergeNodePair (node);
+            else
+                break;
+        }
+    }
+
+    for (i = 0; i < node->n_children; i++)
+        SCE_FTree_MergeNodesAux (node->children[i], height, angle);
+}
+
+void SCE_FTree_MergeNodes (SCE_SForestTree *ft, float height, float angle)
+{
+    SCE_FTree_MergeNodesAux (&ft->root, height, angle);
+}
+
 #define SERIALIZED_NODE_SIZE                                            \
     /* matrix: position + quaternion (4 is the serialized size of a float) */ \
     (3 * 4 + 4 * 4 +                                                    \
@@ -1123,5 +1184,3 @@ int SCE_FTree_Deserialize (SCE_SForestTree *ft, SCE_SFile *fp)
 }
 
 /* TODO: add a Split() function */
-/* TODO: and a function to simplify the geometry to merge nodes along a
-         single straight branch */

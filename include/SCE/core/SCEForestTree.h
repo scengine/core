@@ -17,7 +17,7 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 19/04/2012
-   updated: 11/04/2013 */
+   updated: 14/04/2013 */
 
 #ifndef SCEFORESTTREE_H
 #define SCEFORESTTREE_H
@@ -155,6 +155,8 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree*,
 
 void SCE_FTree_ComputeRadius (SCE_SForestTree*, float);
 void SCE_FTree_ReduceVertexCount (SCE_SForestTree*);
+
+void SCE_FTree_MergeNodes (SCE_SForestTree*, float, float);
 
 size_t SCE_FTree_GetSerializedSize (const SCE_SForestTree*);
 
