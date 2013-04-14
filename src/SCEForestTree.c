@@ -247,7 +247,7 @@ void SCE_FTree_GetNodeMatrixv (const SCE_SForestTreeNode *node, SCE_TMatrix4x3 m
 {
     SCE_Matrix4x3_Copy (mat, node->matrix);
 }
-size_t SCE_FTree_GetNumNodeChildren (const SCE_SForestTreeNode *node)
+size_t SCE_FTree_GetNodeNumChildren (const SCE_SForestTreeNode *node)
 {
     return node->n_children;
 }
