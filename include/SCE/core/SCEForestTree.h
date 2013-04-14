@@ -155,6 +155,11 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree*,
 void SCE_FTree_ComputeRadius (SCE_SForestTree*, float);
 void SCE_FTree_ReduceVertexCount (SCE_SForestTree*);
 
+size_t SCE_FTree_GetSerializedSize (const SCE_SForestTree*);
+
+void SCE_FTree_Serialize (const SCE_SForestTree*, SCE_SFile*);
+int SCE_FTree_Deserialize (SCE_SForestTree*, SCE_SFile*);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

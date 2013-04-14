@@ -982,7 +982,7 @@ fail:
 }
 
 
-void SCE_FTree_ComputeRadiusAux (SCE_SForestTreeNode *node, float r)
+static void SCE_FTree_ComputeRadiusAux (SCE_SForestTreeNode *node, float r)
 {
     int i;
     node->radius = r;
@@ -1022,6 +1022,100 @@ static void SCE_FTree_ReduceVertexCountAux (SCE_SForestTreeNode *node, float rad
 void SCE_FTree_ReduceVertexCount (SCE_SForestTree *ft)
 {
     SCE_FTree_ReduceVertexCountAux (&ft->root, ft->root.radius);
+}
+
+#define SERIALIZED_NODE_SIZE                                            \
+    /* matrix: position + quaternion (4 is the serialized size of a float) */ \
+    (3 * 4 + 4 * 4 +                                                    \
+     /* n_children (long), radius (float), leaf index (single byte) */  \
+     SCE_ENCODE_LONG_SIZE + 4 + 1)                                      \
+
+/**
+ * \brief Get size of the serialization of a tree
+ * \param ft a tree
+ * \return the size
+ *
+ * SCE_FTree_Count() must have been called on \p ft for this function to work.
+ */
+size_t SCE_FTree_GetSerializedSize (const SCE_SForestTree *ft)
+{
+    size_t node_size = SERIALIZED_NODE_SIZE;
+    return node_size * SCE_FTree_GetNumNodes (ft);
+}
+
+static void SCE_FTree_SerializeNode (const SCE_SForestTreeNode *node,
+                                     SCE_SFile *fp)
+{
+    SCE_TVector3 pos;
+    SCE_TQuaternion rot;
+
+    SCE_Matrix4x3_GetTranslation (node->matrix, pos);
+    SCE_Matrix4x3_ToQuaternion (node->matrix, rot);
+    /* TODO: assuming SCE_TVector3 and SCE_TQuaternion types are float */
+    SCE_Encode_StreamFloats (pos, 3, SCE_TRUE, 8, 23, fp);
+    SCE_Encode_StreamFloats (rot, 4, SCE_TRUE, 8, 23, fp);
+    SCE_Encode_StreamLong (node->n_children, fp);
+    SCE_Encode_StreamFloats (&node->radius, 1, SCE_TRUE, 8, 23, fp);
+    SCE_Encode_StreamLong (node->leaf_index, fp);
+}
+
+static void SCE_FTree_SerializeNodeRec (const SCE_SForestTreeNode *node,
+                                        SCE_SFile *fp)
+{
+    size_t i;
+    SCE_FTree_SerializeNode (node, fp);
+    for (i = 0; i < node->n_children; i++)
+        SCE_FTree_SerializeNodeRec (node->children[i], fp);
+}
+
+void SCE_FTree_Serialize (const SCE_SForestTree *ft, SCE_SFile *fp)
+{
+    SCE_FTree_SerializeNodeRec (&ft->root, fp);
+}
+
+static void SCE_FTree_DeserializeNode (SCE_SForestTreeNode *node, SCE_SFile *fp)
+{
+    SCE_TVector3 pos;
+    SCE_TQuaternion rot;
+
+    SCE_Decode_StreamFloats (pos, 3, SCE_TRUE, 8, 23, fp);
+    SCE_Decode_StreamFloats (rot, 4, SCE_TRUE, 8, 23, fp);
+    node->n_children = SCE_Decode_StreamLong (fp);
+    SCE_Decode_StreamFloats (&node->radius, 1, SCE_TRUE, 8, 23, fp);
+    node->leaf_index = SCE_Decode_StreamLong (fp);
+
+    SCE_Matrix4x3_FromQuaternion (node->matrix, rot);
+    SCE_Matrix4x3_SetTranslation (node->matrix, pos);
+}
+
+static int SCE_FTree_DeserializeNodeRec (SCE_SForestTreeNode *node,
+                                         SCE_SFile *fp)
+{
+    size_t i;
+    size_t n_children;
+
+    SCE_FTree_DeserializeNode (node, fp);
+    n_children = node->n_children;
+    node->n_children = 0;       /* because addnode() increments it */
+    for (i = 0; i < n_children; i++) {
+        SCE_SForestTreeNode *child = NULL;
+        if (!(child = SCE_FTree_CreateNode ())) {
+            SCEE_LogSrc ();
+            return SCE_ERROR;
+        }
+        SCE_FTree_DeserializeNodeRec (child, fp);
+        SCE_FTree_AddNode (node, child);
+    }
+    return SCE_OK;
+}
+
+int SCE_FTree_Deserialize (SCE_SForestTree *ft, SCE_SFile *fp)
+{
+    if (SCE_FTree_DeserializeNodeRec (&ft->root, fp) < 0) {
+        SCEE_LogSrc ();
+        return SCE_ERROR;
+    }
+    return SCE_OK;
 }
 
 /* TODO: add a Split() function */
