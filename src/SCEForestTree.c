@@ -247,6 +247,10 @@ void SCE_FTree_GetNodeMatrixv (const SCE_SForestTreeNode *node, SCE_TMatrix4x3 m
 {
     SCE_Matrix4x3_Copy (mat, node->matrix);
 }
+void SCE_FTree_GetNodePositionv (const SCE_SForestTreeNode *node, SCE_TVector3 pos)
+{
+    SCE_Matrix4x3_GetTranslation (node->matrix, pos);
+}
 size_t SCE_FTree_GetNodeNumChildren (const SCE_SForestTreeNode *node)
 {
     return node->n_children;
