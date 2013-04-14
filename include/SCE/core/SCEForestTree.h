@@ -123,7 +123,7 @@ void SCE_FTree_SetNodeNumVertices (SCE_SForestTreeNode*, SCEuint);
 
 void SCE_FTree_SetNodeMatrix (SCE_SForestTreeNode*, const SCE_TMatrix4x3);
 float* SCE_FTree_GetNodeMatrix (SCE_SForestTreeNode*);
-void SCE_FTree_GetNodeMatrixv (SCE_SForestTreeNode*, SCE_TMatrix4x3);
+void SCE_FTree_GetNodeMatrixv (const SCE_SForestTreeNode*, SCE_TMatrix4x3);
 size_t SCE_FTree_GetNumNodeChildren (const SCE_SForestTreeNode*);
 
 void SCE_FTree_SetBush (SCE_SForestTreeNode*, int);

@@ -243,7 +243,7 @@ float* SCE_FTree_GetNodeMatrix (SCE_SForestTreeNode *node)
     /* TODO: dont allow the user to modify the matrix */
     return node->matrix;
 }
-void SCE_FTree_GetNodeMatrixv (SCE_SForestTreeNode *node, SCE_TMatrix4x3 mat)
+void SCE_FTree_GetNodeMatrixv (const SCE_SForestTreeNode *node, SCE_TMatrix4x3 mat)
 {
     SCE_Matrix4x3_Copy (mat, node->matrix);
 }
