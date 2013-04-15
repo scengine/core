@@ -988,15 +988,19 @@ fail:
 
 static void SCE_FTree_ComputeRadiusAux (SCE_SForestTreeNode *node, float r)
 {
-    int i;
-    node->radius = r;
-    for (i = 0; i < node->n_children; i++) {
-        float radius;
-        float factor;
+    if (node->n_children == 0) {
+        node->radius = 0.0;
+    } else {
+        int i;
+        node->radius = r;
+        for (i = 0; i < node->n_children; i++) {
+            float radius;
+            float factor;
 
-        factor = (float)node->children[i]->n_branches / node->n_branches;
-        radius = sqrt (factor * r * r);
-        SCE_FTree_ComputeRadiusAux (node->children[i], radius);
+            factor = (float)node->children[i]->n_branches / node->n_branches;
+            radius = sqrt (factor * r * r);
+            SCE_FTree_ComputeRadiusAux (node->children[i], radius);
+        }
     }
 }
 void SCE_FTree_ComputeRadius (SCE_SForestTree *ft, float trunk)
