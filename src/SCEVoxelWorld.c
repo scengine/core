@@ -209,7 +209,8 @@ SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
     /* TODO: create directory */
 
     SCE_VOctree_SetMaxDepth (&wt->vo, vw->n_lod - 1);
-    SCE_VOctree_SetOrigin (&wt->vo, x * vw->w, y * vw->h, z * vw->d);
+    SCE_VOctree_SetOrigin (&wt->vo, x * (long)vw->w, y * (long)vw->h,
+                           z * (long)vw->d);
     SCE_VOctree_SetDimensions (&wt->vo, vw->w, vw->h, vw->d);
     SCE_VOctree_SetPrefix (&wt->vo, prefix);
     SCE_VOctree_SetFileSystem (&wt->vo, vw->fs);
@@ -226,9 +227,9 @@ SCE_SVoxelWorldTree* SCE_VWorld_GetTree (SCE_SVoxelWorld *vw,
     SCE_SListIterator *it = NULL;
     long a, b, c;
 
-    x *= vw->w;
-    y *= vw->h;
-    z *= vw->d;
+    x *= (long)vw->w;
+    y *= (long)vw->h;
+    z *= (long)vw->d;
 
     SCE_List_ForEach (it, &vw->trees) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
@@ -345,9 +346,9 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld *vw, const char *fname)
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
 
         SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
-        x /= vw->w;
-        y /= vw->h;
-        z /= vw->d;
+        x /= (long)vw->w;
+        y /= (long)vw->h;
+        z /= (long)vw->d;
         SCE_Encode_StreamLong (x, &fp);
         SCE_Encode_StreamLong (y, &fp);
         SCE_Encode_StreamLong (z, &fp);
@@ -391,9 +392,9 @@ int SCE_VWorld_LoadAllTrees (SCE_SVoxelWorld *vw)
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
 
         SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
-        x /= vw->w;
-        y /= vw->h;
-        z /= vw->d;
+        x /= (long)vw->w;
+        y /= (long)vw->h;
+        z /= (long)vw->d;
         SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
         /* TODO: use a macro for "octree.bin" */
         strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
@@ -438,9 +439,9 @@ int SCE_VWorld_SaveAllTrees (SCE_SVoxelWorld *vw)
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
 
         SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
-        x /= vw->w;
-        y /= vw->h;
-        z /= vw->d;
+        x /= (long)vw->w;
+        y /= (long)vw->h;
+        z /= (long)vw->d;
         SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
         /* TODO: use a macro for "octree.bin" */
         strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
