@@ -959,13 +959,9 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 node->children[i]->status = SCE_VOCTREE_NODE_EMPTY;
                 node->children[i]->in_volume = 0;
             }
-            for (i = 0; i < 8; i++) {
-                SCE_SLongRect3 r;
-                SCE_VOctree_ConstructRect (node_rect, i, &r);
-                if (SCE_VOctree_Set (vo, node->children[i], &r, level,
-                                     depth - 1, area, grid) < 0)
-                    goto fail;
-            }
+            if (SCE_VOctree_Set (vo, node, node_rect, level, depth,
+                                 area, grid) < 0)
+                goto fail;
         }
         break;
     case SCE_VOCTREE_NODE_FULL:
@@ -1011,13 +1007,9 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 node->children[i]->in_volume = vo->w * vo->h * vo->d;
                 node->children[i]->material = node->material;
             }
-            for (i = 0; i < 8; i++) {
-                SCE_SLongRect3 r;
-                SCE_VOctree_ConstructRect (node_rect, i, &r);
-                if (SCE_VOctree_Set (vo, node->children[i], &r, level,
-                                     depth - 1, area, grid) < 0)
-                    goto fail;
-            }
+            if (SCE_VOctree_Set (vo, node, node_rect, level, depth,
+                                 area, grid) < 0)
+                goto fail;
         }
         break;
     case SCE_VOCTREE_NODE_LEAF:
@@ -1052,13 +1044,9 @@ SCE_VOctree_Set (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 node->children[i]->status = status;
                 node->children[i]->in_volume = in_volume;
             }
-            for (i = 0; i < 8; i++) {
-                SCE_SLongRect3 r;
-                SCE_VOctree_ConstructRect (node_rect, i, &r);
-                if (SCE_VOctree_Set (vo, node->children[i], &r, level,
-                                     depth - 1, area, grid) < 0)
-                    goto fail;
-            }
+            if (SCE_VOctree_Set (vo, node, node_rect, level, depth,
+                                 area, grid) < 0)
+                goto fail;
         }
         break;
     case SCE_VOCTREE_NODE_NODE:
@@ -1195,13 +1183,8 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 node->children[i]->status = SCE_VOCTREE_NODE_EMPTY;
                 node->children[i]->in_volume = 0;
             }
-            for (i = 0; i < 8; i++) {
-                SCE_SLongRect3 r;
-                SCE_VOctree_ConstructRect (node_rect, i, &r);
-                if (SCE_VOctree_Fill (vo, node->children[i], &r, level,
-                                      depth - 1, area) < 0)
-                    goto fail;
-            }
+            if (SCE_VOctree_Fill (vo, node, node_rect, level, depth, area) < 0)
+                goto fail;
         }
         break;
     case SCE_VOCTREE_NODE_FULL:
@@ -1239,14 +1222,8 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 node->children[i]->status = status;
                 node->children[i]->in_volume = in_volume;
             }
-            /* TODO: why not just call VOctree_Fill (node) ? */
-            for (i = 0; i < 8; i++) {
-                SCE_SLongRect3 r;
-                SCE_VOctree_ConstructRect (node_rect, i, &r);
-                if (SCE_VOctree_Fill (vo, node->children[i], &r, level,
-                                      depth - 1, area) < 0)
-                    goto fail;
-            }
+            if (SCE_VOctree_Fill (vo, node, node_rect, level, depth, area) < 0)
+                goto fail;
         }
         break;
     case SCE_VOCTREE_NODE_NODE:
