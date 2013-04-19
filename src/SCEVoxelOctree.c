@@ -825,6 +825,34 @@ SCE_VOctree_CopyToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
     return SCE_OK;
 }
+static int
+SCE_VOctree_FillToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
+                        const SCE_SLongRect3 *node_rect,
+                        const SCE_SLongRect3 *area)
+{
+    SCE_SLongRect3 src_region, dst_region;
+    long diff;
+
+    if (SCE_VOctree_CacheNode (vo, node) < 0) {
+        SCEE_LogSrc ();
+        return SCE_ERROR;
+    }
+
+    SCE_Rectangle3_Intersectionl (node_rect, area, &dst_region);
+    src_region = dst_region;
+    SCE_Rectangle3_SubOriginl (&src_region, area);
+    SCE_Rectangle3_SubOriginl (&dst_region, node_rect);
+    if (vo->usage == SCE_VOCTREE_DENSITY_FIELD) {
+        diff = SCE_VGrid_FillStats (&dst_region, &node->grid, 255);
+        node->in_volume += diff;
+    } else {
+        SCE_VGrid_FillStats2 (&dst_region, &node->grid, 255, node->in);
+    }
+
+    node->is_sync = SCE_FALSE;
+
+    return SCE_OK;
+}
 
 static void
 SCE_VOctree_EraseNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
@@ -1097,6 +1125,189 @@ int SCE_VOctree_SetRegion (SCE_SVoxelOctree *vo, SCEuint level,
 
     return SCE_VOctree_Set (vo, &vo->root, &node_rect, level, depth,
                             area, &grid);
+}
+
+static int
+SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
+                  const SCE_SLongRect3 *node_rect, SCEuint level, SCEuint depth,
+                  const SCE_SLongRect3 *area)
+{
+    size_t i;
+    SCE_SLongRect3 inter, region, local_rect;
+    long x, y, z;
+    SCEuint clevel;             /* current level */
+    int inside;
+    /* TODO: hardcoded patterns */
+    SCEubyte empty_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
+    SCEubyte full_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
+    full_pattern[0] = node->material;
+
+    if (!SCE_Rectangle3_Intersectionl (node_rect, area, &inter))
+        return SCE_OK;
+    /* node is totally inside the region */
+    inside = SCE_Rectangle3_IsInside (&inter, node_rect);
+
+    clevel = level + depth;
+    local_rect = *node_rect;
+    SCE_Rectangle3_GetOriginlv (&local_rect, &x, &y, &z);
+    SCE_VOctree_SetNodeOrigin (node, x, y, z);
+    SCE_Rectangle3_Pow2l (&local_rect, -depth);
+
+    switch (node->status) {
+    case SCE_VOCTREE_NODE_EMPTY:
+        if (inside && depth == 0) {
+            node->status = SCE_VOCTREE_NODE_FULL;
+            break;
+        }
+
+        /* check if the grid is empty first, since the grid is more likely
+           to be small, this test is quite fast and can save us useless
+           file creation/deletion, which is very expensive */
+        region = inter;
+        SCE_Rectangle3_SubOriginl (&region, area);
+
+        /* create this node */
+        SCE_VOctree_MakeNodeFilename (vo, &local_rect, clevel, node->fname);
+        node->level = clevel;
+        SCE_VOctree_SetNodeGrid (node,
+                                 SCE_Rectangle3_GetWidthl (&local_rect),
+                                 SCE_Rectangle3_GetHeightl (&local_rect),
+                                 SCE_Rectangle3_GetDepthl (&local_rect), 1);
+        if (SCE_VOctree_CacheNode (vo, node) < 0)
+            goto fail;
+        SCE_VGrid_Fill (&node->grid, NULL, empty_pattern);
+
+        if (depth == 0) {
+            /* simple copy */
+            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area) < 0)
+                goto fail;
+            if (SCE_isfull (vo, node)) {
+                SCE_VOctree_EraseNode (vo, node);
+                node->status = SCE_VOCTREE_NODE_FULL;
+            } else
+                node->status = SCE_VOCTREE_NODE_LEAF;
+        } else {
+            node->status = SCE_VOCTREE_NODE_NODE;
+            /* create 8 children and recurse */
+            for (i = 0; i < 8; i++) {
+                if (!(node->children[i] = SCE_VOctree_CreateNode (vo)))
+                    goto fail;
+                node->children[i]->status = SCE_VOCTREE_NODE_EMPTY;
+                node->children[i]->in_volume = 0;
+            }
+            for (i = 0; i < 8; i++) {
+                SCE_SLongRect3 r;
+                SCE_VOctree_ConstructRect (node_rect, i, &r);
+                if (SCE_VOctree_Fill (vo, node->children[i], &r, level,
+                                      depth - 1, area) < 0)
+                    goto fail;
+            }
+        }
+        break;
+    case SCE_VOCTREE_NODE_FULL:
+        break;                  /* nice. */
+    case SCE_VOCTREE_NODE_LEAF:
+        if (inside) {
+            /* TODO: maybe a little bit ugly? */
+            SCE_VOctree_EraseNode (vo, node);
+            node->status = SCE_VOCTREE_NODE_FULL;
+            break;
+        }
+
+        if (depth == 0) {
+            /* simple copy */
+            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area) < 0)
+                goto fail;
+            if (SCE_isfull (vo, node)) {
+                SCE_VOctree_EraseNode (vo, node);
+                node->status = SCE_VOCTREE_NODE_FULL;
+            }
+        } else {
+            SCE_EVoxelOctreeStatus status = SCE_VOCTREE_NODE_EMPTY;
+            long in_volume = 0;
+            node->status = SCE_VOCTREE_NODE_NODE;
+
+            if (node->in_volume > (vo->w * vo->h * vo->d) / 2) { /* tkt. */
+                status = SCE_VOCTREE_NODE_FULL;
+                in_volume = vo->w * vo->h * vo->d;
+            }
+
+            /* create 8 children and recurse */
+            for (i = 0; i < 8; i++) {
+                if (!(node->children[i] = SCE_VOctree_CreateNode (vo)))
+                    goto fail;
+                node->children[i]->status = status;
+                node->children[i]->in_volume = in_volume;
+            }
+            /* TODO: why not just call VOctree_Fill (node) ? */
+            for (i = 0; i < 8; i++) {
+                SCE_SLongRect3 r;
+                SCE_VOctree_ConstructRect (node_rect, i, &r);
+                if (SCE_VOctree_Fill (vo, node->children[i], &r, level,
+                                      depth - 1, area) < 0)
+                    goto fail;
+            }
+        }
+        break;
+    case SCE_VOCTREE_NODE_NODE:
+        /* if (inside) delete children; node->status = full; ? */
+
+        if (depth == 0) {
+            /* simple copy */
+            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area) < 0)
+                goto fail;
+        } else {
+            int j = 0, mat = 0;
+            /* recurse */
+            for (i = 0; i < 8; i++) {
+                SCE_SLongRect3 r;
+                SCE_VOctree_ConstructRect (node_rect, i, &r);
+                if (SCE_VOctree_Fill (vo, node->children[i], &r, level,
+                                      depth - 1, area) < 0)
+                    goto fail;
+                if (node->children[i]->status == SCE_VOCTREE_NODE_EMPTY)
+                    j++;
+                else if (node->children[i]->status == SCE_VOCTREE_NODE_FULL)
+                    j--;
+                if (i == 0)
+                    mat = node->children[i]->material;
+                else
+                    mat = node->children[i]->material == mat ? mat : -1;
+            }
+            if (j == 8) {
+                /* TODO: this is impossible, since we just filled at least one
+                   child, not all of them can be completely empty */
+                SCE_VOctree_DeleteChildren (node);
+                SCE_VOctree_EraseNode (vo, node);
+                node->status = SCE_VOCTREE_NODE_EMPTY;
+            } else if (j == -8 && mat > -1) {
+                SCE_VOctree_DeleteChildren (node);
+                SCE_VOctree_EraseNode (vo, node);
+                node->status = SCE_VOCTREE_NODE_FULL;
+                node->material = mat;
+            }
+        }
+        break;
+    }
+
+    return SCE_OK;
+fail:
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+int SCE_VOctree_FillRegion (SCE_SVoxelOctree *vo, SCEuint level,
+                            const SCE_SLongRect3 *area)
+{
+    SCEuint depth;
+    SCE_SLongRect3 node_rect;
+
+    depth = vo->max_depth - level;
+    SCE_Rectangle3_SetFromOriginl (&node_rect, vo->x, vo->y, vo->z,
+                                   vo->w, vo->h, vo->d);
+    SCE_Rectangle3_Pow2l (&node_rect, depth);
+
+    return SCE_VOctree_Fill (vo, &vo->root, &node_rect, level, depth, area);
 }
 
 

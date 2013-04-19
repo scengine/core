@@ -561,6 +561,39 @@ int SCE_VWorld_SetRegion (SCE_SVoxelWorld *vw, const SCE_SLongRect3 *region,
 {
     return SCE_VWorld_Set (vw, 0, region, data);
 }
+int SCE_VWorld_Fill (SCE_SVoxelWorld *vw, SCEuint level, const SCE_SLongRect3 *region)
+{
+    SCE_SList list;
+    SCE_SListIterator *it = NULL;
+    int tmp;
+
+    SCE_List_Init (&list);
+    tmp = vw->create_trees;
+    vw->create_trees = SCE_FALSE;
+    if (SCE_VWorld_FetchTrees (vw, level, region, &list) < 0)
+        goto fail;
+    vw->create_trees = tmp;
+
+    SCE_List_ForEach (it, &list) {
+        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
+        if (SCE_VOctree_FillRegion (&wt->vo, level, region) < 0)
+            goto fail;
+    }
+    SCE_List_Flush (&list);
+
+    SCE_VWorld_PushZone (vw, region, level);
+
+    return SCE_OK;
+fail:
+    vw->create_trees = tmp;
+    SCE_List_Flush (&list);
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+int SCE_VWorld_FillRegion (SCE_SVoxelWorld *vw, const SCE_SLongRect3 *region)
+{
+    return SCE_VWorld_Fill (vw, 0, region);
+}
 
 void SCE_VWorld_AddUpdatedRegion (SCE_SVoxelWorld *vw, SCEuint level,
                                   const SCE_SLongRect3 *zone)
