@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+typedef int (*SCE_FVoxelWorldMkdirFunc)(const char*);
+
 typedef struct sce_svoxelworldtree SCE_SVoxelWorldTree;
 struct sce_svoxelworldtree {
     SCE_SVoxelOctree vo;
@@ -47,6 +49,7 @@ struct sce_svoxelworld {
     SCE_EVoxelOctreeUsage usage;
     int create_trees;
     char prefix[128];           /* root directory */
+    SCE_FVoxelWorldMkdirFunc fmkdir;
     SCE_SFileSystem *fs;
     SCE_SFileCache *fcache;
     SCEulong max_cached_nodes;
@@ -78,6 +81,7 @@ SCEuint SCE_VWorld_GetNumLevels (SCE_SVoxelWorld*);
 void SCE_VWorld_SetPrefix (SCE_SVoxelWorld*, const char*);
 void SCE_VWorld_SetUsage (SCE_SVoxelWorld*, SCE_EVoxelOctreeUsage);
 void SCE_VWorld_SetCreateTrees (SCE_SVoxelWorld*, int);
+void SCE_VWorld_SetMkdirFunc (SCE_SVoxelWorld*, SCE_FVoxelWorldMkdirFunc);
 
 void SCE_VWorld_SetFileSystem (SCE_SVoxelWorld*, SCE_SFileSystem*);
 void SCE_VWorld_SetFileCache (SCE_SVoxelWorld*, SCE_SFileCache*);

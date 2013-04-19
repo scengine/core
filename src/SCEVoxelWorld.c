@@ -162,6 +162,11 @@ void SCE_VWorld_SetCreateTrees (SCE_SVoxelWorld *vw, int c)
 {
     vw->create_trees = c;
 }
+void SCE_VWorld_SetMkdirFunc (SCE_SVoxelWorld *vw, SCE_FVoxelWorldMkdirFunc f)
+{
+    vw->fmkdir = f;
+}
+
 
 /**
  * \brief Must be called before any octree is added to the world
@@ -191,6 +196,7 @@ static void
 SCE_VWorld_SetTreePrefix (char *prefix, const SCE_SVoxelWorld *vw,
                           long x, long y, long z)
 {
+    /* TODO: OS specific directory separator */
     sprintf (prefix, "%s/region_%ld_%ld_%ld", vw->prefix, x, y, z);
 }
 
@@ -200,13 +206,25 @@ SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
     char prefix[128] = {0};
     SCE_SVoxelWorldTree *wt = NULL;
 
-    if (!(wt = SCE_VWorld_CreateTree ())) {
-        SCEE_LogSrc ();
-        return NULL;
-    }
+    if (!(wt = SCE_VWorld_CreateTree ()))
+        goto fail;
 
     SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
-    /* TODO: create directory */
+    if (vw->fmkdir) {
+        char lodpath[128];
+        SCEuint i;
+        size_t end;
+
+        strcpy (lodpath, prefix);
+        /* TODO: OS specific directory separator */
+        strcat (lodpath, "/lod");
+        end = strlen (lodpath);
+        for (i = 0; i < vw->n_lod; i++) {
+            sprintf (&lodpath[end], "%u", i);
+            if (vw->fmkdir (lodpath) < 0)
+                goto fail;
+        }
+    }
 
     SCE_VOctree_SetMaxDepth (&wt->vo, vw->n_lod - 1);
     SCE_VOctree_SetOrigin (&wt->vo, x * (long)vw->w, y * (long)vw->h,
@@ -220,6 +238,9 @@ SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
     SCE_List_Appendl (&vw->trees, &wt->it);
 
     return wt;
+fail:
+    SCEE_LogSrc ();
+    return NULL;
 }
 SCE_SVoxelWorldTree* SCE_VWorld_GetTree (SCE_SVoxelWorld *vw,
                                          long x, long y, long z)
