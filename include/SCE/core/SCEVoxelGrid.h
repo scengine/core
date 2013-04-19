@@ -62,6 +62,9 @@ long SCE_VGrid_CopyStats (const SCE_SLongRect3*, SCE_SVoxelGrid*,
 void SCE_VGrid_CopyStats2 (const SCE_SLongRect3*, SCE_SVoxelGrid*,
                            const SCE_SLongRect3*, const SCE_SVoxelGrid*,
                            long[256]);
+long SCE_VGrid_FillStats (const SCE_SLongRect3*, SCE_SVoxelGrid*, SCEubyte);
+void SCE_VGrid_FillStats2 (const SCE_SLongRect3*, SCE_SVoxelGrid*, SCEubyte,
+                           long[256]);
 
 SCEubyte* SCE_VGrid_Offset (SCE_SVoxelGrid*, SCEulong, SCEulong, SCEulong);
 

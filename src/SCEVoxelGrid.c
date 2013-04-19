@@ -164,6 +164,7 @@ void SCE_VGrid_Copy (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
     dst->full_checked = dst->empty_checked = SCE_FALSE;
 }
 
+
 /* this function assumes n_cmp = 1 */
 long SCE_VGrid_CopyStats (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
                           const SCE_SLongRect3 *src_region,
@@ -228,6 +229,65 @@ void SCE_VGrid_CopyStats2 (const SCE_SLongRect3 *dst_region,SCE_SVoxelGrid *dst,
                 diff[ptr1[0]]--;
                 diff[ptr2[0]]++;
                 ptr1[0] = ptr2[0];
+            }
+        }
+    }
+
+    dst->full_checked = dst->empty_checked = SCE_FALSE;
+}
+
+/* this function assumes n_cmp = 1 */
+long SCE_VGrid_FillStats (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
+                          SCEubyte pattern)
+{
+    long dst_p1[3], dst_p2[3];
+    long x1, y1, z1;
+    SCE_SLongRect3 default_dst_region;
+    SCEubyte *ptr1 = NULL;
+    long diff = 0;
+
+    SCE_Rectangle3_Setl (&default_dst_region, 0, 0, 0, dst->w, dst->h, dst->d);
+    if (!dst_region) dst_region = &default_dst_region;
+
+    SCE_Rectangle3_GetPointslv (dst_region, dst_p1, dst_p2);
+
+    for (z1 = dst_p1[2]; z1 < dst_p2[2]; z1++) {
+        for (y1 = dst_p1[1]; y1 < dst_p2[1]; y1++) {
+            for (x1 = dst_p1[0]; x1 < dst_p2[0]; x1++) {
+                ptr1 = &dst->data[VOFFSET (dst, x1, y1, z1)];
+                if (ptr1[0] <= 127 && pattern > 127)
+                    diff++;
+                else if (ptr1[0] > 127 && pattern <= 127)
+                    diff--;
+                ptr1[0] = pattern;
+            }
+        }
+    }
+
+    dst->full_checked = dst->empty_checked = SCE_FALSE;
+
+    return diff;
+}
+void SCE_VGrid_FillStats2 (const SCE_SLongRect3 *dst_region, SCE_SVoxelGrid *dst,
+                           SCEubyte pattern, long diff[256])
+{
+    long dst_p1[3], dst_p2[3];
+    long x1, y1, z1;
+    SCE_SLongRect3 default_dst_region;
+    SCEubyte *ptr1 = NULL;
+
+    SCE_Rectangle3_Setl (&default_dst_region, 0, 0, 0, dst->w, dst->h, dst->d);
+    if (!dst_region) dst_region = &default_dst_region;
+
+    SCE_Rectangle3_GetPointslv (dst_region, dst_p1, dst_p2);
+
+    for (z1 = dst_p1[2]; z1 < dst_p2[2]; z1++) {
+        for (y1 = dst_p1[1]; y1 < dst_p2[1]; y1++) {
+            for (x1 = dst_p1[0]; x1 < dst_p2[0]; x1++) {
+                ptr1 = &dst->data[VOFFSET (dst, x1, y1, z1)];
+                diff[ptr1[0]]--;
+                diff[pattern]++;
+                ptr1[0] = pattern;
             }
         }
     }
