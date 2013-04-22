@@ -111,7 +111,7 @@ int SCE_VWorld_GetRegion (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
                           SCEubyte*);
 int SCE_VWorld_SetRegion (SCE_SVoxelWorld*, const SCE_SLongRect3*,
                           const SCEubyte*);
-int SCE_VWorld_FillRegion (SCE_SVoxelWorld*, const SCE_SLongRect3*);
+int SCE_VWorld_FillRegion (SCE_SVoxelWorld*, const SCE_SLongRect3*, SCEubyte);
 
 void SCE_VWorld_AddUpdatedRegion (SCE_SVoxelWorld*, SCEuint,
                                   const SCE_SLongRect3*);

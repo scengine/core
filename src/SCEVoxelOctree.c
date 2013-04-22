@@ -828,7 +828,7 @@ SCE_VOctree_CopyToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 static int
 SCE_VOctree_FillToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                         const SCE_SLongRect3 *node_rect,
-                        const SCE_SLongRect3 *area)
+                        const SCE_SLongRect3 *area, SCEubyte pattern)
 {
     SCE_SLongRect3 src_region, dst_region;
     long diff;
@@ -843,10 +843,10 @@ SCE_VOctree_FillToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     SCE_Rectangle3_SubOriginl (&src_region, area);
     SCE_Rectangle3_SubOriginl (&dst_region, node_rect);
     if (vo->usage == SCE_VOCTREE_DENSITY_FIELD) {
-        diff = SCE_VGrid_FillStats (&dst_region, &node->grid, 255);
+        diff = SCE_VGrid_FillStats (&dst_region, &node->grid, pattern);
         node->in_volume += diff;
     } else {
-        SCE_VGrid_FillStats2 (&dst_region, &node->grid, 255, node->in);
+        SCE_VGrid_FillStats2 (&dst_region, &node->grid, pattern, node->in);
     }
 
     node->is_sync = SCE_FALSE;
@@ -880,7 +880,6 @@ static int SCE_isfull (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
         return node->in_volume == vo->w * vo->h * vo->d;
     else {
         size_t i;
-        int mat = -1;
 
         for (i = 0; i < 256; i++) {
             if (node->in[i] == vo->w * vo->h * vo->d) {
@@ -1118,7 +1117,7 @@ int SCE_VOctree_SetRegion (SCE_SVoxelOctree *vo, SCEuint level,
 static int
 SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                   const SCE_SLongRect3 *node_rect, SCEuint level, SCEuint depth,
-                  const SCE_SLongRect3 *area)
+                  const SCE_SLongRect3 *area, SCEubyte pattern)
 {
     size_t i;
     SCE_SLongRect3 inter, region, local_rect;
@@ -1127,8 +1126,6 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     int inside;
     /* TODO: hardcoded patterns */
     SCEubyte empty_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
-    SCEubyte full_pattern[SCE_VOCTREE_VOXEL_ELEMENTS] = {0};
-    full_pattern[0] = node->material;
 
     if (!SCE_Rectangle3_Intersectionl (node_rect, area, &inter))
         return SCE_OK;
@@ -1145,6 +1142,7 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     case SCE_VOCTREE_NODE_EMPTY:
         if (inside && depth == 0) {
             node->status = SCE_VOCTREE_NODE_FULL;
+            node->material = pattern;
             break;
         }
 
@@ -1167,7 +1165,8 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area) < 0)
+            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area,
+                                        pattern) < 0)
                 goto fail;
             if (SCE_isfull (vo, node)) {
                 SCE_VOctree_EraseNode (vo, node);
@@ -1183,23 +1182,27 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 node->children[i]->status = SCE_VOCTREE_NODE_EMPTY;
                 node->children[i]->in_volume = 0;
             }
-            if (SCE_VOctree_Fill (vo, node, node_rect, level, depth, area) < 0)
+            if (SCE_VOctree_Fill (vo, node, node_rect, level, depth, area,
+                                  pattern) < 0)
                 goto fail;
         }
         break;
     case SCE_VOCTREE_NODE_FULL:
+        node->material = pattern;
         break;                  /* nice. */
     case SCE_VOCTREE_NODE_LEAF:
         if (inside) {
             /* TODO: maybe a little bit ugly? */
             SCE_VOctree_EraseNode (vo, node);
             node->status = SCE_VOCTREE_NODE_FULL;
+            node->material = pattern;
             break;
         }
 
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area) < 0)
+            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area,
+                                        pattern) < 0)
                 goto fail;
             if (SCE_isfull (vo, node)) {
                 SCE_VOctree_EraseNode (vo, node);
@@ -1222,7 +1225,8 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 node->children[i]->status = status;
                 node->children[i]->in_volume = in_volume;
             }
-            if (SCE_VOctree_Fill (vo, node, node_rect, level, depth, area) < 0)
+            if (SCE_VOctree_Fill (vo, node, node_rect, level, depth, area,
+                                  pattern) < 0)
                 goto fail;
         }
         break;
@@ -1231,7 +1235,8 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
 
         if (depth == 0) {
             /* simple copy */
-            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area) < 0)
+            if (SCE_VOctree_FillToNode (vo, node, &local_rect, area,
+                                        pattern) < 0)
                 goto fail;
         } else {
             int j = 0, mat = 0;
@@ -1240,7 +1245,7 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                 SCE_SLongRect3 r;
                 SCE_VOctree_ConstructRect (node_rect, i, &r);
                 if (SCE_VOctree_Fill (vo, node->children[i], &r, level,
-                                      depth - 1, area) < 0)
+                                      depth - 1, area, pattern) < 0)
                     goto fail;
                 if (node->children[i]->status == SCE_VOCTREE_NODE_EMPTY)
                     j++;
@@ -1252,16 +1257,16 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                     mat = node->children[i]->material == mat ? mat : -1;
             }
             if (j == 8) {
-                /* TODO: this is impossible, since we just filled at least one
-                   child, not all of them can be completely empty */
+                /* can only happen if pattern = 0 and vo->usage = MATERIAL */
                 SCE_VOctree_DeleteChildren (node);
                 SCE_VOctree_EraseNode (vo, node);
                 node->status = SCE_VOCTREE_NODE_EMPTY;
+                node->material = pattern;
             } else if (j == -8 && mat > -1) {
                 SCE_VOctree_DeleteChildren (node);
                 SCE_VOctree_EraseNode (vo, node);
                 node->status = SCE_VOCTREE_NODE_FULL;
-                node->material = mat;
+                node->material = pattern;
             }
         }
         break;
@@ -1273,8 +1278,19 @@ fail:
     return SCE_ERROR;
 }
 
+/**
+ * \brief 
+ * 
+ * \param vo 
+ * \param level 
+ * \param area 
+ * \param pattern ignored on non-material voctrees, you should not set
+ * it to 0 but truth is: it works, so you dont have to care (yet)
+ * 
+ * \return 
+ */
 int SCE_VOctree_FillRegion (SCE_SVoxelOctree *vo, SCEuint level,
-                            const SCE_SLongRect3 *area)
+                            const SCE_SLongRect3 *area, SCEubyte pattern)
 {
     SCEuint depth;
     SCE_SLongRect3 node_rect;
@@ -1283,8 +1299,10 @@ int SCE_VOctree_FillRegion (SCE_SVoxelOctree *vo, SCEuint level,
     SCE_Rectangle3_SetFromOriginl (&node_rect, vo->x, vo->y, vo->z,
                                    vo->w, vo->h, vo->d);
     SCE_Rectangle3_Pow2l (&node_rect, depth);
+    pattern = vo->usage == SCE_VOCTREE_MATERIAL ? pattern : 255;
 
-    return SCE_VOctree_Fill (vo, &vo->root, &node_rect, level, depth, area);
+    return SCE_VOctree_Fill (vo, &vo->root, &node_rect, level, depth,
+                             area, pattern);
 }
 
 

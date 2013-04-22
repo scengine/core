@@ -561,7 +561,8 @@ int SCE_VWorld_SetRegion (SCE_SVoxelWorld *vw, const SCE_SLongRect3 *region,
 {
     return SCE_VWorld_Set (vw, 0, region, data);
 }
-int SCE_VWorld_Fill (SCE_SVoxelWorld *vw, SCEuint level, const SCE_SLongRect3 *region)
+int SCE_VWorld_Fill (SCE_SVoxelWorld *vw, SCEuint level,
+                     const SCE_SLongRect3 *region, SCEubyte pattern)
 {
     SCE_SList list;
     SCE_SListIterator *it = NULL;
@@ -576,7 +577,7 @@ int SCE_VWorld_Fill (SCE_SVoxelWorld *vw, SCEuint level, const SCE_SLongRect3 *r
 
     SCE_List_ForEach (it, &list) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
-        if (SCE_VOctree_FillRegion (&wt->vo, level, region) < 0)
+        if (SCE_VOctree_FillRegion (&wt->vo, level, region, pattern) < 0)
             goto fail;
     }
     SCE_List_Flush (&list);
@@ -590,9 +591,10 @@ fail:
     SCEE_LogSrc ();
     return SCE_ERROR;
 }
-int SCE_VWorld_FillRegion (SCE_SVoxelWorld *vw, const SCE_SLongRect3 *region)
+int SCE_VWorld_FillRegion (SCE_SVoxelWorld *vw, const SCE_SLongRect3 *region,
+                           SCEubyte pattern)
 {
-    return SCE_VWorld_Fill (vw, 0, region);
+    return SCE_VWorld_Fill (vw, 0, region, pattern);
 }
 
 void SCE_VWorld_AddUpdatedRegion (SCE_SVoxelWorld *vw, SCEuint level,

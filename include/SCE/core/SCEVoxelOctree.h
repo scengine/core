@@ -149,7 +149,8 @@ int SCE_VOctree_GetRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
                            SCEubyte*);
 int SCE_VOctree_SetRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
                            const SCEubyte*);
-int SCE_VOctree_FillRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*);
+int SCE_VOctree_FillRegion (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
+                            SCEubyte);
 int SCE_VOctree_FetchNodes (SCE_SVoxelOctree*, SCEuint, const SCE_SLongRect3*,
                             SCE_SList*);
 SCE_SVoxelOctreeNode* SCE_VOctree_FetchNode (SCE_SVoxelOctree*, SCEuint,
