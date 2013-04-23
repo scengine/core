@@ -1128,7 +1128,7 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     if (!SCE_Rectangle3_Intersectionl (node_rect, area, &inter))
         return SCE_OK;
     /* node is totally inside the region */
-    inside = SCE_Rectangle3_IsInside (&inter, node_rect);
+    inside = SCE_Rectangle3_IsInsidel (&inter, node_rect);
 
     clevel = level + depth;
     local_rect = *node_rect;
@@ -1143,6 +1143,8 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
             node->material = pattern;
             break;
         }
+        if (pattern == 0)
+            break;
 
         /* check if the grid is empty first, since the grid is more likely
            to be small, this test is quite fast and can save us useless
@@ -1189,7 +1191,7 @@ SCE_VOctree_Fill (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
         node->material = pattern;
         break;                  /* nice. */
     case SCE_VOCTREE_NODE_LEAF:
-        if (inside) {
+        if (inside && depth == 0) {
             /* TODO: maybe a little bit ugly? */
             SCE_VOctree_EraseNode (vo, node);
             node->status = SCE_VOCTREE_NODE_FULL;
