@@ -830,7 +830,7 @@ SCE_VOctree_FillToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
                         const SCE_SLongRect3 *node_rect,
                         const SCE_SLongRect3 *area, SCEubyte pattern)
 {
-    SCE_SLongRect3 src_region, dst_region;
+    SCE_SLongRect3 dst_region;
     long diff;
 
     if (SCE_VOctree_CacheNode (vo, node) < 0) {
@@ -839,8 +839,6 @@ SCE_VOctree_FillToNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node,
     }
 
     SCE_Rectangle3_Intersectionl (node_rect, area, &dst_region);
-    src_region = dst_region;
-    SCE_Rectangle3_SubOriginl (&src_region, area);
     SCE_Rectangle3_SubOriginl (&dst_region, node_rect);
     if (vo->usage == SCE_VOCTREE_DENSITY_FIELD) {
         diff = SCE_VGrid_FillStats (&dst_region, &node->grid, pattern);
