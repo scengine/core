@@ -710,6 +710,7 @@ int SCE_VWorld_GenerateLOD (SCE_SVoxelWorld *vw, SCEuint level,
 {
     size_t i;
     SCE_SLongRect3 src, dst;
+    SCE_EVoxelOctreeStatus status;
     long p1[3], p2[3];
 
     src = dst = *zone;
@@ -726,6 +727,22 @@ int SCE_VWorld_GenerateLOD (SCE_SVoxelWorld *vw, SCEuint level,
         p2[i] = p2[i] * 2 + 1;
     }
     SCE_Rectangle3_Setlv (&src, p1, p2);
+
+    status = SCE_VWorld_GetRegionStatus (vw, level, &src);
+    switch (status) {
+    case SCE_VOCTREE_NODE_EMPTY:
+        if (updated)
+            *updated = dst;
+        return SCE_OK;
+    case SCE_VOCTREE_NODE_FULL:
+        /* TODO: might just not work for material voxels but WHATEVER */
+        /* TODO: yeah GetRegionsStatus() should return the material. */
+        SCE_VWorld_Fill (vw, level + 1, &dst, 255); /* TODO: full pattern */
+        if (updated)
+            *updated = dst;
+        return SCE_OK;
+    default: break;
+    }
 
     /* if one of the region exceed the size in vw's buffers,
        split LOD generation */
