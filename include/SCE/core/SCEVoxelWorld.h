@@ -135,6 +135,8 @@ int SCE_VWorld_FetchAllNodes (SCE_SVoxelWorld*, SCEuint, SCE_SList*);
 int SCE_VWorld_FetchAllTreeNodes (SCE_SVoxelWorld*, long, long, long,
                                   SCEuint, SCE_SList*);
 
+SCE_EVoxelOctreeStatus
+SCE_VWorld_GetRegionStatus (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*);
 
 int SCE_VWorld_UpdateCache (SCE_SVoxelWorld*);
 int SCE_VWorld_SyncCache (SCE_SVoxelWorld*);

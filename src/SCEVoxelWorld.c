@@ -1003,6 +1003,41 @@ int SCE_VWorld_FetchAllTreeNodes (SCE_SVoxelWorld *vw, long x, long y, long z,
     return SCE_OK;
 }
 
+SCE_EVoxelOctreeStatus
+SCE_VWorld_GetRegionStatus (SCE_SVoxelWorld *vw, SCEuint level,
+                            const SCE_SLongRect3 *r)
+{
+    SCE_SList list;
+    SCE_SListIterator *it = NULL;
+    SCE_EVoxelOctreeStatus status = SCE_VOCTREE_NODE_LEAF, ns;
+    int tmp;
+
+    SCE_List_Init (&list);
+
+    tmp = vw->create_trees;
+    vw->create_trees = SCE_FALSE;
+    SCE_VWorld_FetchNodes (vw, level, r, &list);
+    SCE_List_ForEach (it, &list) {
+        SCE_SVoxelOctreeNode *node = SCE_List_GetData (it);
+
+        ns = SCE_VOctree_GetNodeStatus (node);
+        if (ns == SCE_VOCTREE_NODE_LEAF || ns == SCE_VOCTREE_NODE_NODE) {
+            status = SCE_VOCTREE_NODE_LEAF;
+            break;
+        }
+
+        if (status == SCE_VOCTREE_NODE_LEAF || status == ns)
+            status = ns;
+        else {
+            status = SCE_VOCTREE_NODE_LEAF;
+            break;
+        }
+    }
+
+    SCE_List_Flush (&list);
+    vw->create_trees = tmp;
+    return status;
+}
 
 int SCE_VWorld_UpdateCache (SCE_SVoxelWorld *vw)
 {
