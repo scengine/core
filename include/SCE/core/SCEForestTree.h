@@ -43,7 +43,7 @@ struct sce_sforesttreenode {
     SCEuint n_polygons;   /* tessellation of the node (number of vertices) */
 
     int leaf_index;   /**< Whether this node should generate a bush */
-    SCE_TMatrix4x3 leaf_matrix; /**< Bush's matrix */
+    SCE_TMatrix4x3 leaf_matrix; /**< Bush's matrix TODO: remove, use node's matrix */
 
     SCEuint index;        /* index of this node (which is a vertex) */
     SCE_SForestTreeNode *children[SCE_MAX_FTREE_DEGREE];
@@ -152,6 +152,8 @@ size_t SCE_FTree_GetNumBranches (const SCE_SForestTree*);
 int SCE_FTree_SpaceColonization (SCE_SForestTree*,
                                  const SCE_SForestTreeParameters*,
                                  const SCE_TVector3, SCE_TVector3*, size_t);
+
+void SCE_FTree_DistributeBushes (SCE_SForestTree*, SCEuint);
 
 void SCE_FTree_ComputeRadius (SCE_SForestTree*, float);
 void SCE_FTree_ReduceVertexCount (SCE_SForestTree*);

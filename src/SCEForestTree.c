@@ -753,8 +753,13 @@ SCE_FTree_UpdateBushesMatricesAux (SCE_SForestTree *ft,
     size_t i;
 
     if (node->leaf_index >= 0) {
+#if 0
         SCE_Matrix4x3_Copy (&ft->bushes[node->leaf_index][ft->index_counter],
                             node->leaf_matrix);
+#else
+        SCE_Matrix4x3_Copy (&ft->bushes[node->leaf_index][ft->index_counter],
+                            node->matrix);
+#endif
         ft->index_counter += 4 * 3;
     }
 
@@ -985,22 +990,122 @@ fail:
     return SCE_ERROR;
 }
 
+static int SCE_FTree_AverageNodePosition (SCE_SForestTreeNode *node,
+                                          SCE_TVector3 pos)
+{
+    int i;
+    SCE_TVector3 p;
+    float div;
+    size_t count = 0;
+
+    /* only take intersections into account (better results, trust me.) */
+    if (node->n_branches <= 1) {
+        SCE_FTree_GetNodePositionv (node, pos); /* bicans. */
+        return SCE_FALSE;
+    }
+
+#if 0
+    if (node->n_children != 1) {
+        SCE_FTree_GetNodePositionv (node, p);
+        if (node->n_children == 0)
+            SCE_Vector3_Operator1v (pos, =, p);
+        else {
+            SCE_Vector3_Operator2 (pos, =, p, *, 0.5);
+            div = 0.5 / node->n_children;
+        }
+    } else {
+        SCE_Vector3_Set (pos, 0.0, 0.0, 0.0);
+        div = 1.0;
+    }
+#endif
+
+    SCE_Vector3_Set (pos, 0.0, 0.0, 0.0);
+
+    for (i = 0; i < node->n_children; i++) {
+        if (SCE_FTree_AverageNodePosition (node->children[i], p)) {
+            count++;
+            SCE_Vector3_Operator1v (pos, +=, p);
+        }
+    }
+
+    if (!count)
+        SCE_FTree_GetNodePositionv (node, pos);
+    else {
+        div = 1.0 / count;
+        SCE_FTree_GetNodePositionv (node, p);
+        SCE_Vector3_Operator2v (pos, = 0.5 * div *, pos, + 0.5 *, p);
+    }
+
+    return SCE_TRUE;
+}
+
+static void SCE_FTree_DistributeBushesAux (SCE_SForestTreeNode *node,
+                                           SCEuint n_bushes)
+{
+    int i;
+    if (node->n_branches > 16) {
+        for (i = 0; i < node->n_children; i++)
+            SCE_FTree_DistributeBushesAux (node->children[i], n_bushes);
+    } else if (node->n_children >= 1) { /* we dont want to allocate memory */
+        SCE_SForestTreeNode *new = node->children[0];
+        SCE_TVector3 new_pos = {0.0, 0.0, 0.0}, dir, pos;
+        SCE_TMatrix4x3 rot;
+        SCE_TVector3 b1, b2, b3;
+
+        /* new child at the average position of sub-branches */
+        SCE_FTree_AverageNodePosition (node, new_pos);
+        /* TODO: we must consider the global shape (convex hull) of the
+           sub-branches, for both scaling and potentially choosing a more
+           appropriate bush model */
+        /* compute final matrix of the new child */
+        SCE_FTree_GetNodePositionv (node, pos);
+        SCE_Vector3_Operator2v (dir, =, new_pos, -, pos);
+        SCE_Vector3_Normalize (dir);
+        SCE_Matrix4x3_GetBase (node->matrix, b1, b2, b3);
+        SCE_Matrix4x3_Rotation (rot, b3, dir);
+        SCE_Matrix4x3_Mul (rot, node->matrix, new->matrix);
+        SCE_Matrix4x3_SetTranslation (new->matrix, new_pos);
+
+        for (i = 0; i < new->n_children; i++) {
+            SCE_FTree_DeleteNode (new->children[i]);
+            new->children[i] = NULL;
+        }
+        new->n_children = 0;
+
+        /* remove other nodes */
+        for (i = 1; i < node->n_children; i++) {
+            SCE_FTree_DeleteNode (node->children[i]);
+            node->children[i] = NULL;
+        }
+        node->n_children = 1;
+
+        SCE_Matrix4x3_Copy (new->leaf_matrix, new->matrix);
+        new->leaf_index = SCE_Math_RandRange (0, n_bushes - 1);
+    }
+}
+/**
+ * \brief Randomly places leaf instances at some nodes
+ * \param ft 
+ * \param n_bushes number of different bush instance
+ *
+ * You wanna call SCE_FTree_CountNodes() on \p ft before and after this function
+ */
+void SCE_FTree_DistributeBushes (SCE_SForestTree *ft, SCEuint n_bushes)
+{
+    SCE_FTree_DistributeBushesAux (&ft->root, n_bushes);
+}
 
 static void SCE_FTree_ComputeRadiusAux (SCE_SForestTreeNode *node, float r)
 {
-    if (node->n_children == 0) {
-        node->radius = 0.0;
-    } else {
-        int i;
-        node->radius = r;
-        for (i = 0; i < node->n_children; i++) {
-            float radius;
-            float factor;
+    int i;
+    node->radius = r;
+    for (i = 0; i < node->n_children; i++) {
+        float radius;
+        float factor;
 
-            factor = (float)node->children[i]->n_branches / node->n_branches;
-            radius = sqrt (factor * r * r);
-            SCE_FTree_ComputeRadiusAux (node->children[i], radius);
-        }
+        factor = (float)node->children[i]->n_branches / node->n_branches;
+        radius = sqrt (factor * r * r);
+        SCE_FTree_ComputeRadiusAux (node->children[i], radius);
     }
 }
 void SCE_FTree_ComputeRadius (SCE_SForestTree *ft, float trunk)
