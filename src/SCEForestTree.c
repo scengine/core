@@ -1060,8 +1060,8 @@ static void SCE_FTree_MergeNodesAux (SCE_SForestTreeNode *node, float height, fl
 
             /* compute error (a subtle mix between some dot products) */
             /* angle between two directions of the nodes */
-            SCE_Matrix4x3_GetBase (node, p1, p2, d1);
-            SCE_Matrix4x3_GetBase (node->children[0], p1, p2, d2);
+            SCE_Matrix4x3_GetBase (node->matrix, p1, p2, d1);
+            SCE_Matrix4x3_GetBase (node->children[0]->matrix, p1, p2, d2);
             theta = 0.5 * (1.0 - SCE_Vector3_Dot (d1, d2));
             if (theta > angle)
                 break;
