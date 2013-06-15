@@ -638,11 +638,15 @@ int SCE_VOctree_SyncNode (SCE_SVoxelOctree *vo, SCE_SVoxelOctreeNode *node)
         if (SCE_VOctree_CompressNode (node) < 0)
             goto fail;
         node->is_sync = SCE_TRUE;
+#if 0
         SCEE_SendMsg ("synced %d bytes %s\n", SCE_VGrid_GetSize (&node->grid),
                       node->fname);
+#endif
     } else {
+#if 0
         SCEE_SendMsg ("NOT synced %d bytes %s\n",
                       SCE_VGrid_GetSize (&node->grid), node->fname);
+#endif
     }
 
     return SCE_OK;
@@ -1286,6 +1290,7 @@ fail:
  * \param area 
  * \param pattern ignored on non-material voctrees, you should not set
  * it to 0 but truth is: it works, so you dont have to care (yet)
+ * Not true anymore, it appears that 0 doesnt work.
  * 
  * \return 
  */
