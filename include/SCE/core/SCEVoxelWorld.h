@@ -43,6 +43,8 @@ struct sce_svoxelworldtree {
 typedef struct sce_svoxelworld SCE_SVoxelWorld;
 struct sce_svoxelworld {
     SCE_SList trees;            /* list of VoxelWorldTree */
+    SCE_SArray2D trees_grid;
+    int trees_initialized;
 
     SCEulong w, h, d;
     SCEuint n_lod;

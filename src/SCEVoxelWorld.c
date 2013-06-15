@@ -66,6 +66,9 @@ void SCE_VWorld_Init (SCE_SVoxelWorld *vw)
     size_t i;
 
     SCE_List_Init (&vw->trees);
+    SCE_Array2D_Init (&vw->trees_grid);
+    vw->trees_initialized = SCE_FALSE;
+    SCE_Array2D_SetElementSize (&vw->trees_grid, sizeof (SCE_SVoxelWorldTree*));
     SCE_List_SetFreeFunc (&vw->trees, SCE_VWorld_FreeFunc);
     vw->w = vw->h = vw->d = 0;
     vw->n_lod = 1;
@@ -88,6 +91,7 @@ void SCE_VWorld_Init (SCE_SVoxelWorld *vw)
 void SCE_VWorld_Clear (SCE_SVoxelWorld *vw)
 {
     SCE_List_Clear (&vw->trees);
+    SCE_Array2D_Clear (&vw->trees_grid);
     SCE_free (vw->buffer1);
     SCE_free (vw->buffer2);
 }
@@ -235,7 +239,16 @@ SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld *vw,
     SCE_VOctree_SetFileCache (&wt->vo, vw->fcache);
     SCE_VOctree_SetMaxCachedNodes (&wt->vo, vw->max_cached_nodes);
     SCE_VOctree_SetUsage (&wt->vo, vw->usage);
+
     SCE_List_Appendl (&vw->trees, &wt->it);
+    if (!vw->trees_initialized) {
+        void *pattern = NULL;
+        if (SCE_Array2D_SetEmptyPattern (&vw->trees_grid, &pattern) < 0)
+            goto fail;
+        vw->trees_initialized = SCE_TRUE;
+    }
+    if (SCE_Array2D_Set (&vw->trees_grid, x, y, &wt) < 0)
+        goto fail;
 
     return wt;
 fail:
@@ -245,19 +258,9 @@ fail:
 SCE_SVoxelWorldTree* SCE_VWorld_GetTree (SCE_SVoxelWorld *vw,
                                          long x, long y, long z)
 {
-    SCE_SListIterator *it = NULL;
-    long a, b, c;
-
-    x *= (long)vw->w;
-    y *= (long)vw->h;
-    z *= (long)vw->d;
-
-    SCE_List_ForEach (it, &vw->trees) {
-        SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
-        SCE_VOctree_GetOriginv (&wt->vo, &a, &b, &c);
-        if (a == x && b == y && c == z)
-            return wt;
-    }
+    SCE_SVoxelWorldTree *tree = NULL;
+    if (SCE_Array2D_Get (&vw->trees_grid, x, y, &tree))
+        return tree;
     return NULL;
 }
 void SCE_VWorld_GetTreeOriginv (const SCE_SVoxelWorldTree *wt,
