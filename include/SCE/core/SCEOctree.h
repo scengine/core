@@ -47,10 +47,11 @@ typedef struct sce_soctree SCE_SOctree;
 typedef void (*SCE_FOctreeInsertFunc)(SCE_SOctree *tree,SCE_SOctreeElement *el);
 
 struct sce_soctreeelement {
-    SCE_SListIterator it;
+    SCE_SListIterator it, it2;
     SCE_FOctreeInsertFunc insert;/**< Insert function */
     SCE_SOctree *octree;         /**< Octree */
     SCE_SBoundingSphere *sphere; /**< Sphere used for collision detection */
+    void *udata;
 };
 
 
@@ -69,8 +70,6 @@ typedef int (*SCE_FOctreeLimitFunc)(SCE_SOctree *tree, void *param);
 
 /**
  * \brief Octree definition structure
- * \warning You shouldn't directly access to any of the members of this
- *          structure.
  */
 struct sce_soctree {
     SCE_SOctree *child[8];  /**< Array of octree's children */
@@ -81,18 +80,29 @@ struct sce_soctree {
     SCE_SBoundingBox box;   /**< Octree's bounding box */
     SCE_SList elements;     /**< Elements contained in the octree */
     void *data;             /**< User defined data */
+    SCE_SListIterator public_it;
+    SCE_SListIterator it;
 };
 
 /** @} */
 
-SCE_SOctree* SCE_Octree_Create (void);
+void SCE_Octree_Init (SCE_SOctree*);
 void SCE_Octree_Clear (SCE_SOctree*);
+SCE_SOctree* SCE_Octree_Create (void);
 void SCE_Octree_Delete (SCE_SOctree*);
 void SCE_Octree_DeleteRecursive (SCE_SOctree*);
 
 void SCE_Octree_InitElement (SCE_SOctreeElement*);
+void SCE_Octree_ClearElement (SCE_SOctreeElement*);
 SCE_SOctreeElement* SCE_Octree_CreateElement (void);
 void SCE_Octree_DeleteElement (SCE_SOctreeElement*);
+
+void SCE_Octree_SetElementBoundingSphere (SCE_SOctreeElement*,
+                                          SCE_SBoundingSphere*);
+SCE_SBoundingSphere* SCE_Octree_GetElementBoundingSphere (SCE_SOctreeElement*);
+void SCE_Octree_GetElementCenterv (const SCE_SOctreeElement*, SCE_TVector3);
+void SCE_Octree_SetElementData (SCE_SOctreeElement*, void*);
+void* SCE_Octree_GetElementData (SCE_SOctreeElement*);
 
 void SCE_Octree_SetCenter (SCE_SOctree*, float, float, float);
 void SCE_Octree_SetCenterv (SCE_SOctree*, SCE_TVector3);
@@ -105,6 +115,7 @@ SCE_SBoundingBox* SCE_Octree_GetBoundingBox (SCE_SOctree*);
 
 void SCE_Octree_SetData (SCE_SOctree*, void*);
 void* SCE_Octree_GetData (SCE_SOctree*);
+SCE_SListIterator* SCE_Octree_GetIterator (SCE_SOctree*);
 
 int SCE_Octree_IsVisible (SCE_SOctree*);
 int SCE_Octree_IsPartiallyVisible (SCE_SOctree*);
@@ -126,6 +137,26 @@ void SCE_Octree_ReinsertElement (SCE_SOctreeElement*);
 void SCE_Octree_RemoveElement (SCE_SOctreeElement*);
 
 void SCE_Octree_MarkVisibles (SCE_SOctree*, SCE_SFrustum*);
+
+/* new API */
+
+void SCE_Octree_FetchNodesBB (SCE_SOctree*, const SCE_SBoundingBox*,
+                              SCE_SList*);
+void SCE_Octree_FetchNodesRect (SCE_SOctree*, const SCE_SLongRect3*,
+                                SCE_SList*);
+void SCE_Octree_FetchNodesBS (SCE_SOctree*, const SCE_SBoundingSphere*,
+                              SCE_SList*);
+void SCE_Octree_FetchNodesFrustum (SCE_SOctree*, const SCE_SFrustum*,
+                                   SCE_SList*);
+
+void SCE_Octree_FetchElementsBB (SCE_SOctree*, const SCE_SBoundingBox*,
+                                 SCE_SList*);
+void SCE_Octree_FetchElementsRect (SCE_SOctree*, const SCE_SLongRect3*,
+                                   SCE_SList*);
+void SCE_Octree_FetchElementsBS (SCE_SOctree*, const SCE_SBoundingSphere*,
+                                 SCE_SList*);
+void SCE_Octree_FetchElementsFrustum (SCE_SOctree*, const SCE_SFrustum*,
+                                      SCE_SList*);
 
 #ifdef __cplusplus
 } /* extern "C" */

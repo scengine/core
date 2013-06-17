@@ -43,7 +43,7 @@ static void SCE_Octree_InsertLoose (SCE_SOctree*, SCE_SOctreeElement*);
 static void SCE_Octree_InsertNormal (SCE_SOctree*, SCE_SOctreeElement*);
 static void SCE_Octree_Insert (SCE_SOctree*, SCE_SOctreeElement*);
 
-static void SCE_Octree_Init (SCE_SOctree *tree)
+void SCE_Octree_Init (SCE_SOctree *tree)
 {
     size_t i;
     for (i = 0; i < 8; i++)
@@ -55,6 +55,24 @@ static void SCE_Octree_Init (SCE_SOctree *tree)
     SCE_BoundingBox_Init (&tree->box);
     SCE_List_Init (&tree->elements);
     tree->data = NULL;
+    SCE_List_InitIt (&tree->public_it);
+    SCE_List_SetData (&tree->public_it, tree);
+    SCE_List_InitIt (&tree->it);
+    SCE_List_SetData (&tree->it, tree);
+}
+/**
+ * \brief Clears an octree, calls SCE_Octree_Delete() on all its children
+ * \sa SCE_Octree_DeleteRecursive(), SCE_Octree_Delete()
+ */
+void SCE_Octree_Clear (SCE_SOctree *tree)
+{
+    /* NOTE: remove tree->it? */
+    SCE_List_Clear (&tree->elements);
+    if (tree->child[0]) {
+        size_t i;
+        for (i = 0; i < 8; i++)
+            SCE_Octree_Delete (tree->child[i]);
+    }
 }
 
 /**
@@ -74,49 +92,23 @@ fail:
     return NULL;
 }
 /**
- * \brief Clears an octree by removing recusivly all its chlidren
- * \sa SCE_Octree_DeleteRecursive(), SCE_Octree_Delete()
- */
-void SCE_Octree_Clear (SCE_SOctree *tree)
-{
-    if (tree->child[0]) {
-        size_t i;
-        for (i = 0; i < 8; i++)
-            tree->child[i]->parent = NULL;
-    }
-}
-/**
  * \brief Deletes an octree
  * \param tree an octree to delete
- * 
- * This function deletes the given octree and detachs it of any eventual child.
- * \sa SCE_Octree_DeleteRecursive(), SCE_Octree_Clear()
+ * \sa SCE_Octree_Clear()
  */
 void SCE_Octree_Delete (SCE_SOctree *tree)
 {
     if (tree) {
         SCE_Octree_Clear (tree);
-        SCE_List_Clear (&tree->elements);
         SCE_free (tree);
     }
 }
 /**
- * \brief Deletes an octree and all its children
- * \param tree an octree
- * 
- * This function deletes recursivly an octree.
- * \see SCE_Octree_Delete()
+ * \todo legacy function
  */
 void SCE_Octree_DeleteRecursive (SCE_SOctree *tree)
 {
-    if (tree) {
-        size_t i;
-        for (i = 0; i < 8; i++) {
-            SCE_Octree_DeleteRecursive (tree->child[i]);
-            tree->child[i] = NULL;
-        }
-        SCE_Octree_Delete (tree);
-    }
+    SCE_Octree_Delete (tree);
 }
 
 /**
@@ -125,9 +117,18 @@ void SCE_Octree_DeleteRecursive (SCE_SOctree *tree)
 void SCE_Octree_InitElement (SCE_SOctreeElement *el)
 {
     SCE_List_InitIt (&el->it);
+    SCE_List_SetData (&el->it, el);
+    SCE_List_InitIt (&el->it2);
+    SCE_List_SetData (&el->it2, el);
     el->insert = SCE_Octree_DefaultInsertFunc;
     el->octree = NULL;
     el->sphere = NULL;
+    el->udata = NULL;
+}
+
+void SCE_Octree_ClearElement (SCE_SOctreeElement *el)
+{
+    SCE_Octree_RemoveElement (el);
 }
 
 /**
@@ -152,9 +153,31 @@ fail:
 void SCE_Octree_DeleteElement (SCE_SOctreeElement *el)
 {
     if (el) {
-        SCE_Octree_RemoveElement (el);
+        SCE_Octree_ClearElement (el);
         SCE_free (el);
     }
+}
+
+void SCE_Octree_SetElementBoundingSphere (SCE_SOctreeElement *el,
+                                          SCE_SBoundingSphere *sphere)
+{
+    el->sphere = sphere;
+}
+SCE_SBoundingSphere* SCE_Octree_GetElementBoundingSphere(SCE_SOctreeElement *el)
+{
+    return el->sphere;
+}
+void SCE_Octree_GetElementCenterv (const SCE_SOctreeElement *el, SCE_TVector3 c)
+{
+    SCE_BoundingSphere_GetCenterv (el->sphere, c);
+}
+void SCE_Octree_SetElementData (SCE_SOctreeElement *el, void *data)
+{
+    el->udata = data;
+}
+void* SCE_Octree_GetElementData (SCE_SOctreeElement *el)
+{
+    return el->udata;
 }
 
 
@@ -237,6 +260,11 @@ void* SCE_Octree_GetData (SCE_SOctree *tree)
 {
     return tree->data;
 }
+SCE_SListIterator* SCE_Octree_GetIterator (SCE_SOctree *tree)
+{
+    return &tree->public_it;
+}
+
 
 /**
  * \brief Is \p tree visible?
@@ -317,6 +345,7 @@ int SCE_Octree_MakeChildren (SCE_SOctree *tree, int useloose, float ratio)
     w2 = w / 2.0f;
     h2 = h / 2.0f;
 
+    /* TODO: this seems to be wrong, especially with loose */
     for (i = 0; i < 8; i += 4) {
         SCE_Vector3_Copy (origins[i], origin);
         origins[i][2] += d2 * (1.0f - ratio);
@@ -482,7 +511,7 @@ void SCE_Octree_ReinsertElement (SCE_SOctreeElement *el)
 void SCE_Octree_RemoveElement (SCE_SOctreeElement *el)
 {
     if (el->octree) {
-        SCE_List_Removel (&el->it);
+        SCE_List_Remove (&el->it);
         el->octree = NULL;
     }
 }
@@ -524,5 +553,131 @@ void SCE_Octree_MarkVisibles (SCE_SOctree *tree, SCE_SFrustum *frustum)
         tree->partially = SCE_TRUE;
     }
 }
+
+void SCE_Octree_FetchNodesBB (SCE_SOctree *tree, const SCE_SBoundingBox *bb,
+                              SCE_SList *nodes)
+{
+    /* AABBWithBB doesnt exist since it's as difficult as BBWithBB */
+    if (SCE_Collide_BBWithBBBool (&tree->box, bb)) {
+        SCE_List_Appendl (nodes, &tree->it);
+        if (tree->child[0]) {
+            int i;
+            for (i = 0; i < 8; i++)
+                SCE_Octree_FetchNodesBB (tree->child[i], bb, nodes);
+        }
+    }
+}
+void SCE_Octree_FetchNodesRect (SCE_SOctree *tree, const SCE_SLongRect3 *r,
+                                SCE_SList *nodes)
+{
+    SCE_SBoundingBox bb;
+    SCE_BoundingBox_SetFromRectl (&bb, r);
+    SCE_BoundingBox_MakePlanes (&bb);
+    /* TODO: use AABBWithAABB */
+    SCE_Octree_FetchNodesBB (tree, &bb, nodes);
+}
+void SCE_Octree_FetchNodesBS (SCE_SOctree *tree, const SCE_SBoundingSphere *bs,
+                              SCE_SList *nodes)
+{
+    if (SCE_Collide_AABBWithBSBool (&tree->box, bs)) {
+        SCE_List_Appendl (nodes, &tree->it);
+        if (tree->child[0]) {
+            int i;
+            for (i = 0; i < 8; i++)
+                SCE_Octree_FetchNodesBS (tree->child[i], bs, nodes);
+        }
+    }
+}
+#if 0
+void SCE_Octree_FetchNodesFrustum (SCE_SOctree *tree, const SCE_SFrustum *f,
+                                   SCE_SList *nodes)
+{
+
+}
+#endif
+
+static void SCE_Octree_AppendElRec (SCE_SOctree *tree, SCE_SList *elements)
+{
+    SCE_SListIterator *it = NULL;
+    SCE_List_ForEach (it, &tree->elements) {
+        SCE_SOctreeElement *el = SCE_List_GetData (it);
+        SCE_List_Appendl (elements, &el->it2);
+    }
+    if (tree->child[0]) {
+        int i;
+        for (i = 0; i < 8; i++)
+            SCE_Octree_AppendElRec (tree->child[i], elements);
+    }
+}
+
+void SCE_Octree_FetchElementsBB (SCE_SOctree *tree, const SCE_SBoundingBox *bb,
+                                 SCE_SList *elements)
+{
+    SCE_SListIterator *it = NULL;
+
+    switch (SCE_Collide_BBWithBB (&tree->box, bb)) {
+    case SCE_COLLIDE_OUT:
+        break;
+    case SCE_COLLIDE_IN:
+        /* append all elements and sub-elements */
+        SCE_Octree_AppendElRec (tree, elements);
+        break;
+    case SCE_COLLIDE_PARTIALLY:
+        SCE_List_ForEach (it, &tree->elements) {
+            SCE_SOctreeElement *el = SCE_List_GetData (it);
+            /* TODO: use bool version */
+            if (SCE_Collide_BBWithBS (bb, el->sphere))
+                SCE_List_Appendl (elements, &el->it2);
+        }
+        if (tree->child[0]) {
+            int i;
+            for (i = 0; i < 8; i++)
+                SCE_Octree_FetchElementsBB (tree->child[i], bb, elements);
+        }
+    default:;                   /* that's not possible. */
+    }
+}
+void SCE_Octree_FetchElementsRect (SCE_SOctree *tree, const SCE_SLongRect3 *r,
+                                   SCE_SList *elements)
+{
+    SCE_SBoundingBox bb;
+    SCE_BoundingBox_SetFromRectl (&bb, r);
+    SCE_BoundingBox_MakePlanes (&bb);
+    /* TODO: use AABBWithAABB */
+    SCE_Octree_FetchElementsBB (tree, &bb, elements);
+}
+void SCE_Octree_FetchElementsBS (SCE_SOctree *tree,
+                                 const SCE_SBoundingSphere *bs,
+                                 SCE_SList *elements)
+{
+    SCE_SListIterator *it = NULL;
+
+    switch (SCE_Collide_BSWithBB (bs, &tree->box)) {
+    case SCE_COLLIDE_OUT:
+        break;
+    case SCE_COLLIDE_IN:
+        /* append all elements and sub-elements */
+        SCE_Octree_AppendElRec (tree, elements);
+        break;
+    case SCE_COLLIDE_PARTIALLY:
+        SCE_List_ForEach (it, &tree->elements) {
+            SCE_SOctreeElement *el = SCE_List_GetData (it);
+            /* TODO: use bool version */
+            if (SCE_Collide_BSWithBS (bs, el->sphere))
+                SCE_List_Appendl (elements, &el->it2);
+        }
+        if (tree->child[0]) {
+            int i;
+            for (i = 0; i < 8; i++)
+                SCE_Octree_FetchElementsBS (tree->child[i], bs, elements);
+        }
+    default:;                   /* that's not possible. */
+    }
+}
+#if 0
+void SCE_Octree_FetchElementsFrustum (SCE_SOctree*, const SCE_SFrustum*,
+                                      SCE_SList*);
+#endif
+
 
 /** @} */
