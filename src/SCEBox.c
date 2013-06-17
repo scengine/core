@@ -143,7 +143,7 @@ void SCE_Box_SetSize (SCE_SBox *box, float w, float h, float d)
  * \param d new box's dimensions
  * \sa SCE_Box_SetSize()
  */
-void SCE_Box_SetSizev (SCE_SBox *box, SCE_TVector3 d)
+void SCE_Box_SetSizev (SCE_SBox *box, const SCE_TVector3 d)
 {
     SCE_TVector3 center;
     SCE_Box_GetCenterv (box, center);
@@ -238,6 +238,8 @@ void SCE_Box_GetPointsv (SCE_SBox *box, SCE_TVector3 p[8])
 /**
  * \brief Builds the planes of a box
  * \param planes write out the planes here
+ *
+ * Normals of the planes points towards the outside of the box.
  * \sa SCE_Box_Make()
  */
 void SCE_Box_MakePlanes (SCE_SBox *box, SCE_SPlane planes[6])
@@ -298,14 +300,11 @@ float SCE_Box_GetDepth (SCE_SBox *box)
  * \param w,h,d will writes the dimensions here, some pointers can be NULL
  * \sa SCE_Box_GetWidth(), SCE_Box_GetHeight(), SCE_Box_GetDepth()
  */
-void SCE_Box_GetDimensionsv (SCE_SBox *box, float *w, float *h, float *d)
+void SCE_Box_GetDimensionsv (SCE_SBox *box, SCE_TVector3 d)
 {
-    if (w)
-        *w = SCE_Box_GetWidth (box);
-    if (h)
-        *h = SCE_Box_GetHeight (box);
-    if (d)
-        *d = SCE_Box_GetDepth (box);
+    d[0] = SCE_Box_GetWidth (box);
+    d[1] = SCE_Box_GetHeight (box);
+    d[2] = SCE_Box_GetDepth (box);
 }
 
 /**

@@ -52,7 +52,7 @@ void SCE_Box_SetFromMinMax (SCE_SBox*, const SCE_TVector3, const SCE_TVector3);
 void SCE_Box_SetFromRectl (SCE_SBox*, const SCE_SLongRect3*);
 
 void SCE_Box_SetSize (SCE_SBox*, float, float, float);
-void SCE_Box_SetSizev (SCE_SBox*, SCE_TVector3);
+void SCE_Box_SetSizev (SCE_SBox*, const SCE_TVector3);
 
 void SCE_Box_SetCenter (SCE_SBox*, float, float, float);
 void SCE_Box_SetCenterv (SCE_SBox*, const SCE_TVector3);
@@ -69,7 +69,7 @@ void SCE_Box_MakePlanes (SCE_SBox*, SCE_SPlane[6]);
 float SCE_Box_GetWidth (SCE_SBox*);
 float SCE_Box_GetHeight (SCE_SBox*);
 float SCE_Box_GetDepth (SCE_SBox*);
-void SCE_Box_GetDimensionsv (SCE_SBox*, float*, float*, float*);
+void SCE_Box_GetDimensionsv (SCE_SBox*, SCE_TVector3);
 
 void SCE_Box_ApplyMatrix4 (SCE_SBox*, SCE_TMatrix4);
 void SCE_Box_ApplyMatrix3 (SCE_SBox*, SCE_TMatrix3);
