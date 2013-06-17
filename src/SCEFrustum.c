@@ -31,6 +31,8 @@ void SCE_Frustum_Init (SCE_SFrustum *f)
         SCE_Plane_Init (&f->planes[i]);
 }
 
+/* I do believe the normals of the planes are oriented towards the inside
+   of the frustum, but obviously I'm not sure. */
 void SCE_Frustum_MakeFromMatrices (SCE_SFrustum *f, SCE_TMatrix4 view,
                                    SCE_TMatrix4 proj)
 {

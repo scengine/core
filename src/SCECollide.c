@@ -78,6 +78,7 @@ int SCE_Collide_PlanesWithPointv (const SCE_SPlane *planes, size_t n,
     return SCE_TRUE;
 }
 
+/* TODO: planes normals must be oriented towards the inside */
 int SCE_Collide_PlanesWithBB (const SCE_SPlane *planes, size_t n,
                               const SCE_SBoundingBox *box)
 {
@@ -114,12 +115,13 @@ int SCE_Collide_PlanesWithBBBool (const SCE_SPlane *planes, size_t n,
     }
     return SCE_TRUE;
 }
+/* TODO: planes normals must be oriented towards the outside */
 int SCE_Collide_PlanesWithBS (const SCE_SPlane *planes, size_t n,
                               const SCE_SBoundingSphere *sphere)
 {
     float d;
     size_t i;
-    unsigned int passed = 0;
+    size_t passed = 0;
     float *c, r;
 
     c = SCE_BoundingSphere_GetCenter ((SCE_SBoundingSphere*)sphere);
@@ -128,12 +130,10 @@ int SCE_Collide_PlanesWithBS (const SCE_SPlane *planes, size_t n,
     /* works only with convex meshs */
     for (i = 0; i < n; i++) {
         d = SCE_Plane_DistanceToPointv (&planes[i], c);
-        if (d >= r)
+        if (d <= -r)
             passed++;
-        else if (d < -r)        /* TODO: requires a normalized plane */
+        else if (d > r)        /* TODO: requires a normalized plane */
             return SCE_COLLIDE_OUT;
-        else
-            passed--;     /* the sphere can't be totally in (maybe partially) */
     }
     return (passed == n ? SCE_COLLIDE_IN : SCE_COLLIDE_PARTIALLY);
 }
