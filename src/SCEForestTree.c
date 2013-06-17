@@ -968,6 +968,8 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
                 SCE_List_Appendl (&nodes, &node->it);
                 n_nodes++;
                 node->radius = 0.1;
+            } else {
+                SCE_FTree_DeleteNode (node);
             }
 
             /* reset attraction vector & co */
