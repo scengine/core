@@ -21,6 +21,7 @@
 
 #include <SCE/utils/SCEUtils.h>
 
+#include "SCE/core/SCEOctree.h"
 #include "SCE/core/SCEForestTree.h"
 
 void SCE_FTree_InitNode (SCE_SForestTreeNode *node)
@@ -28,6 +29,13 @@ void SCE_FTree_InitNode (SCE_SForestTreeNode *node)
     int i;
 
     node->parent = NULL;
+
+    SCE_Octree_InitElement (&node->el);
+    SCE_BoundingSphere_Init (&node->bs);
+    SCE_BoundingSphere_Set (&node->bs, 0.0, 0.0, 0.0, 0.1);
+    SCE_Octree_SetElementBoundingSphere (&node->el, &node->bs);
+    SCE_Octree_SetElementData (&node->el, node);
+
     SCE_Matrix4x3_Identity (node->matrix);
     SCE_Vector3_Set (node->plane, 0.0, 0.0, 0.0);
     node->radius = 1.0;
@@ -56,6 +64,7 @@ void SCE_FTree_InitNode (SCE_SForestTreeNode *node)
 void SCE_FTree_ClearNode (SCE_SForestTreeNode *node)
 {
     int i;
+    SCE_Octree_ClearElement (&node->el);
     for (i = 0; i < SCE_MAX_FTREE_DEGREE; i++)
         SCE_FTree_DeleteNode (node->children[i]);
 }
@@ -827,6 +836,50 @@ size_t SCE_FTree_GetNumBranches (const SCE_SForestTree *ft)
     return SCE_FTree_GetNodeNumBranches (&ft->root);
 }
 
+static int SCE_FTree_MakeOctree (SCE_SOctree *octree, const SCE_TVector3 o,
+                                 const SCE_TVector3 *p, size_t n)
+{
+    SCE_SBox box;
+    SCE_TVector3 v;
+
+    /* get bounding box surrounding p */
+    SCE_Box_Init (&box);
+    /* TODO: we PRAY that SCE_TVector3 is of the same type as SCEvertices */
+    SCE_Geometry_ComputeBoundingBox (p, n, sizeof (SCE_TVector3), &box);
+    SCE_Box_Expand (&box, o);
+
+    SCE_Octree_Init (octree);
+    SCE_Box_GetCenterv (&box, v);
+    SCE_Octree_SetCenterv (octree, v);
+    SCE_Box_GetDimensionsv (&box, v);
+    /* for bounding sphere radius (which must be smaller than 0.5,
+       see InsertNodeIntoOctree()) */
+    v[0] += 1.0;
+    v[1] += 1.0;
+    v[2] += 1.0;
+    SCE_Octree_SetSizev (octree, v);
+
+    /* TODO: let's hope 3 levels will be "enough", in fact the octree
+       should be constructed as elements are inserted */
+    if (SCE_Octree_RecursiveMake (octree, 3, NULL, NULL, SCE_FALSE, 0.0) < 0)
+        goto fail;
+
+    return SCE_OK;
+fail:
+    SCE_Octree_Clear (octree);
+    SCEE_LogSrc ();
+    return SCE_ERROR;
+}
+
+static void SCE_FTree_InsertNodeIntoOctree (SCE_SOctree *octree,
+                                            SCE_SForestTreeNode *node)
+{
+    SCE_TVector3 pos;
+    SCE_Matrix4x3_GetTranslation (node->matrix, pos);
+    SCE_BoundingSphere_Setv (&node->bs, pos, 0.1); /* radius must be smaller than 0.5 */
+    SCE_Octree_InsertElement (octree, &node->el);
+}
+
 /**
  * \brief 
  * 
@@ -848,12 +901,17 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
     SCE_SListIterator *it = NULL, *pro = NULL;
     int run = SCE_TRUE;
     long n_nodes = 0;
+    SCE_SOctree octree;
+
+    if (SCE_FTree_MakeOctree (&octree, origin, p, n) < 0)
+        goto fail;
 
     SCE_List_Init (&nodes);
 
     /* init root */
     SCE_Matrix4x3_Translatev (ft->root.matrix, origin);
     SCE_List_Appendl (&nodes, &ft->root.it);
+    SCE_FTree_InsertNodeIntoOctree (&octree, &ft->root);
 
     while (run) {
         /* for each point */
@@ -863,16 +921,26 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
             float min_d = -1.0;
             SCE_SForestTreeNode *closest = NULL;
             SCE_TVector3 pos;
+            SCE_SBoundingSphere area;
+            SCE_SList surrounding;
 
-            /* for each node */
-            SCE_List_ForEachProtected (pro, it, &nodes) {
+            SCE_List_Init (&surrounding);
+
+            /* for each neighboring node */
+            SCE_BoundingSphere_Init (&area);
+            /* squared distance */
+            SCE_BoundingSphere_Setv (&area, p[i], sqrt (param->radius));
+            SCE_Octree_FetchElementsBS (&octree, &area, &surrounding);
+            SCE_List_ForEachProtected (pro, it, &surrounding) {
                 /* find the closest */
-                SCE_SForestTreeNode *node = SCE_List_GetData (it);
+                SCE_SOctreeElement *el = SCE_List_GetData (it);
+                SCE_SForestTreeNode *node = SCE_Octree_GetElementData (el);
                 SCE_TVector3 diff;
                 float d;
 
                 if (node->n_children == SCE_MAX_FTREE_DEGREE) {
                     SCE_List_Remove (&node->it);
+                    SCE_Octree_RemoveElement (&node->el);
                     continue;
                 }
 
@@ -897,6 +965,8 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
                     closest = node;
                 }
             }
+
+            SCE_List_Flush (&surrounding);
 
             if (closest) {
                 /* add attraction */
@@ -968,6 +1038,7 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
                 SCE_List_Appendl (&nodes, &node->it);
                 n_nodes++;
                 node->radius = 0.1;
+                SCE_FTree_InsertNodeIntoOctree (&octree, node);
             } else {
                 SCE_FTree_DeleteNode (node);
             }
@@ -985,6 +1056,8 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
     }
 
     SCE_List_Flush (&nodes);    /* just in case */
+
+    SCE_Octree_Clear (&octree);
 
     return SCE_OK;
 fail:

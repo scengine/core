@@ -36,6 +36,10 @@ typedef struct sce_sforesttreenode SCE_SForestTreeNode;
 struct sce_sforesttreenode {
     SCE_SForestTreeNode *parent;
 
+    /* used for space colonization algorithm */
+    SCE_SOctreeElement el;
+    SCE_SBoundingSphere bs;
+
     SCE_TMatrix4x3 matrix;
     SCE_TVector3 plane;
     float radius;
