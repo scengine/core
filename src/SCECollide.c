@@ -341,12 +341,12 @@ int SCE_Collide_BSWithBS (const SCE_SBoundingSphere *s,
     r = sphere->radius;
     c2 = sphere2->center;
     r2 = sphere2->radius;
-    d = SCE_Math_Fabsf (SCE_Vector3_Dot (c, c2));
-    r  = r - r2; r  *= r;
-    r2 = r + r2; r2 *= r2;
-    if (d <= r - r2)
+    d = SCE_Vector3_Distance (c, c2);
+    r  = SCE_Math_Fabsf (r - r2);
+    r2 = r + r2;
+    if (d <= r)
         return SCE_COLLIDE_IN;
-    else if (d < r + r2)
+    else if (d < r2)
         return SCE_COLLIDE_PARTIALLY;
     else
         return SCE_COLLIDE_OUT;
