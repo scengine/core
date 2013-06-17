@@ -371,3 +371,47 @@ void SCE_Box_FaceOrientation (SCE_EBoxFace f, SCE_TMatrix4 m)
     default:;                   /* omg */
     }
 }
+
+/**
+ * \brief Expands a box so that it includes a given point
+ * \param b a box
+ * \param p a point
+ */
+void SCE_Box_Expand (SCE_SBox *b, const SCE_TVector3 p)
+{
+    if (p[0] > b->p[1][0]) {
+        b->p[1][0] = p[0];
+        b->p[2][0] = p[0];
+        b->p[6][0] = p[0];
+        b->p[5][0] = p[0];
+    } else if (p[0] < b->p[0][0]) {
+        b->p[0][0] = p[0];
+        b->p[3][0] = p[0];
+        b->p[4][0] = p[0];
+        b->p[7][0] = p[0];
+    }
+
+    if (p[1] > b->p[2][1]) {
+        b->p[2][1] = p[1];
+        b->p[3][1] = p[1];
+        b->p[4][1] = p[1];
+        b->p[5][1] = p[1];
+    } else if (p[1] < b->p[0][1]) {
+        b->p[0][1] = p[1];
+        b->p[1][1] = p[1];
+        b->p[6][1] = p[1];
+        b->p[7][1] = p[1];
+    }
+
+    if (p[2] > b->p[4][2]) {
+        b->p[4][2] = p[2];
+        b->p[5][2] = p[2];
+        b->p[6][2] = p[2];
+        b->p[7][2] = p[2];
+    } else if (p[2] < b->p[0][2]) {
+        b->p[0][2] = p[2];
+        b->p[1][2] = p[2];
+        b->p[2][2] = p[2];
+        b->p[3][2] = p[2];
+    }
+}

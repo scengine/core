@@ -77,6 +77,8 @@ void SCE_Box_ApplyMatrix4x3 (SCE_SBox*, SCE_TMatrix4x3);
 
 void SCE_Box_FaceOrientation (SCE_EBoxFace, SCE_TMatrix4);
 
+void SCE_Box_Expand (SCE_SBox*, const SCE_TVector3);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
