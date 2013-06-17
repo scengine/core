@@ -898,20 +898,25 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
 {
     long i;
     SCE_SList nodes, attracted;
+    SCE_SList surrounding, *list = NULL;
     SCE_SListIterator *it = NULL, *pro = NULL;
     int run = SCE_TRUE;
     long n_nodes = 0;
     SCE_SOctree octree;
-
-    if (SCE_FTree_MakeOctree (&octree, origin, p, n) < 0)
-        goto fail;
 
     SCE_List_Init (&nodes);
 
     /* init root */
     SCE_Matrix4x3_Translatev (ft->root.matrix, origin);
     SCE_List_Appendl (&nodes, &ft->root.it);
-    SCE_FTree_InsertNodeIntoOctree (&octree, &ft->root);
+
+    list = &nodes;
+    if (param->use_octree) {
+        if (SCE_FTree_MakeOctree (&octree, origin, p, n) < 0)
+            goto fail;
+        SCE_FTree_InsertNodeIntoOctree (&octree, &ft->root);
+        list = &surrounding;
+    }
 
     while (run) {
         /* for each point */
@@ -922,25 +927,34 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
             SCE_SForestTreeNode *closest = NULL;
             SCE_TVector3 pos;
             SCE_SBoundingSphere area;
-            SCE_SList surrounding;
 
-            SCE_List_Init (&surrounding);
+            if (param->use_octree) {
+                SCE_List_Init (&surrounding);
+                SCE_BoundingSphere_Init (&area);
+                /* squared distance */
+                SCE_BoundingSphere_Setv (&area, p[i], sqrt (param->radius));
+                SCE_Octree_FetchElementsBS (&octree, &area, &surrounding);
+            }
 
-            /* for each neighboring node */
-            SCE_BoundingSphere_Init (&area);
-            /* squared distance */
-            SCE_BoundingSphere_Setv (&area, p[i], sqrt (param->radius));
-            SCE_Octree_FetchElementsBS (&octree, &area, &surrounding);
-            SCE_List_ForEachProtected (pro, it, &surrounding) {
+            /* for each node */
+            SCE_List_ForEachProtected (pro, it, list) {
                 /* find the closest */
-                SCE_SOctreeElement *el = SCE_List_GetData (it);
-                SCE_SForestTreeNode *node = SCE_Octree_GetElementData (el);
+                SCE_SOctreeElement *el = NULL;
+                SCE_SForestTreeNode *node = NULL;
                 SCE_TVector3 diff;
                 float d;
 
+                if (!param->use_octree) {
+                    node = SCE_List_GetData (it);
+                } else {
+                    el = SCE_List_GetData (it);
+                    node = SCE_Octree_GetElementData (el);
+                }
+
                 if (node->n_children == SCE_MAX_FTREE_DEGREE) {
                     SCE_List_Remove (&node->it);
-                    SCE_Octree_RemoveElement (&node->el);
+                    if (param->use_octree)
+                        SCE_Octree_RemoveElement (&node->el);
                     continue;
                 }
 
@@ -966,7 +980,8 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
                 }
             }
 
-            SCE_List_Flush (&surrounding);
+            if (param->use_octree)
+                SCE_List_Flush (&surrounding);
 
             if (closest) {
                 /* add attraction */
@@ -1038,7 +1053,8 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
                 SCE_List_Appendl (&nodes, &node->it);
                 n_nodes++;
                 node->radius = 0.1;
-                SCE_FTree_InsertNodeIntoOctree (&octree, node);
+                if (param->use_octree)
+                    SCE_FTree_InsertNodeIntoOctree (&octree, node);
             } else {
                 SCE_FTree_DeleteNode (node);
             }
@@ -1057,7 +1073,8 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
 
     SCE_List_Flush (&nodes);    /* just in case */
 
-    SCE_Octree_Clear (&octree);
+    if (param->use_octree)
+        SCE_Octree_Clear (&octree);
 
     return SCE_OK;
 fail:

@@ -101,6 +101,8 @@ struct sce_sforesttreeparameters {
                                    will be removed */
     float radius;               /* radius of influence */
     long max_nodes;             /* maximum number of nodes to generate */
+    int use_octree;             /* whether to use an octree to "speedup"
+                                   the generation */
 };
 
 void SCE_FTree_InitNode (SCE_SForestTreeNode*);
