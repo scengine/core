@@ -42,6 +42,7 @@ void SCE_BoundingSphere_Setv (SCE_SBoundingSphere*, SCE_TVector3, float);
 
 SCE_SSphere* SCE_BoundingSphere_GetSphere (SCE_SBoundingSphere*);
 float* SCE_BoundingSphere_GetCenter (SCE_SBoundingSphere*);
+void SCE_BoundingSphere_GetCenterv (const SCE_SBoundingSphere*, SCE_TVector3);
 float SCE_BoundingSphere_GetRadius (const SCE_SBoundingSphere*);
 
 void SCE_BoundingSphere_Push (SCE_SBoundingSphere*, SCE_TMatrix4, SCE_SSphere*);

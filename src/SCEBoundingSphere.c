@@ -100,6 +100,11 @@ float* SCE_BoundingSphere_GetCenter (SCE_SBoundingSphere *sphere)
 {
     return sphere->sphere.center;
 }
+void SCE_BoundingSphere_GetCenterv (const SCE_SBoundingSphere *sphere,
+                                    SCE_TVector3 c)
+{
+    SCE_Vector3_Copy (c, sphere->sphere.center);
+}
 /**
  * \brief Gets the radius of a bouding sphere
  * \param sphere a bouding sphere
