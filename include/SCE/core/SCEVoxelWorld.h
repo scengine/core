@@ -17,11 +17,12 @@
  -----------------------------------------------------------------------------*/
 
 /* created: 07/05/2012
-   updated: 06/03/2013 */
+   updated: 04/07/2013 */
 
 #ifndef SCEVOXELWORLD_H
 #define SCEVOXELWORLD_H
 
+#include <pthread.h>
 #include <SCE/utils/SCEUtils.h>
 #include "SCE/core/SCEVoxelOctree.h"
 
@@ -33,6 +34,7 @@ typedef int (*SCE_FVoxelWorldMkdirFunc)(const char*);
 
 typedef struct sce_svoxelworldtree SCE_SVoxelWorldTree;
 struct sce_svoxelworldtree {
+    pthread_rwlock_t rwlock;
     SCE_SVoxelOctree vo;
     void *udata;
     SCE_SListIterator it, it2;
@@ -40,11 +42,20 @@ struct sce_svoxelworldtree {
 
 #define SCE_MAX_VWORLD_UPDATE_ZONES 128
 
+typedef struct sce_svoxelworldbuffer SCE_SVoxelWorldBuffer;
+struct sce_svoxelworldbuffer {
+    pthread_mutex_t mutex;
+    SCEubyte *buffer1, *buffer2;
+};
+
 typedef struct sce_svoxelworld SCE_SVoxelWorld;
 struct sce_svoxelworld {
     SCE_SList trees;            /* list of VoxelWorldTree */
     SCE_SArray2D trees_grid;
     int trees_initialized;
+
+    pthread_mutex_t mutex;
+    pthread_rwlock_t rwlock, rwlock2;
 
     SCEulong w, h, d;
     SCEuint n_lod;
@@ -59,11 +70,18 @@ struct sce_svoxelworld {
     SCE_SLongRect3 zones[SCE_MAX_VWORLD_UPDATE_ZONES];
     int zones_level[SCE_MAX_VWORLD_UPDATE_ZONES];
     int last, first;
+    int record_updates;
 
     /* some memory pre-allocated for LOD computation */
-    SCEubyte *buffer1, *buffer2;
+    SCE_SVoxelWorldBuffer *buffers;
+    size_t n_buffers;
     size_t size1, size2;
 };
+
+void SCE_VWorld_InitTree (SCE_SVoxelWorldTree*);
+void SCE_VWorld_ClearTree (SCE_SVoxelWorldTree*);
+SCE_SVoxelWorldTree* SCE_VWorld_CreateTree (void);
+void SCE_VWorld_DeleteTree (SCE_SVoxelWorldTree*);
 
 void SCE_VWorld_Init (SCE_SVoxelWorld*);
 void SCE_VWorld_Clear (SCE_SVoxelWorld*);
@@ -88,7 +106,11 @@ void SCE_VWorld_SetMkdirFunc (SCE_SVoxelWorld*, SCE_FVoxelWorldMkdirFunc);
 void SCE_VWorld_SetFileSystem (SCE_SVoxelWorld*, SCE_SFileSystem*);
 void SCE_VWorld_SetFileCache (SCE_SVoxelWorld*, SCE_SFileCache*);
 void SCE_VWorld_SetMaxCachedNodes (SCE_SVoxelWorld*, SCEulong);
+void SCE_VWorld_SetNumBuffers (SCE_SVoxelWorld*, size_t);
 
+SCE_SVoxelWorldTree* SCE_VWorld_NewTree (SCE_SVoxelWorld*, long, long, long);
+int SCE_VWorld_AddTree (SCE_SVoxelWorld*, SCE_SVoxelWorldTree*);
+SCE_SVoxelWorldTree* SCE_VWorld_RemoveTree (SCE_SVoxelWorld*, long, long, long);
 SCE_SVoxelWorldTree* SCE_VWorld_AddNewTree (SCE_SVoxelWorld*, long, long, long);
 SCE_SVoxelWorldTree* SCE_VWorld_GetTree (SCE_SVoxelWorld*, long, long, long);
 void SCE_VWorld_GetTreeOriginv (const SCE_SVoxelWorldTree*, long*, long*,long*);
@@ -104,8 +126,12 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld*, const char*);
 
 int SCE_VWorld_LoadTree (SCE_SVoxelWorld*, long, long, long);
 int SCE_VWorld_LoadAllTrees (SCE_SVoxelWorld*);
+int SCE_VWorld_SaveTreev (SCE_SVoxelWorld*, SCE_SVoxelWorldTree*);
 int SCE_VWorld_SaveTree (SCE_SVoxelWorld*, long, long, long);
 int SCE_VWorld_SaveAllTrees (SCE_SVoxelWorld*);
+
+void SCE_VWorld_TreeRegion (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
+                            long[3], long[3]);
 
 /* int SCE_VWorld_UnloadTree (SCE_SVoxelWorld*, long, long, long); */
 
@@ -118,6 +144,8 @@ int SCE_VWorld_FillRegion (SCE_SVoxelWorld*, const SCE_SLongRect3*, SCEubyte);
 void SCE_VWorld_AddUpdatedRegion (SCE_SVoxelWorld*, SCEuint,
                                   const SCE_SLongRect3*);
 int SCE_VWorld_GetNextUpdatedRegion (SCE_SVoxelWorld*, SCE_SLongRect3*);
+void SCE_VWorld_EnableUpdateRecording (SCE_SVoxelWorld*);
+void SCE_VWorld_DisableUpdateRecording (SCE_SVoxelWorld*);
 
 int SCE_VWorld_GenerateLOD (SCE_SVoxelWorld*, SCEuint, const SCE_SLongRect3*,
                             SCE_SLongRect3*);
