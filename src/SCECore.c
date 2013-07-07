@@ -62,6 +62,7 @@ int SCE_Init_Core (FILE *outlog, SCEbitfield flags)
     init_n++;
     if (init_n == 1) {
         if (SCE_Init_Utils (outlog) < 0 ||
+            SCE_Init_Noise () < 0 ||
             SCE_Init_Geometry () < 0 ||
             SCE_Init_Image () < 0 ||
             SCE_Init_BoxGeom () < 0 ||

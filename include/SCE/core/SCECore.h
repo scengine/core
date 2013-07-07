@@ -27,6 +27,7 @@
 #include <SCE/utils/SCEUtils.h>
 
 /* internal dependencies */
+#include "SCE/core/SCENoise.h"
 #include "SCE/core/SCEBoundingBox.h"
 #include "SCE/core/SCEBoundingSphere.h"
 #include "SCE/core/SCECone.h"

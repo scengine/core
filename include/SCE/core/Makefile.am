@@ -1,6 +1,7 @@
 sce_include_core_HEADERS = lib4fm.h \
                            libwar.h \
                            SCENode.h \
+                           SCENoise.h \
                            SCEBox.h \
                            SCESphere.h \
                            SCECone.h \

@@ -14,6 +14,7 @@ libscecore_la_LIBADD    = @SCE_UTILS_LIBS@ \
 libscecore_la_LDFLAGS   = -version-info @SCE_CORE_LTVERSION@
 libscecore_la_SOURCES   = libwar.c \
                           lib4fm.c \
+                          SCENoise.c \
                           SCEBox.c \
                           SCESphere.c \
                           SCECone.c \
