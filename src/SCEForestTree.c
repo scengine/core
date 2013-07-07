@@ -1008,9 +1008,6 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
             SCE_TMatrix4x3 rot;
             float a;
 
-            /* stop when there's no longer any parent to expand */
-            run = SCE_TRUE;
-
             if (!(node = SCE_FTree_CreateNode ()))
                 goto fail;
 
@@ -1055,6 +1052,10 @@ int SCE_FTree_SpaceColonization (SCE_SForestTree *ft,
                 node->radius = 0.1;
                 if (param->use_octree)
                     SCE_FTree_InsertNodeIntoOctree (&octree, node);
+
+                /* stop when there's no longer any parent to expand */
+                run = SCE_TRUE;
+
             } else {
                 SCE_FTree_DeleteNode (node);
             }
