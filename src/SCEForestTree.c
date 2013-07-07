@@ -762,7 +762,7 @@ SCE_FTree_UpdateBushesMatricesAux (SCE_SForestTree *ft,
     size_t i;
 
     if (node->leaf_index >= 0) {
-#if 0
+#if 1
         SCE_Matrix4x3_Copy (&ft->bushes[node->leaf_index][ft->index_counter],
                             node->leaf_matrix);
 #else
@@ -1291,10 +1291,11 @@ void SCE_FTree_MergeNodes (SCE_SForestTree *ft, float height, float angle)
 }
 
 #define SERIALIZED_NODE_SIZE                                            \
-    /* matrix: position + quaternion (4 is the serialized size of a float) */ \
-    (3 * 4 + 4 * 4 +                                                    \
-     /* n_children (long), radius (float), leaf index (single byte) */  \
-     SCE_ENCODE_LONG_SIZE + 4 + 1)                                      \
+    /* matrix: 2 * (position + quaternion) */                           \
+    /* (4 is the serialized size of a float) */                         \
+    (1 * (3 * 4 + 4 * 4) + 12 * 4 +                                     \
+     /* n_children (long), radius (float), leaf index (long) */         \
+     2 * SCE_ENCODE_LONG_SIZE + 4)                                      \
 
 /**
  * \brief Get size of the serialization of a tree
@@ -1306,6 +1307,7 @@ void SCE_FTree_MergeNodes (SCE_SForestTree *ft, float height, float angle)
 size_t SCE_FTree_GetSerializedSize (const SCE_SForestTree *ft)
 {
     size_t node_size = SERIALIZED_NODE_SIZE;
+    /* TODO: that's not accurate: we dont have a leaf matrix for each node */
     return node_size * SCE_FTree_GetNumNodes (ft);
 }
 
@@ -1323,6 +1325,8 @@ static void SCE_FTree_SerializeNode (const SCE_SForestTreeNode *node,
     SCE_Encode_StreamLong (node->n_children, fp);
     SCE_Encode_StreamFloats (&node->radius, 1, SCE_TRUE, 8, 23, fp);
     SCE_Encode_StreamLong (node->leaf_index, fp);
+    if (node->leaf_index >= 0)
+        SCE_Encode_StreamFloats (node->leaf_matrix, 12, SCE_TRUE, 8, 23, fp);
 }
 
 static void SCE_FTree_SerializeNodeRec (const SCE_SForestTreeNode *node,
@@ -1346,12 +1350,13 @@ static void SCE_FTree_DeserializeNode (SCE_SForestTreeNode *node, SCE_SFile *fp)
 
     SCE_Decode_StreamFloats (pos, 3, SCE_TRUE, 8, 23, fp);
     SCE_Decode_StreamFloats (rot, 4, SCE_TRUE, 8, 23, fp);
+    SCE_Matrix4x3_FromQuaternion (node->matrix, rot);
+    SCE_Matrix4x3_SetTranslation (node->matrix, pos);
     node->n_children = SCE_Decode_StreamLong (fp);
     SCE_Decode_StreamFloats (&node->radius, 1, SCE_TRUE, 8, 23, fp);
     node->leaf_index = SCE_Decode_StreamLong (fp);
-
-    SCE_Matrix4x3_FromQuaternion (node->matrix, rot);
-    SCE_Matrix4x3_SetTranslation (node->matrix, pos);
+    if (node->leaf_index >= 0)
+        SCE_Decode_StreamFloats (node->leaf_matrix, 12, SCE_TRUE, 8, 23, fp);
 }
 
 static int SCE_FTree_DeserializeNodeRec (SCE_SForestTreeNode *node,
