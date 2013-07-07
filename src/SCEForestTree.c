@@ -1176,6 +1176,37 @@ static void SCE_FTree_DistributeBushesAux (SCE_SForestTreeNode *node,
         new->leaf_index = SCE_Math_RandRange (0, n_bushes - 1);
     }
 }
+
+static void SCE_FTree_DistributeBushesAux2 (SCE_SForestTreeNode *node,
+                                            SCE_TVector3 origin,
+                                            SCEuint n_bushes)
+{
+    if (node->n_children) {
+        int i;
+        for (i = 0; i < node->n_children; i++)
+            SCE_FTree_DistributeBushesAux2 (node->children[i], origin, n_bushes);
+    } else {
+        SCE_TVector3 pos, z, x, y;
+
+        SCE_Matrix4x3_GetTranslation (node->matrix, pos);
+        SCE_Matrix4x3_SetTranslation (node->leaf_matrix, pos);
+
+        SCE_Vector3_Operator1v (pos, -=, origin);
+        SCE_Vector3_Normalize (pos);
+        SCE_Vector3_Set (z, 0.0, 0.0, 1.0);
+        SCE_Vector3_Operator1v (z, +=, pos);
+        SCE_Vector3_Normalize (z);
+        SCE_Vector3_Perpendicular (z, x);
+        SCE_Vector3_Normalize (x);
+        SCE_Vector3_Cross (y, x, z);
+        SCE_Vector3_Normalize (y);
+        SCE_Matrix4x3_Base (node->leaf_matrix, x, y, z);
+        SCE_Matrix4x3_MulRotZ (node->leaf_matrix, SCE_Math_RandRangef (0.0, 2.0 * M_PI));
+
+        node->leaf_index = SCE_Math_RandRange (0, n_bushes - 1);
+    }
+}
+
 /**
  * \brief Randomly places leaf instances at some nodes
  * \param ft 
@@ -1185,7 +1216,13 @@ static void SCE_FTree_DistributeBushesAux (SCE_SForestTreeNode *node,
  */
 void SCE_FTree_DistributeBushes (SCE_SForestTree *ft, SCEuint n_bushes)
 {
+#if 0
     SCE_FTree_DistributeBushesAux (&ft->root, n_bushes);
+#else
+    SCE_TVector3 origin;
+    SCE_Matrix4x3_GetTranslation (ft->root.matrix, origin);
+    SCE_FTree_DistributeBushesAux2 (&ft->root, origin, n_bushes);
+#endif
 }
 
 static void SCE_FTree_ComputeRadiusAux (SCE_SForestTreeNode *node, float r)
