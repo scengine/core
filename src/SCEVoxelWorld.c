@@ -295,9 +295,7 @@ int SCE_VWorld_AddTree (SCE_SVoxelWorld *vw, SCE_SVoxelWorldTree *wt)
     SCE_VOctree_SetFileCache (&wt->vo, vw->fcache);
     SCE_VOctree_SetMaxCachedNodes (&wt->vo, vw->max_cached_nodes);
 
-    SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
-    x /= (long)vw->w;
-    y /= (long)vw->h;
+    SCE_VWorld_GetTreeOriginv (wt, &x, &y, &z);
 
     pthread_rwlock_wrlock (&vw->rwlock);
 
@@ -481,10 +479,7 @@ int SCE_VWorld_Save (const SCE_SVoxelWorld *vw, const char *fname)
         long x, y, z;
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
 
-        SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
-        x /= (long)vw->w;
-        y /= (long)vw->h;
-        z /= (long)vw->d;
+        SCE_VWorld_GetTreeOriginv (wt, &x, &y, &z);
         SCE_Encode_StreamLong (x, &fp);
         SCE_Encode_StreamLong (y, &fp);
         SCE_Encode_StreamLong (z, &fp);
@@ -527,10 +522,7 @@ int SCE_VWorld_LoadAllTrees (SCE_SVoxelWorld *vw)
     SCE_List_ForEach (it, &vw->trees) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
 
-        SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
-        x /= (long)vw->w;
-        y /= (long)vw->h;
-        z /= (long)vw->d;
+        SCE_VWorld_GetTreeOriginv (wt, &x, &y, &z);
         SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
         /* TODO: use a macro for "octree.bin" */
         strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
@@ -583,10 +575,7 @@ int SCE_VWorld_SaveAllTrees (SCE_SVoxelWorld *vw)
     SCE_List_ForEach (it, &vw->trees) {
         SCE_SVoxelWorldTree *wt = SCE_List_GetData (it);
 
-        SCE_VOctree_GetOriginv (&wt->vo, &x, &y, &z);
-        x /= (long)vw->w;
-        y /= (long)vw->h;
-        z /= (long)vw->d;
+        SCE_VWorld_GetTreeOriginv (wt, &x, &y, &z);
         SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
         /* TODO: use a macro for "octree.bin" */
         strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
