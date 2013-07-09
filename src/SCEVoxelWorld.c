@@ -502,10 +502,13 @@ int SCE_VWorld_LoadTree (SCE_SVoxelWorld *vw, long x, long y, long z)
             goto fail;
     }
 
+    /* TODO: we should load the tree before adding it to vw */
     SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
     /* TODO: use a macro for "octree.bin" */
     strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
+    pthread_rwlock_wrlock (&wt->rwlock);
     if (SCE_VOctree_Load (&wt->vo, prefix) < 0) goto fail;
+    pthread_rwlock_unlock (&wt->rwlock);
 
     return SCE_OK;
 fail:
@@ -526,10 +529,12 @@ int SCE_VWorld_LoadAllTrees (SCE_SVoxelWorld *vw)
         SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
         /* TODO: use a macro for "octree.bin" */
         strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
+        pthread_rwlock_wrlock (&wt->rwlock);
         if (SCE_VOctree_Load (&wt->vo, prefix) < 0) {
             SCEE_LogSrc ();
             return SCE_ERROR;
         }
+        pthread_rwlock_unlock (&wt->rwlock);
     }
 
     return SCE_OK;
@@ -545,10 +550,12 @@ int SCE_VWorld_SaveTreev (SCE_SVoxelWorld *vw, SCE_SVoxelWorldTree *wt)
     SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
     /* TODO: use a macro for "octree.bin" */
     strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
+    pthread_rwlock_rdlock (&wt->rwlock);
     if (SCE_VOctree_Save (&wt->vo, prefix) < 0) {
         SCEE_LogSrc ();
         return SCE_ERROR;
     }
+    pthread_rwlock_unlock (&wt->rwlock);
 
     return SCE_OK;
 }
@@ -579,10 +586,12 @@ int SCE_VWorld_SaveAllTrees (SCE_SVoxelWorld *vw)
         SCE_VWorld_SetTreePrefix (prefix, vw, x, y, z);
         /* TODO: use a macro for "octree.bin" */
         strncat (prefix, "/octree.bin", sizeof prefix - strlen (prefix) - 1);
+        pthread_rwlock_rdlock (&wt->rwlock);
         if (SCE_VOctree_Save (&wt->vo, prefix) < 0) {
             SCEE_LogSrc ();
             return SCE_ERROR;
         }
+        pthread_rwlock_unlock (&wt->rwlock);
     }
 
     return SCE_OK;
